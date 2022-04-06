@@ -5,6 +5,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/WidgetComponent.h"
  
 
 
@@ -23,6 +24,9 @@ AEndlessBetrayalCharacter::AEndlessBetrayalCharacter()
 
 	bUseControllerRotationYaw = false;	//We don't want our character rotating along with our controller (not yet)
 	GetCharacterMovement()->bOrientRotationToMovement = true;
+
+	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
+	OverheadWidget->SetupAttachment(RootComponent);
 }
 
 void AEndlessBetrayalCharacter::BeginPlay()
