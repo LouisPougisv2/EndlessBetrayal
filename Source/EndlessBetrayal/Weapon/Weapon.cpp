@@ -3,6 +3,8 @@
 
 #include "Weapon.h"
 #include "Components/SphereComponent.h"
+#include "Components/WidgetComponent.h"
+#include "EndlessBetrayal/Character/EndlessBetrayalCharacter.h"
 
 
 // Sets default values
@@ -24,16 +26,44 @@ AWeapon::AWeapon()
 	AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	PickupWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("PickupWidget"));
+	PickupWidget->SetupAttachment(RootComponent);
 }
 
 void AWeapon::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	if (PickupWidget)
+	{
+		PickupWidget->SetVisibility(false);
+	}
+
 	if (HasAuthority()) //Same as if checking GetLocalRole() == ENetRole::ROLE_Authority
 	{
 		AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		AreaSphere->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
+		AreaSphere->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::OnSphereOverlapBegin);
+		AreaSphere->OnComponentEndOverlap.AddDynamic(this, &AWeapon::OnSphereOverlapEnd);
+
+	} 
+}
+
+void AWeapon::OnSphereOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	AEndlessBetrayalCharacter* EndlessBetrayalCharacter = Cast<AEndlessBetrayalCharacter>(OtherActor);
+	if (EndlessBetrayalCharacter && PickupWidget)
+	{
+		PickupWidget->SetVisibility(true);
+	}
+}
+
+void AWeapon::OnSphereOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	AEndlessBetrayalCharacter* EndlessBetrayalCharacter = Cast<AEndlessBetrayalCharacter>(OtherActor);
+	if (EndlessBetrayalCharacter && PickupWidget)
+	{
+		PickupWidget->SetVisibility(false);
 	}
 }
 
