@@ -6,7 +6,8 @@
 #include "Camera/CameraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/WidgetComponent.h"
- 
+#include "Net/UnrealNetwork.h"
+#include "EndlessBetrayal/Weapon/Weapon.h"
 
 
 AEndlessBetrayalCharacter::AEndlessBetrayalCharacter()
@@ -29,10 +30,23 @@ AEndlessBetrayalCharacter::AEndlessBetrayalCharacter()
 	OverheadWidget->SetupAttachment(RootComponent);
 }
 
+void AEndlessBetrayalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME_CONDITION(AEndlessBetrayalCharacter, OverlappingWeapon, COND_OwnerOnly);
+}
+
 void AEndlessBetrayalCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
+}
+
+void AEndlessBetrayalCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
 }
 
 void AEndlessBetrayalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -47,6 +61,7 @@ void AEndlessBetrayalCharacter::SetupPlayerInputComponent(UInputComponent* Playe
 	PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &AEndlessBetrayalCharacter::LookUp);
 
 }
+
 void AEndlessBetrayalCharacter::MoveForward(float Value)
 {
 	if ((Controller != nullptr) && (Value != 0.0f))
@@ -77,10 +92,34 @@ void AEndlessBetrayalCharacter::LookUp(float Value)
 	AddControllerPitchInput(Value);
 }
 
-void AEndlessBetrayalCharacter::Tick(float DeltaTime)
+void AEndlessBetrayalCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 {
-	Super::Tick(DeltaTime);
-
+	if (OverlappingWeapon)
+	{
+		OverlappingWeapon->ShowPickupWidget(false);
+	}
+	OverlappingWeapon = Weapon;
+	if (IsLocallyControlled())
+	{
+		if (OverlappingWeapon)
+		{
+			OverlappingWeapon->ShowPickupWidget(true);
+		}
+	}
 }
+
+void AEndlessBetrayalCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
+{
+	if (OverlappingWeapon)
+	{
+		OverlappingWeapon->ShowPickupWidget(true);
+	}
+	if (LastWeapon)
+	{
+		LastWeapon->ShowPickupWidget(false);
+	}
+	 
+}
+
 
 

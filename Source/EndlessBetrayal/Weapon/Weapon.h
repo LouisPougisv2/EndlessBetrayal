@@ -25,6 +25,7 @@ public:
 	AWeapon();
 
 	virtual void Tick(float DeltaTime) override;
+	void ShowPickupWidget(bool bShowWidget);
 
 protected:
 	virtual void BeginPlay() override;
@@ -48,6 +49,7 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	class UWidgetComponent* PickupWidget;
+
 public:	
 
 };
