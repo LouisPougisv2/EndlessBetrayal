@@ -16,6 +16,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void PostInitializeComponents() override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -24,6 +25,7 @@ protected:
 	void MoveRight(float Value);
 	void Turn(float Value);
 	void LookUp(float Value);
+	void EquipButtonPressed();
 private: 
 
 	UPROPERTY(VisibleAnywhere, Category = "Camera")
@@ -40,6 +42,9 @@ private:
 
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);	//Function called automatically when the variable is replicated
+
+	UPROPERTY(VisibleAnywhere)
+	class UCombatComponent* CombatComponent;
 public:	
 
 	void SetOverlappingWeapon(AWeapon* Weapon);

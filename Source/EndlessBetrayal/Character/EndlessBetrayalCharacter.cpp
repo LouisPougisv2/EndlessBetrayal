@@ -8,6 +8,7 @@
 #include "Components/WidgetComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "EndlessBetrayal/Weapon/Weapon.h"
+#include "EndlessBetrayal/EndlessBetrayalComponents/CombatComponent.h"
 
 
 AEndlessBetrayalCharacter::AEndlessBetrayalCharacter()
@@ -28,6 +29,9 @@ AEndlessBetrayalCharacter::AEndlessBetrayalCharacter()
 
 	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
 	OverheadWidget->SetupAttachment(RootComponent);
+
+	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
+	CombatComponent->SetIsReplicated(true);
 }
 
 void AEndlessBetrayalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -54,12 +58,22 @@ void AEndlessBetrayalCharacter::SetupPlayerInputComponent(UInputComponent* Playe
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	PlayerInputComponent->BindAction(TEXT("Jump"), EInputEvent::IE_Pressed, this, &ACharacter::Jump);
+	PlayerInputComponent->BindAction(TEXT("Equip"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::EquipButtonPressed);
 
 	PlayerInputComponent->BindAxis(TEXT("MoveForward"), this, &AEndlessBetrayalCharacter::MoveForward);
 	PlayerInputComponent->BindAxis(TEXT("MoveRight"), this, &AEndlessBetrayalCharacter::MoveRight);
 	PlayerInputComponent->BindAxis(TEXT("Turn"), this, &AEndlessBetrayalCharacter::Turn);
 	PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &AEndlessBetrayalCharacter::LookUp);
 
+}
+
+void AEndlessBetrayalCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	if (CombatComponent)
+	{
+		CombatComponent->Character = this;
+	}
 }
 
 void AEndlessBetrayalCharacter::MoveForward(float Value)
@@ -90,6 +104,14 @@ void AEndlessBetrayalCharacter::Turn(float Value)
 void AEndlessBetrayalCharacter::LookUp(float Value)
 {
 	AddControllerPitchInput(Value);
+}
+
+void AEndlessBetrayalCharacter::EquipButtonPressed()
+{
+	if (CombatComponent && HasAuthority())		//So only the server is calling this function
+	{
+		CombatComponent->EquipWeapon(OverlappingWeapon);
+	}
 }
 
 void AEndlessBetrayalCharacter::SetOverlappingWeapon(AWeapon* Weapon)

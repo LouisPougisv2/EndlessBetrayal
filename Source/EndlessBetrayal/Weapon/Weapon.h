@@ -52,4 +52,5 @@ private:
 
 public:	
 
+	void SetWeaponState(EWeaponState NewState) { WeaponState = NewState; }
 };
