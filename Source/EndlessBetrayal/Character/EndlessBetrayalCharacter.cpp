@@ -108,7 +108,22 @@ void AEndlessBetrayalCharacter::LookUp(float Value)
 
 void AEndlessBetrayalCharacter::EquipButtonPressed()
 {
-	if (CombatComponent && HasAuthority())		//So only the server is calling this function
+	if (CombatComponent)		//So only the server is calling this function
+	{
+		if (HasAuthority())
+		{
+			CombatComponent->EquipWeapon(OverlappingWeapon);
+		}
+		else
+		{
+			ServerEquipButtonPressed();
+		}
+	}
+}
+
+void AEndlessBetrayalCharacter::ServerEquipButtonPressed_Implementation()
+{
+	if (CombatComponent)		
 	{
 		CombatComponent->EquipWeapon(OverlappingWeapon);
 	}

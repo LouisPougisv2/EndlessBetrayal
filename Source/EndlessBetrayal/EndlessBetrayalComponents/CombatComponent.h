@@ -27,6 +27,7 @@ protected:
 private:
 
 	class AEndlessBetrayalCharacter* Character;		//Set up in the PostInitializeComponent function in the EndlessBetrayalCharacter
+	
 	AWeapon* EquippedWeapon;
 
 public:	
