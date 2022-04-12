@@ -15,9 +15,9 @@ class ENDLESSBETRAYAL_API UCombatComponent : public UActorComponent
 public:	
 
 	UCombatComponent();
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
 	friend class AEndlessBetrayalCharacter;	//As Combat component will need to access a lot of variable from The character
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void EquipWeapon(class AWeapon* WeaponToEquip);
 protected:
@@ -28,6 +28,7 @@ private:
 
 	class AEndlessBetrayalCharacter* Character;		//Set up in the PostInitializeComponent function in the EndlessBetrayalCharacter
 	
+	UPROPERTY(Replicated)
 	AWeapon* EquippedWeapon;
 
 public:	

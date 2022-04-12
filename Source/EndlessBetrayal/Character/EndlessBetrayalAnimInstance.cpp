@@ -28,4 +28,6 @@ void UEndlessBetrayalAnimInstance::NativeUpdateAnimation(float DeltaTime)
 
 	bIsInAir = EndlessBetrayalCharacter->GetCharacterMovement()->IsFalling();
 	bIsAccelerating = EndlessBetrayalCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0 ? true : false;
+
+	bWeaponEquipped = EndlessBetrayalCharacter->IsWeaponEquipped();
 }
