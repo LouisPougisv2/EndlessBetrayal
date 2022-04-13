@@ -62,6 +62,8 @@ void AEndlessBetrayalCharacter::SetupPlayerInputComponent(UInputComponent* Playe
 	PlayerInputComponent->BindAction(TEXT("Jump"), EInputEvent::IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction(TEXT("Equip"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::EquipButtonPressed);
 	PlayerInputComponent->BindAction(TEXT("Crouch"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::CrouchButtonPressed);
+	PlayerInputComponent->BindAction(TEXT("Aim"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::AimButtonPressed);
+	PlayerInputComponent->BindAction(TEXT("Aim"), EInputEvent::IE_Released, this, &AEndlessBetrayalCharacter::AimButtonReleased);
 
 	PlayerInputComponent->BindAxis(TEXT("MoveForward"), this, &AEndlessBetrayalCharacter::MoveForward);
 	PlayerInputComponent->BindAxis(TEXT("MoveRight"), this, &AEndlessBetrayalCharacter::MoveRight);
@@ -133,6 +135,21 @@ void AEndlessBetrayalCharacter::ServerEquipButtonPressed_Implementation()
 	}
 }
 
+void AEndlessBetrayalCharacter::AimButtonPressed()
+{
+	if (CombatComponent)
+	{
+		CombatComponent->SetAiming(true);
+	}
+}
+void AEndlessBetrayalCharacter::AimButtonReleased()
+{
+	if (CombatComponent)
+	{
+		CombatComponent->SetAiming(false);
+	}
+}
+
 void AEndlessBetrayalCharacter::CrouchButtonPressed()
 {
 	
@@ -180,4 +197,7 @@ bool AEndlessBetrayalCharacter::IsWeaponEquipped()
 	return (CombatComponent && CombatComponent->EquippedWeapon);
 }
 
-
+bool AEndlessBetrayalCharacter::IsAiming() 
+{
+	return (CombatComponent && CombatComponent->bIsAiming);
+}

@@ -31,4 +31,5 @@ void UEndlessBetrayalAnimInstance::NativeUpdateAnimation(float DeltaTime)
 
 	bWeaponEquipped = EndlessBetrayalCharacter->IsWeaponEquipped();
 	bIsCrouched = EndlessBetrayalCharacter->bIsCrouched;		//Coming from the character.h boolean
+	bIsAiming = EndlessBetrayalCharacter->IsAiming();
 }
