@@ -30,4 +30,5 @@ void UEndlessBetrayalAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	bIsAccelerating = EndlessBetrayalCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0 ? true : false;
 
 	bWeaponEquipped = EndlessBetrayalCharacter->IsWeaponEquipped();
+	bIsCrouched = EndlessBetrayalCharacter->bIsCrouched;		//Coming from the character.h boolean
 }

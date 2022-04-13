@@ -32,6 +32,8 @@ AEndlessBetrayalCharacter::AEndlessBetrayalCharacter()
 
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	CombatComponent->SetIsReplicated(true);
+
+	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 }
 
 void AEndlessBetrayalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -59,6 +61,7 @@ void AEndlessBetrayalCharacter::SetupPlayerInputComponent(UInputComponent* Playe
 
 	PlayerInputComponent->BindAction(TEXT("Jump"), EInputEvent::IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction(TEXT("Equip"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::EquipButtonPressed);
+	PlayerInputComponent->BindAction(TEXT("Crouch"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::CrouchButtonPressed);
 
 	PlayerInputComponent->BindAxis(TEXT("MoveForward"), this, &AEndlessBetrayalCharacter::MoveForward);
 	PlayerInputComponent->BindAxis(TEXT("MoveRight"), this, &AEndlessBetrayalCharacter::MoveRight);
@@ -121,11 +124,25 @@ void AEndlessBetrayalCharacter::EquipButtonPressed()
 	}
 }
 
+
 void AEndlessBetrayalCharacter::ServerEquipButtonPressed_Implementation()
 {
 	if (CombatComponent)		
 	{
 		CombatComponent->EquipWeapon(OverlappingWeapon);
+	}
+}
+
+void AEndlessBetrayalCharacter::CrouchButtonPressed()
+{
+	
+	if (bIsCrouched)			//Inherited public variable
+	{
+		UnCrouch();
+	}
+	else
+	{
+		Crouch();
 	}
 }
 
