@@ -28,11 +28,14 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void ServerSetAiming(bool bAiming);
 
+	UFUNCTION()
+	void OnRep_EquippedWeapon();
+
 private:
 
 	class AEndlessBetrayalCharacter* Character;		//Set up in the PostInitializeComponent function in the EndlessBetrayalCharacter
 	
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	AWeapon* EquippedWeapon;
 
 	UPROPERTY(Replicated)

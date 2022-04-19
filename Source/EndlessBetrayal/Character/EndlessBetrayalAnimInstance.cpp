@@ -4,6 +4,8 @@
 #include "EndlessBetrayalAnimInstance.h"
 #include "EndlessBetrayalCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/KismetMathLibrary.h"
+
 
 void UEndlessBetrayalAnimInstance::NativeInitializeAnimation()
 {
@@ -32,4 +34,18 @@ void UEndlessBetrayalAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	bWeaponEquipped = EndlessBetrayalCharacter->IsWeaponEquipped();
 	bIsCrouched = EndlessBetrayalCharacter->bIsCrouched;		//Coming from the character.h boolean
 	bIsAiming = EndlessBetrayalCharacter->IsAiming();
+
+	//Offset yawfor straffing
+	FRotator AimRotation = EndlessBetrayalCharacter->GetBaseAimRotation();
+	FRotator MovementRotation = UKismetMathLibrary::MakeRotFromX(EndlessBetrayalCharacter->GetVelocity());
+	FRotator DeltaRot = UKismetMathLibrary::NormalizedDeltaRotator(MovementRotation, AimRotation);
+	DeltaRotation = FMath::RInterpTo(DeltaRotation, DeltaRot, DeltaTime, 15.0f);	//Will avoid to interp from -180->0>180, instead, will take the shortest path (-180->180)
+	YawOffset = DeltaRotation.Yaw;
+
+	CharacterRotationLastFrame = CharacterRotation;
+	CharacterRotation = EndlessBetrayalCharacter->GetActorRotation();
+	const FRotator Delta = UKismetMathLibrary::NormalizedDeltaRotator(CharacterRotation, CharacterRotationLastFrame);
+	const float Target = Delta.Yaw / DeltaTime;	//This is scaling up and make it proportional to DeltaTime;
+	const float Interp = FMath::FInterpTo(Lean, Target, DeltaTime, 6.0); //To avoid jerkiness in our lean
+	Lean = FMath::Clamp(Interp, -90.0, 90.0);	//To avoid to go below/above -90.0 or 90.0 when we move the mouse quickly
 }
