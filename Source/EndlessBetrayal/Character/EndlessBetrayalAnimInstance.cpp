@@ -48,4 +48,7 @@ void UEndlessBetrayalAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	const float Target = Delta.Yaw / DeltaTime;	//This is scaling up and make it proportional to DeltaTime;
 	const float Interp = FMath::FInterpTo(Lean, Target, DeltaTime, 6.0); //To avoid jerkiness in our lean
 	Lean = FMath::Clamp(Interp, -90.0, 90.0);	//To avoid to go below/above -90.0 or 90.0 when we move the mouse quickly
+
+	AO_Yaw = EndlessBetrayalCharacter->GetAO_Yaw();
+	AO_Pitch = EndlessBetrayalCharacter->GetAO_Pitch();
 }
