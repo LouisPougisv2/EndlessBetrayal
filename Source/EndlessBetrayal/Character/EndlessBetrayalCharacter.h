@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "EndlessBetrayal/EndlessBetrayalTypes/TurningInPlace.h"
 #include "EndlessBetrayalCharacter.generated.h"
 
 UCLASS()
@@ -54,9 +55,13 @@ private:
 	UFUNCTION(Server, Reliable)
 	void ServerEquipButtonPressed();
 
+	void TurnInPlace(float DeltaTime);
+
 	float AO_Yaw;
+	float InterpAOYaw;
 	float AO_Pitch;
 	FRotator StartingAimRotation;
+	ETurningInPlace TurningInPlace;
 public:	
 
 	void SetOverlappingWeapon(AWeapon* Weapon);
@@ -64,4 +69,7 @@ public:
 	bool IsAiming();
 	FORCEINLINE float GetAO_Yaw() const { return AO_Yaw; }
 	FORCEINLINE float GetAO_Pitch() const { return AO_Pitch; }
+	AWeapon* GetEquippedWeapon();
+
+	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; }
 };

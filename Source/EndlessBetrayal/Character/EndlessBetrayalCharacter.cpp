@@ -39,6 +39,8 @@ AEndlessBetrayalCharacter::AEndlessBetrayalCharacter()
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 
+	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+
 }
 
 void AEndlessBetrayalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -170,13 +172,21 @@ void AEndlessBetrayalCharacter::AimOffset(float DeltaTime)
 		FRotator CurrentAimRotation = FRotator(0.0f, GetBaseAimRotation().Yaw, 0.0f);
 		FRotator DeltaAimRotation = UKismetMathLibrary::NormalizedDeltaRotator(CurrentAimRotation, StartingAimRotation);
 		AO_Yaw = DeltaAimRotation.Yaw;
-		bUseControllerRotationYaw = false;
+
+		if (TurningInPlace == ETurningInPlace::ETIP_NotTurning)
+		{
+			InterpAOYaw = AO_Yaw;
+		}
+		bUseControllerRotationYaw = true;
+
+		TurnInPlace(DeltaTime);
 	}
 	if (Speed > 0.0f || bIsInAir)	//Running or jumping
 	{
 		StartingAimRotation = FRotator(0.0f, GetBaseAimRotation().Yaw, 0.0f);
 		AO_Yaw = 0.0f;
 		bUseControllerRotationYaw = true;
+		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 	}
 
 	AO_Pitch = GetBaseAimRotation().Pitch;
@@ -231,6 +241,30 @@ void AEndlessBetrayalCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 	 
 }
 
+void AEndlessBetrayalCharacter::TurnInPlace(float DeltaTime)
+{
+	if (AO_Yaw < -90.0)
+	{
+		TurningInPlace = ETurningInPlace::ETIP_Left;
+	}
+	else if (AO_Yaw > 90.0)
+	{
+		TurningInPlace = ETurningInPlace::ETIP_Right;
+	}
+	else { TurningInPlace = ETurningInPlace::ETIP_NotTurning; }
+
+	if (TurningInPlace != ETurningInPlace::ETIP_NotTurning)
+	{
+		InterpAOYaw = FMath::FInterpTo(InterpAOYaw, 0.0f, DeltaTime, 6.0f);
+		AO_Yaw = InterpAOYaw;
+		if (FMath::Abs(AO_Yaw) < 15.0f)		//Once we've turned "enough"
+		{
+			TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+			StartingAimRotation = FRotator(0.0f, GetBaseAimRotation().Yaw, 0.0f);
+		}
+	}
+}
+
 bool AEndlessBetrayalCharacter::IsWeaponEquipped()
 {
 	return (CombatComponent && CombatComponent->EquippedWeapon);
@@ -239,4 +273,11 @@ bool AEndlessBetrayalCharacter::IsWeaponEquipped()
 bool AEndlessBetrayalCharacter::IsAiming() 
 {
 	return (CombatComponent && CombatComponent->bIsAiming);
+}
+
+AWeapon* AEndlessBetrayalCharacter::GetEquippedWeapon()
+{
+	if (CombatComponent == nullptr) return nullptr;
+	
+	return CombatComponent->EquippedWeapon;
 }

@@ -5,6 +5,7 @@
 #include "EndlessBetrayalCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "EndlessBetrayal/Weapon/Weapon.h"
 
 
 void UEndlessBetrayalAnimInstance::NativeInitializeAnimation()
@@ -32,8 +33,10 @@ void UEndlessBetrayalAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	bIsAccelerating = EndlessBetrayalCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0 ? true : false;
 
 	bWeaponEquipped = EndlessBetrayalCharacter->IsWeaponEquipped();
+	EquippedWeapon = EndlessBetrayalCharacter->GetEquippedWeapon();
 	bIsCrouched = EndlessBetrayalCharacter->bIsCrouched;		//Coming from the character.h boolean
 	bIsAiming = EndlessBetrayalCharacter->IsAiming();
+	TurningInPlace = EndlessBetrayalCharacter->GetTurningInPlace();
 
 	//Offset yawfor straffing
 	FRotator AimRotation = EndlessBetrayalCharacter->GetBaseAimRotation();
@@ -51,4 +54,16 @@ void UEndlessBetrayalAnimInstance::NativeUpdateAnimation(float DeltaTime)
 
 	AO_Yaw = EndlessBetrayalCharacter->GetAO_Yaw();
 	AO_Pitch = EndlessBetrayalCharacter->GetAO_Pitch();
+
+	if (bWeaponEquipped && EquippedWeapon && EquippedWeapon->GetWeaponMesh() && EndlessBetrayalCharacter->GetMesh())
+	{
+		LeftHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("LeftHandSocket"), ERelativeTransformSpace::RTS_World);
+		FVector OutPosition;	//Position of the left hand socket on the weapon transformed to hand_r bone space
+		FRotator OutRotation;	//Rotation of the left hand socket on the weapon transformed to hand_r bone space
+
+		//We now want the transform world space to be converted in bone space
+		EndlessBetrayalCharacter->GetMesh()->TransformToBoneSpace(FName("hand_r"), LeftHandTransform.GetLocation(), FRotator::ZeroRotator, OutPosition, OutRotation);
+		LeftHandTransform.SetLocation(OutPosition);
+		LeftHandTransform.SetRotation(FQuat(OutRotation));
+	}
 }
