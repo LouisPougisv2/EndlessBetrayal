@@ -33,6 +33,7 @@ protected:
 
 private:
 
+	UPROPERTY()
 	class AEndlessBetrayalCharacter* Character;		//Set up in the PostInitializeComponent function in the EndlessBetrayalCharacter
 	
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
