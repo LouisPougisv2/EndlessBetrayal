@@ -4,10 +4,11 @@
 #include "OverheadWidget.h"
 #include "Components/TextBlock.h"
 
-void UOverheadWidget::OnLevelRemovedFromWorld(ULevel* Level, UWorld* World)
+
+void UOverheadWidget::NativeDestruct()
 {
 	RemoveFromParent();	//Will take the widget and remove it from the viewport
-	Super::OnLevelRemovedFromWorld(Level, World);
+	Super::NativeDestruct();
 }
 
 void UOverheadWidget::SetDisplayText(FString TextToDisplay)

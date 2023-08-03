@@ -43,16 +43,20 @@ void UCombatComponent::SetAiming(bool bAiming)
 {
 		bIsAiming = bAiming;
 		ServerSetAiming(bAiming);
-		if (Character && bIsAiming)
+		if (Character)
 		{
 			Character->GetCharacterMovement()->MaxWalkSpeed = bIsAiming ? AimWalkSpeed : BaseWalkSpeed;
+		}
+		else if (Character)
+		{
+			Character->GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed;
 		}
 }
 
 void UCombatComponent::ServerSetAiming_Implementation(bool bAiming)
 {
 	bIsAiming = bAiming;
-	if (Character && bIsAiming) //The walk speed was all choppy due to the fact that our local modification wasn't overriding the max walk speed from the character movement component
+	if (Character) //The walk speed was all choppy due to the fact that our local modification wasn't overriding the max walk speed from the character movement component
 	{
 		Character->GetCharacterMovement()->MaxWalkSpeed = bIsAiming ? AimWalkSpeed : BaseWalkSpeed;
 	}
