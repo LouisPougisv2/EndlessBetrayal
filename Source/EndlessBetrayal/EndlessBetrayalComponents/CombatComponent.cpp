@@ -71,6 +71,16 @@ void UCombatComponent::OnRep_EquippedWeapon()
 	}
 }
 
+void UCombatComponent::FireButtonPressed(bool bPressed)
+{
+	bIsFireButtonPressed = bPressed;
+
+	if(IsValid(Character) && bIsFireButtonPressed)
+	{
+		Character->PlayFireMontage(bIsAiming);
+	}
+}
+
 
 void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
