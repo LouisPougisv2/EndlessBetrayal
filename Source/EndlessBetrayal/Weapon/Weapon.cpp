@@ -6,6 +6,7 @@
 #include "Components/WidgetComponent.h"
 #include "EndlessBetrayal/Character/EndlessBetrayalCharacter.h"
 #include "Net/UnrealNetwork.h"
+#include "Animation/AnimationAsset.h"
 
 
 
@@ -113,6 +114,16 @@ void AWeapon::ShowPickupWidget(bool bShowWidget)
 	if (PickupWidget)
 	{
 		PickupWidget->SetVisibility(bShowWidget);
+	}
+}
+
+void AWeapon::Fire()
+{
+	if(!IsValid(FireAnimation)) return;
+
+	if(IsValid(WeaponMesh))
+	{
+		WeaponMesh->PlayAnimation(FireAnimation, false);
 	}
 }
 

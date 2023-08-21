@@ -32,11 +32,17 @@ void UCombatComponent::BeginPlay()
 	}
 }
 
+void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UCombatComponent, EquippedWeapon);
+	DOREPLIFETIME(UCombatComponent, bIsAiming);
+}
 
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
 }
 
 void UCombatComponent::SetAiming(bool bAiming)
@@ -75,19 +81,28 @@ void UCombatComponent::FireButtonPressed(bool bPressed)
 {
 	bIsFireButtonPressed = bPressed;
 
-	if(IsValid(Character) && bIsFireButtonPressed)
+	if(bIsFireButtonPressed)
 	{
-		Character->PlayFireMontage(bIsAiming);
+		ServerFire();
 	}
 }
 
-
-void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+void UCombatComponent::ServerFire_Implementation()
 {
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	//Runs on Server and all clients when call from the server
+	MulticastFire();
+}
 
-	DOREPLIFETIME(UCombatComponent, EquippedWeapon);
-	DOREPLIFETIME(UCombatComponent, bIsAiming);
+void UCombatComponent::MulticastFire_Implementation()
+{
+	//TODO : Add Ammo check here when adding Ammo in the future
+	if(!IsValid(EquippedWeapon)) return;
+	
+	if(IsValid(Character))
+	{
+		Character->PlayFireMontage(bIsAiming);
+		EquippedWeapon->Fire();
+	}
 }
 
 void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
