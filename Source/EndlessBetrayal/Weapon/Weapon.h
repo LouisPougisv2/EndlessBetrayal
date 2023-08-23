@@ -58,6 +58,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	class UAnimationAsset* FireAnimation;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	TSubclassOf<class ABulletCasing> BulletCasingClass;
 public:	
 
 	void SetWeaponState(EWeaponState NewState);
