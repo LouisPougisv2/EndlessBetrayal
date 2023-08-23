@@ -8,14 +8,13 @@
 #include "Components/SphereComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "GameFramework/CharacterMovementComponent.h"
-
-
-
+#include "Kismet/GameplayStatics.h"
+#include "DrawDebugHelpers.h"
 
 
 UCombatComponent::UCombatComponent()
 {
-	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bCanEverTick = true;
 
 	BaseWalkSpeed = 600.0f;
 	AimWalkSpeed = 450.0f;
@@ -83,17 +82,45 @@ void UCombatComponent::FireButtonPressed(bool bPressed)
 
 	if(bIsFireButtonPressed)
 	{
-		ServerFire();
+		FHitResult HitResult;
+		TraceUnderCrosshair(HitResult);
+		ServerFire(HitResult.ImpactPoint);
 	}
 }
 
-void UCombatComponent::ServerFire_Implementation()
+void UCombatComponent::TraceUnderCrosshair(FHitResult& HitResult)
 {
-	//Runs on Server and all clients when call from the server
-	MulticastFire();
+	FVector2D ViewPortSize;
+	if(IsValid(GetWorld()) && IsValid(GetWorld()->GetGameViewport()))
+	{
+		GetWorld()->GetGameViewport()->GetViewportSize(ViewPortSize);
+	}
+	const FVector2D CrosshairLocation(ViewPortSize.X / 2.0f, ViewPortSize.Y / 2.0f);
+	FVector CrosshairWorldPosition;
+	FVector CrosshairWorldDirection;
+	
+	const bool bIsDeprojectScreenToWorldSuccessful = UGameplayStatics::DeprojectScreenToWorld(
+		UGameplayStatics::GetPlayerController(this, 0),
+		CrosshairLocation,
+		CrosshairWorldPosition,
+		CrosshairWorldDirection);
+
+	if(bIsDeprojectScreenToWorldSuccessful)
+	{
+		FVector Start = CrosshairWorldPosition;
+		FVector End = Start + CrosshairWorldDirection * TRACE_LENGTH;
+
+		GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility);
+	}
 }
 
-void UCombatComponent::MulticastFire_Implementation()
+void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
+{
+	//Runs on Server and all clients when call from the server
+	MulticastFire(TraceHitTarget);
+}
+
+void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
 {
 	//TODO : Add Ammo check here when adding Ammo in the future
 	if(!IsValid(EquippedWeapon)) return;
@@ -101,7 +128,7 @@ void UCombatComponent::MulticastFire_Implementation()
 	if(IsValid(Character))
 	{
 		Character->PlayFireMontage(bIsAiming);
-		EquippedWeapon->Fire();
+		EquippedWeapon->Fire(TraceHitTarget);
 	}
 }
 
