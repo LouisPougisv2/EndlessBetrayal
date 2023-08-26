@@ -10,6 +10,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
+#include "EndlessBetrayal/HUD/EndlessBetrayalHUD.h"
+#include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
 
 
 UCombatComponent::UCombatComponent()
@@ -42,6 +44,8 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	SetHUDCrosshair(DeltaTime);
 }
 
 void UCombatComponent::SetAiming(bool bAiming)
@@ -111,6 +115,50 @@ void UCombatComponent::TraceUnderCrosshair(FHitResult& HitResult)
 		FVector End = Start + CrosshairWorldDirection * TRACE_LENGTH;
 
 		GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility);
+	}
+}
+
+void UCombatComponent::SetHUDCrosshair(float DeltaTime)
+{
+	if(!(IsValid(Character)) || !(IsValid(Character->Controller))) return;
+	
+	if(!IsValid(PlayerController)) PlayerController = Cast<AEndlessBetrayalPlayerController>(Character->Controller);
+	if(IsValid(PlayerController))
+	{
+		if(!IsValid(HUD)) HUD = Cast<AEndlessBetrayalHUD>(PlayerController->GetHUD());
+		if(IsValid(HUD))
+		{
+			FHUDTextures TempHUDTexture;
+			if(IsValid(EquippedWeapon))
+			{
+				TempHUDTexture.CrosshairCenter = EquippedWeapon->GetCrosshairCenter();
+				TempHUDTexture.CrosshairTop = EquippedWeapon->GetCrosshairTop();
+				TempHUDTexture.CrosshairRight = EquippedWeapon->GetCrosshairRight();
+				TempHUDTexture.CrosshairBottom = EquippedWeapon->GetCrosshairBottom();
+				TempHUDTexture.CrosshairLeft = EquippedWeapon->GetCrosshairLeft();
+			}
+			//Calculate the Crosshair spread
+			const FVector2d WalkSpeedRange (0.0f, Character->GetCharacterMovement()->MaxWalkSpeed);
+			const FVector2d VelocityMultiplierRange(0.0f, 1.0f);
+			FVector Velocity = Character->GetVelocity();
+			Velocity.Z = 0.0f;
+			
+			CrosshairVelocityFactor = FMath::GetMappedRangeValueClamped(WalkSpeedRange, VelocityMultiplierRange, Velocity.Size());
+
+			if(Character->GetCharacterMovement()->IsFalling())
+			{
+				CrosshairInAirFactor = FMath::FInterpTo(CrosshairInAirFactor, 1.8f, DeltaTime, 2.25f);
+			}
+			else
+			{
+				CrosshairInAirFactor = FMath::FInterpTo(CrosshairInAirFactor, 0.0f, DeltaTime, 10.0f);
+			}
+			
+			TempHUDTexture.CrosshairSpreadFactor = CrosshairVelocityFactor + CrosshairInAirFactor;
+			
+			HUD->SetHUDTexture(TempHUDTexture);
+		}
+		
 	}
 }
 

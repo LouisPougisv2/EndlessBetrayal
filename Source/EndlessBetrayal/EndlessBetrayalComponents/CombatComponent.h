@@ -42,10 +42,18 @@ protected:
 	
 	void TraceUnderCrosshair(FHitResult& HitResult);
 
+	void SetHUDCrosshair(float DeltaTime);
+
 private:
 
 	UPROPERTY()
 	class AEndlessBetrayalCharacter* Character;		//Set up in the PostInitializeComponent function in the EndlessBetrayalCharacter
+
+	UPROPERTY()
+	class AEndlessBetrayalPlayerController* PlayerController;
+
+	UPROPERTY()
+	class AEndlessBetrayalHUD* HUD;
 	
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	AWeapon* EquippedWeapon;
@@ -61,4 +69,13 @@ private:
 
 	UPROPERTY()
 	bool bIsFireButtonPressed = false;
+
+	/**
+	 * HUD & Crosshair
+	**/
+	UPROPERTY()
+	float CrosshairVelocityFactor;
+
+	UPROPERTY()
+	float CrosshairInAirFactor;
 };

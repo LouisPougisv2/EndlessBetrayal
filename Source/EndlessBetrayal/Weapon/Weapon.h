@@ -61,9 +61,30 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	TSubclassOf<class ABulletCasing> BulletCasingClass;
+
+	UPROPERTY(EditAnywhere, Category = "Crosshair")
+	UTexture2D* CrosshairCenter;
+
+	UPROPERTY(EditAnywhere, Category = "Crosshair")
+	UTexture2D* CrosshairTop;
+
+	UPROPERTY(EditAnywhere, Category = "Crosshair")
+	UTexture2D* CrosshairBottom;
+
+	UPROPERTY(EditAnywhere, Category = "Crosshair")
+	UTexture2D* CrosshairLeft;
+
+	UPROPERTY(EditAnywhere, Category = "Crosshair")
+	UTexture2D* CrosshairRight;
+	
 public:	
 
 	void SetWeaponState(EWeaponState NewState);
 	FORCEINLINE USphereComponent* GetAreaSphere() const	{ return AreaSphere; }
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
+	FORCEINLINE UTexture2D* GetCrosshairCenter() const { return CrosshairCenter; }
+	FORCEINLINE UTexture2D* GetCrosshairTop() const { return CrosshairTop; }
+	FORCEINLINE UTexture2D* GetCrosshairBottom() const { return CrosshairBottom; }
+	FORCEINLINE UTexture2D* GetCrosshairLeft() const { return CrosshairLeft; }
+	FORCEINLINE UTexture2D* GetCrosshairRight() const { return CrosshairRight; }
 };
