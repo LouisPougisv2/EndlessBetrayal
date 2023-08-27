@@ -332,3 +332,9 @@ AWeapon* AEndlessBetrayalCharacter::GetEquippedWeapon()
 	
 	return CombatComponent->EquippedWeapon;
 }
+
+FVector AEndlessBetrayalCharacter::GetHitTarget()
+{
+	if (CombatComponent == nullptr) return FVector();
+	return CombatComponent->HitTarget;
+}

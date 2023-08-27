@@ -78,4 +78,6 @@ private:
 
 	UPROPERTY()
 	float CrosshairInAirFactor;
+
+	FVector HitTarget;
 };
