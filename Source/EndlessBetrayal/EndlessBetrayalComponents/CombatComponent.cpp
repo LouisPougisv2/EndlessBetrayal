@@ -103,6 +103,11 @@ void UCombatComponent::FireButtonPressed(bool bPressed)
 		FHitResult HitResult;
 		TraceUnderCrosshair(HitResult);
 		ServerFire(HitResult.ImpactPoint);
+
+		if(IsValid(EquippedWeapon))
+		{
+			CrosshairShootingFactor += 0.75f;
+		}
 	}
 }
 
@@ -167,8 +172,23 @@ void UCombatComponent::SetHUDCrosshair(float DeltaTime)
 			{
 				CrosshairInAirFactor = FMath::FInterpTo(CrosshairInAirFactor, 0.0f, DeltaTime, 10.0f);
 			}
+
+			if(IsValid(EquippedWeapon))
+			{
+				if(bIsAiming)
+				{
+					CrosshairAimingFactor = FMath::FInterpTo(CrosshairAimingFactor, 0.6f, DeltaTime, EquippedWeapon->GetZoomInterSpeed());
+				}
+				else
+				{
+					CrosshairAimingFactor = FMath::FInterpTo(CrosshairAimingFactor, 0.0f, DeltaTime, EquippedWeapon->GetZoomInterSpeed());
+				}
+			}
+
+			//We want the Crosshair shooting factor to always interp to 0 after shooting, hence the following line
+			CrosshairShootingFactor = FMath::FInterpTo(CrosshairShootingFactor, 0.0f, DeltaTime, 5.0f);
 			
-			TempHUDTexture.CrosshairSpreadFactor = CrosshairVelocityFactor + CrosshairInAirFactor;
+			TempHUDTexture.CrosshairSpreadFactor = 0.25 + CrosshairVelocityFactor + CrosshairInAirFactor - CrosshairAimingFactor + CrosshairShootingFactor;
 			
 			HUD->SetHUDTexture(TempHUDTexture);
 		}

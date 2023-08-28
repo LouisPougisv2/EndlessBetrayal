@@ -79,6 +79,12 @@ private:
 	UPROPERTY()
 	float CrosshairInAirFactor;
 
+	UPROPERTY()
+	float CrosshairAimingFactor;
+
+	UPROPERTY()
+	float CrosshairShootingFactor;
+
 	FVector HitTarget;
 
 
