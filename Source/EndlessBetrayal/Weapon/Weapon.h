@@ -76,6 +76,17 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Crosshair")
 	UTexture2D* CrosshairRight;
+
+	/**
+	*	Zoomed FOV while Zooming
+	**/
+
+	UPROPERTY(EditAnywhere, Category = "Zoom")
+	float ZoomedFOV = 30.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Zoom")
+	float ZoomInterpSpeed = 20.0f;
+	
 	
 public:	
 
@@ -87,4 +98,7 @@ public:
 	FORCEINLINE UTexture2D* GetCrosshairBottom() const { return CrosshairBottom; }
 	FORCEINLINE UTexture2D* GetCrosshairLeft() const { return CrosshairLeft; }
 	FORCEINLINE UTexture2D* GetCrosshairRight() const { return CrosshairRight; }
+
+	FORCEINLINE float GetZoomedFOV() { return ZoomedFOV; }
+	FORCEINLINE float GetZoomInterSpeed() const { return ZoomInterpSpeed; }
 };

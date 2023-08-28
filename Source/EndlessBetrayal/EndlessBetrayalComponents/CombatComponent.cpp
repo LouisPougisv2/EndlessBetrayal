@@ -10,6 +10,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
+#include "Camera/CameraComponent.h"
 #include "EndlessBetrayal/HUD/EndlessBetrayalHUD.h"
 #include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
 
@@ -29,7 +30,12 @@ void UCombatComponent::BeginPlay()
 
 	if (Character)
 	{
-		Character->GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed; 
+		Character->GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed;
+		if(IsValid(Character->GetFollowCamera()))
+		{
+			DefaultFOV =  Character->GetFollowCamera()->FieldOfView;
+			CurrentFOV = DefaultFOV;
+		}
 	}
 }
 
@@ -44,14 +50,15 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	SetHUDCrosshair(DeltaTime);
-
+	
 	if(Character && Character->IsLocallyControlled())
 	{
 		FHitResult HitResult;
 		TraceUnderCrosshair(HitResult);
 		HitTarget = HitResult.ImpactPoint;
+
+		SetHUDCrosshair(DeltaTime);
+		ZoomInterpFOV(DeltaTime);
 	}
 }
 
@@ -167,6 +174,28 @@ void UCombatComponent::SetHUDCrosshair(float DeltaTime)
 		}
 		
 	}
+}
+
+void UCombatComponent::ZoomInterpFOV(float DeltaTime)
+{
+	if(!IsValid(EquippedWeapon)) return;
+
+	if(bIsAiming)
+	{
+		//Zooming varies based on the Equipped Weapon
+		CurrentFOV = FMath::FInterpTo(CurrentFOV, EquippedWeapon->GetZoomedFOV(), DeltaTime, EquippedWeapon->GetZoomInterSpeed());
+	}
+	else
+	{
+		//When DeZooming, zooming back to normal happens at the same speed no matter the weapon
+		CurrentFOV = FMath::FInterpTo(CurrentFOV, DefaultFOV, DeltaTime, ZoomInterpSpeed);
+	}
+
+	if(IsValid(Character) && IsValid(Character->GetFollowCamera()))
+	{
+		Character->GetFollowCamera()->SetFieldOfView(CurrentFOV);
+	}
+	
 }
 
 void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
