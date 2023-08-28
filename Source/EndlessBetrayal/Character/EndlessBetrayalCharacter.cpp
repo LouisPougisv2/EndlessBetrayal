@@ -75,6 +75,8 @@ void AEndlessBetrayalCharacter::SetupPlayerInputComponent(UInputComponent* Playe
 	PlayerInputComponent->BindAction(TEXT("Crouch"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::CrouchButtonPressed);
 	PlayerInputComponent->BindAction(TEXT("Aim"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::AimButtonPressed);
 	PlayerInputComponent->BindAction(TEXT("Aim"), EInputEvent::IE_Released, this, &AEndlessBetrayalCharacter::AimButtonReleased);
+	PlayerInputComponent->BindAction(TEXT("Fire"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::FireButtonPressed);
+	PlayerInputComponent->BindAction(TEXT("Fire"), EInputEvent::IE_Released, this, &AEndlessBetrayalCharacter::FireButtonReleased);
 
 	PlayerInputComponent->BindAxis(TEXT("MoveForward"), this, &AEndlessBetrayalCharacter::MoveForward);
 	PlayerInputComponent->BindAxis(TEXT("MoveRight"), this, &AEndlessBetrayalCharacter::MoveRight);
@@ -89,6 +91,24 @@ void AEndlessBetrayalCharacter::PostInitializeComponents()
 	if (CombatComponent)
 	{
 		CombatComponent->Character = this;
+	}
+}
+
+void AEndlessBetrayalCharacter::PlayFireMontage(bool bIsAiming)
+{
+	if(!IsValid(CombatComponent) || !IsValid(CombatComponent->EquippedWeapon)) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if(IsValid(AnimInstance) && IsValid(FireWeaponMontage))
+	{
+		AnimInstance->Montage_Play(FireWeaponMontage);
+		
+		FName SectionName;
+		SectionName = bIsAiming ? FName("FireAim") : FName("FireHip");
+		
+		//Why not use -> AnimInstance->Montage_JumpToSection(SectionName, FireWeaponMontage);
+		AnimInstance->Montage_JumpToSection(SectionName);
 	}
 }
 
@@ -214,6 +234,22 @@ void AEndlessBetrayalCharacter::Jump()
 	}
 }
 
+void AEndlessBetrayalCharacter::FireButtonPressed()
+{
+	if(ensureAlways(IsValid(CombatComponent)))
+	{
+		CombatComponent->FireButtonPressed(true);
+	}
+}
+
+void AEndlessBetrayalCharacter::FireButtonReleased()
+{
+	if(ensureAlways(IsValid(CombatComponent)))
+	{
+		CombatComponent->FireButtonPressed(false);
+	}
+}
+
 void AEndlessBetrayalCharacter::CrouchButtonPressed()
 {
 	
@@ -295,4 +331,10 @@ AWeapon* AEndlessBetrayalCharacter::GetEquippedWeapon()
 	if (CombatComponent == nullptr) return nullptr;
 	
 	return CombatComponent->EquippedWeapon;
+}
+
+FVector AEndlessBetrayalCharacter::GetHitTarget()
+{
+	if (CombatComponent == nullptr) return FVector();
+	return CombatComponent->HitTarget;
 }

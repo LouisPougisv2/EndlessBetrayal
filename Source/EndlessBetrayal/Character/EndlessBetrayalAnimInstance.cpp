@@ -65,5 +65,20 @@ void UEndlessBetrayalAnimInstance::NativeUpdateAnimation(float DeltaTime)
 		EndlessBetrayalCharacter->GetMesh()->TransformToBoneSpace(FName("hand_r"), LeftHandTransform.GetLocation(), FRotator::ZeroRotator, OutPosition, OutRotation);
 		LeftHandTransform.SetLocation(OutPosition);
 		LeftHandTransform.SetRotation(FQuat(OutRotation));
+
+		if(EndlessBetrayalCharacter->IsLocallyControlled())
+		{
+			bIsLocallyControlled = true;
+			FTransform RightHandTransform = EndlessBetrayalCharacter->GetMesh()->GetSocketTransform(FName("hand_r"), ERelativeTransformSpace::RTS_World);
+			RightHandRotation = UKismetMathLibrary::FindLookAtRotation(RightHandTransform.GetLocation(),RightHandTransform.GetLocation() + (RightHandTransform.GetLocation() - EndlessBetrayalCharacter->GetHitTarget()));
+
+			//TODO : To keep for future tests
+			//const FTransform MuzzleTipTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(("MuzzleFlash"), RTS_World);
+			//const FVector MuzzleX(FRotationMatrix(MuzzleTipTransform.GetRotation().Rotator()).GetUnitAxis(EAxis::X));
+			//
+			//DrawDebugLine(GetWorld(), MuzzleTipTransform.GetLocation(), MuzzleTipTransform.GetLocation() + MuzzleX * 1000.0f, FColor::Red);
+			//DrawDebugLine(GetWorld(), MuzzleTipTransform.GetLocation(), EndlessBetrayalCharacter->GetHitTarget(), FColor::Green);
+		}
+
 	}
 }

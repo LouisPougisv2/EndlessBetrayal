@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "CombatComponent.generated.h"
 
+#define TRACE_LENGTH 80000.0f
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ENDLESSBETRAYAL_API UCombatComponent : public UActorComponent
@@ -30,11 +31,29 @@ protected:
 
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
+		
+	void FireButtonPressed(bool bPressed);
+
+	UFUNCTION(Server, Reliable)
+	void ServerFire(const FVector_NetQuantize& TraceHitTarget);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastFire(const FVector_NetQuantize& TraceHitTarget);
+	
+	void TraceUnderCrosshair(FHitResult& HitResult);
+
+	void SetHUDCrosshair(float DeltaTime);
 
 private:
 
 	UPROPERTY()
 	class AEndlessBetrayalCharacter* Character;		//Set up in the PostInitializeComponent function in the EndlessBetrayalCharacter
+
+	UPROPERTY()
+	class AEndlessBetrayalPlayerController* PlayerController;
+
+	UPROPERTY()
+	class AEndlessBetrayalHUD* HUD;
 	
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	AWeapon* EquippedWeapon;
@@ -48,7 +67,36 @@ private:
 	UPROPERTY(EditAnywhere)
 	float AimWalkSpeed;
 
-public:	
+	UPROPERTY()
+	bool bIsFireButtonPressed = false;
 
-		
+	/**
+	 * HUD & Crosshair
+	**/
+	UPROPERTY()
+	float CrosshairVelocityFactor;
+
+	UPROPERTY()
+	float CrosshairInAirFactor;
+
+	FVector HitTarget;
+
+
+	/**
+	* Aiming & FOV
+	**/
+
+	//Field of view when not aiming, set to camera's FOV in Begin Play
+	float DefaultFOV;
+
+	float CurrentFOV;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float ZoomedFieldOfView = 30.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float ZoomInterpSpeed = 20.0f;
+
+	//FUnction to handle the Zoom in when aiming
+	void ZoomInterpFOV(float DeltaTime);
 };

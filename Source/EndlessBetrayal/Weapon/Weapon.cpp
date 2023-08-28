@@ -2,11 +2,14 @@
 
 
 #include "Weapon.h"
+
+#include "BulletCasing.h"
 #include "Components/SphereComponent.h"
 #include "Components/WidgetComponent.h"
 #include "EndlessBetrayal/Character/EndlessBetrayalCharacter.h"
 #include "Net/UnrealNetwork.h"
-
+#include "Animation/AnimationAsset.h"
+#include "Engine/SkeletalMeshSocket.h"
 
 
 // Sets default values
@@ -113,6 +116,31 @@ void AWeapon::ShowPickupWidget(bool bShowWidget)
 	if (PickupWidget)
 	{
 		PickupWidget->SetVisibility(bShowWidget);
+	}
+}
+
+void AWeapon::Fire(const FVector& HitTarget)
+{
+	if(!IsValid(FireAnimation)) return;
+
+	if(IsValid(WeaponMesh))
+	{
+		WeaponMesh->PlayAnimation(FireAnimation, false);
+	}
+	
+	if(IsValid(BulletCasingClass) && IsValid(WeaponMesh))
+	{
+		const USkeletalMeshSocket* AmmoEjectSocket = WeaponMesh->GetSocketByName(FName("AmmoEject"));
+		if(IsValid(AmmoEjectSocket))
+		{
+			const FTransform SocketTransform = AmmoEjectSocket->GetSocketTransform(WeaponMesh);
+
+			UWorld* World = GetWorld();
+			if(IsValid(World))
+			{
+				World->SpawnActor<ABulletCasing>(BulletCasingClass, SocketTransform.GetLocation(), SocketTransform.GetRotation().Rotator());
+			}
+		}
 	}
 }
 
