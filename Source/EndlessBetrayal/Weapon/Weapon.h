@@ -86,6 +86,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Zoom")
 	float ZoomInterpSpeed = 20.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Zoom")
+	float CrosshairShootingFactor = 0.75f;
 	
 	
 public:	
@@ -101,4 +104,5 @@ public:
 
 	FORCEINLINE float GetZoomedFOV() { return ZoomedFOV; }
 	FORCEINLINE float GetZoomInterSpeed() const { return ZoomInterpSpeed; }
+	FORCEINLINE float GetCrosshairShootingFactor() const { return CrosshairShootingFactor; }
 };
