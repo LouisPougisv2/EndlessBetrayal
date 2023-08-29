@@ -27,6 +27,8 @@ struct FHUDTextures
 	UTexture2D* CrosshairBottom = nullptr;
 
 	float CrosshairSpreadFactor = 0.0f;
+
+	FLinearColor CrosshairColor = FLinearColor::White;
 };
 
 //Note: Crosshair is in the Weapon class as Weapons can have their own crosshair textures
@@ -41,7 +43,7 @@ public:
 	FORCEINLINE void SetHUDTexture(const FHUDTextures& InHUDTextures) { HUDTextures = InHUDTextures; }
 private:
 
-	void DrawCrosshair(UTexture2D* Texture, FVector2d ViewportCenter, FVector2d Spread);
+	void DrawCrosshair(UTexture2D* Texture, FVector2d ViewportCenter, FVector2d Spread, FLinearColor CrosshairColor);
 
 	UPROPERTY(EditAnywhere)
 	float CrosshairSpreadMax = 10.0f;

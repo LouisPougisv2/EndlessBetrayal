@@ -11,7 +11,6 @@
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 #include "Camera/CameraComponent.h"
-#include "EndlessBetrayal/HUD/EndlessBetrayalHUD.h"
 #include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
 
 
@@ -134,6 +133,16 @@ void UCombatComponent::TraceUnderCrosshair(FHitResult& HitResult)
 		FVector End = Start + CrosshairWorldDirection * TRACE_LENGTH;
 
 		GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility);
+
+		//Check if we've hit an actor and if the hit actor has the UInteractWithCrosshairInterface implemented
+		if(IsValid(HitResult.GetActor()) && HitResult.GetActor()->Implements<UInteractWithCrosshairInterface>())
+		{
+			HUDTexture.CrosshairColor = FLinearColor::Yellow;
+		}
+		else
+		{
+			HUDTexture.CrosshairColor = FLinearColor::White;
+		}
 	}
 }
 
@@ -147,14 +156,13 @@ void UCombatComponent::SetHUDCrosshair(float DeltaTime)
 		if(!IsValid(HUD)) HUD = Cast<AEndlessBetrayalHUD>(PlayerController->GetHUD());
 		if(IsValid(HUD))
 		{
-			FHUDTextures TempHUDTexture;
 			if(IsValid(EquippedWeapon))
 			{
-				TempHUDTexture.CrosshairCenter = EquippedWeapon->GetCrosshairCenter();
-				TempHUDTexture.CrosshairTop = EquippedWeapon->GetCrosshairTop();
-				TempHUDTexture.CrosshairRight = EquippedWeapon->GetCrosshairRight();
-				TempHUDTexture.CrosshairBottom = EquippedWeapon->GetCrosshairBottom();
-				TempHUDTexture.CrosshairLeft = EquippedWeapon->GetCrosshairLeft();
+				HUDTexture.CrosshairCenter = EquippedWeapon->GetCrosshairCenter();
+				HUDTexture.CrosshairTop = EquippedWeapon->GetCrosshairTop();
+				HUDTexture.CrosshairRight = EquippedWeapon->GetCrosshairRight();
+				HUDTexture.CrosshairBottom = EquippedWeapon->GetCrosshairBottom();
+				HUDTexture.CrosshairLeft = EquippedWeapon->GetCrosshairLeft();
 			}
 			//Calculate the Crosshair spread
 			const FVector2d WalkSpeedRange (0.0f, Character->GetCharacterMovement()->MaxWalkSpeed);
@@ -188,9 +196,9 @@ void UCombatComponent::SetHUDCrosshair(float DeltaTime)
 			//We want the Crosshair shooting factor to always interp to 0 after shooting, hence the following line
 			CrosshairShootingFactor = FMath::FInterpTo(CrosshairShootingFactor, 0.0f, DeltaTime, 5.0f);
 			
-			TempHUDTexture.CrosshairSpreadFactor = 0.25 + CrosshairVelocityFactor + CrosshairInAirFactor - CrosshairAimingFactor + CrosshairShootingFactor;
+			HUDTexture.CrosshairSpreadFactor = 0.25 + CrosshairVelocityFactor + CrosshairInAirFactor - CrosshairAimingFactor + CrosshairShootingFactor;
 			
-			HUD->SetHUDTexture(TempHUDTexture);
+			HUD->SetHUDTexture(HUDTexture);
 		}
 		
 	}

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "EndlessBetrayal/HUD/EndlessBetrayalHUD.h"
 #include "CombatComponent.generated.h"
 
 #define TRACE_LENGTH 80000.0f
@@ -87,7 +88,8 @@ private:
 
 	FVector HitTarget;
 
-
+	FHUDTextures HUDTexture;
+	
 	/**
 	* Aiming & FOV
 	**/

@@ -5,10 +5,11 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "EndlessBetrayal/EndlessBetrayalTypes/TurningInPlace.h"
+#include "EndlessBetrayal/Interface/InteractWithCrosshairInterface.h"
 #include "EndlessBetrayalCharacter.generated.h"
 
 UCLASS()
-class ENDLESSBETRAYAL_API AEndlessBetrayalCharacter : public ACharacter
+class ENDLESSBETRAYAL_API AEndlessBetrayalCharacter : public ACharacter, public IInteractWithCrosshairInterface
 {
 	GENERATED_BODY()
 
