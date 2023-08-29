@@ -13,7 +13,6 @@
 #include "Camera/CameraComponent.h"
 #include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
 
-
 UCombatComponent::UCombatComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -130,6 +129,13 @@ void UCombatComponent::TraceUnderCrosshair(FHitResult& HitResult)
 	if(bIsDeprojectScreenToWorldSuccessful)
 	{
 		FVector Start = CrosshairWorldPosition;
+
+		if(IsValid(Character))
+		{
+			float DistanceToCharacter = (Character->GetActorLocation() - Start).Size();
+			Start += CrosshairWorldDirection * (DistanceToCharacter + 20.0f);
+		}
+		
 		FVector End = Start + CrosshairWorldDirection * TRACE_LENGTH;
 
 		GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility);

@@ -62,14 +62,20 @@ private:
 
 	void TurnInPlace(float DeltaTime);
 
+	void HideCameraWhenCharacterClose();
+
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	class UAnimMontage* FireWeaponMontage;
 
+	UPROPERTY(EditAnywhere, Category = "Camera")
+	float CameraThreshold = 200.0f;
+	
 	float AO_Yaw;
 	float InterpAOYaw;
 	float AO_Pitch;
 	FRotator StartingAimRotation;
 	ETurningInPlace TurningInPlace;
+
 public:	
 
 	void SetOverlappingWeapon(AWeapon* Weapon);

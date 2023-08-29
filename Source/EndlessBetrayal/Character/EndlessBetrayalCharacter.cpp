@@ -65,6 +65,7 @@ void AEndlessBetrayalCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	AimOffset(DeltaTime);
+	HideCameraWhenCharacterClose();
 }
 
 void AEndlessBetrayalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -314,6 +315,19 @@ void AEndlessBetrayalCharacter::TurnInPlace(float DeltaTime)
 			TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 			StartingAimRotation = FRotator(0.0f, GetBaseAimRotation().Yaw, 0.0f);
 		}
+	}
+}
+
+void AEndlessBetrayalCharacter::HideCameraWhenCharacterClose()
+{
+	if(!IsLocallyControlled()) return;
+
+	const bool bShouldBeVisible = IsValid(FollowCamera) && (FollowCamera->GetComponentLocation() - GetActorLocation()).Size() < CameraThreshold;
+
+	GetMesh()->SetVisibility(!bShouldBeVisible);
+	if(IsValid(CombatComponent) && IsValid(CombatComponent->EquippedWeapon) && IsValid(CombatComponent->EquippedWeapon->GetWeaponMesh()))
+	{
+		CombatComponent->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = bShouldBeVisible;
 	}
 }
 
