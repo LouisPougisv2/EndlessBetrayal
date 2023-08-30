@@ -11,6 +11,7 @@
 #include "EndlessBetrayal/EndlessBetrayalComponents/CombatComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "EndlessBetrayal/EndlessBetrayal.h"
 
 
 AEndlessBetrayalCharacter::AEndlessBetrayalCharacter()
@@ -37,6 +38,7 @@ AEndlessBetrayalCharacter::AEndlessBetrayalCharacter()
 
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+	GetMesh()->SetCollisionObjectType(ECC_SkeletalMesh);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 0.0f, 850.0f);
@@ -109,7 +111,23 @@ void AEndlessBetrayalCharacter::PlayFireMontage(bool bIsAiming)
 		FName SectionName;
 		SectionName = bIsAiming ? FName("FireAim") : FName("FireHip");
 		
-		//Why not use -> AnimInstance->Montage_JumpToSection(SectionName, FireWeaponMontage);
+		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+
+void AEndlessBetrayalCharacter::PlayHitReactMontage()
+{
+	if(!IsValid(CombatComponent) || !IsValid(CombatComponent->EquippedWeapon)) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if(IsValid(AnimInstance) && IsValid(HitReactionMontage))
+	{
+		AnimInstance->Montage_Play(HitReactionMontage);
+
+		//TODO : Modify to select Section name based on where the player is shot
+		FName SectionName("FromFront");
+		
 		AnimInstance->Montage_JumpToSection(SectionName);
 	}
 }
@@ -292,6 +310,11 @@ void AEndlessBetrayalCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 		LastWeapon->ShowPickupWidget(false);
 	}
 	 
+}
+
+void AEndlessBetrayalCharacter::MulticastOnPlayerHit_Implementation()
+{
+	PlayHitReactMontage();
 }
 
 void AEndlessBetrayalCharacter::TurnInPlace(float DeltaTime)
