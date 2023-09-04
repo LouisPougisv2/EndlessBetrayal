@@ -66,7 +66,19 @@ void AEndlessBetrayalCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	AimOffset(DeltaTime);
+	if(GetLocalRole() > ROLE_SimulatedProxy && IsLocallyControlled())
+	{
+		AimOffset(DeltaTime);
+	}
+	else
+	{
+		TimeSinceLastMovementReplication += DeltaTime;
+		if(TimeSinceLastMovementReplication > 0.25f)
+		{
+			OnRep_ReplicatedMovement();
+		}
+		CalculateAO_Pitch();
+	}
 	HideCameraWhenCharacterClose();
 }
 
@@ -96,6 +108,15 @@ void AEndlessBetrayalCharacter::PostInitializeComponents()
 	{
 		CombatComponent->Character = this;
 	}
+}
+
+void AEndlessBetrayalCharacter::OnRep_ReplicatedMovement()
+{
+	Super::OnRep_ReplicatedMovement();
+
+	SimProxiesTurn();
+	
+	TimeSinceLastMovementReplication = 0.0f;
 }
 
 void AEndlessBetrayalCharacter::PlayFireMontage(bool bIsAiming)
@@ -201,6 +222,18 @@ void AEndlessBetrayalCharacter::AimButtonReleased()
 	}
 }
 
+void AEndlessBetrayalCharacter::CalculateAO_Pitch()
+{
+	AO_Pitch = GetBaseAimRotation().Pitch;
+	if (AO_Pitch > 90.0f && !IsLocallyControlled())
+	{
+		//Mapping pitch from the range 270-360 to the range -90 - 0
+		FVector2D InRange(270.0f, 360.0);
+		FVector2D OutRange(-90.0f, 0.0f);
+		AO_Pitch = FMath::GetMappedRangeValueClamped(InRange, OutRange, AO_Pitch);
+	}
+}
+
 void AEndlessBetrayalCharacter::AimOffset(float DeltaTime)
 {
 	if (CombatComponent && CombatComponent->EquippedWeapon == nullptr) return;
@@ -221,7 +254,7 @@ void AEndlessBetrayalCharacter::AimOffset(float DeltaTime)
 			InterpAOYaw = AO_Yaw;
 		}
 		bUseControllerRotationYaw = true;
-
+		bShouldRotateRootBone = true;
 		TurnInPlace(DeltaTime);
 	}
 	if (Speed > 0.0f || bIsInAir)	//Running or jumping
@@ -230,16 +263,50 @@ void AEndlessBetrayalCharacter::AimOffset(float DeltaTime)
 		AO_Yaw = 0.0f;
 		bUseControllerRotationYaw = true;
 		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+		bShouldRotateRootBone = false;
 	}
 
-	AO_Pitch = GetBaseAimRotation().Pitch;
-	if (AO_Pitch > 90.0f && !IsLocallyControlled())
+	CalculateAO_Pitch();
+}
+
+void AEndlessBetrayalCharacter::SimProxiesTurn()
+{
+	if(!IsValid(CombatComponent) || !IsValid(CombatComponent->EquippedWeapon)) return;
+
+	FVector Velocity = GetVelocity();
+	Velocity.Z = 0.0f;
+	float Speed = Velocity.Size();
+
+	bShouldRotateRootBone = false;
+	if(Speed > 0.0f)
 	{
-		//Mapping pitch from the range 270-360 to the range -90 - 0
-		FVector2D InRange(270.0f, 360.0);
-		FVector2D OutRange(-90.0f, 0.0f);
-		AO_Pitch = FMath::GetMappedRangeValueClamped(InRange, OutRange, AO_Pitch);
+		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+		return;
 	}
+
+	CalculateAO_Pitch();
+	ProxyRotationLastFrame = ProxyRotation;
+	ProxyRotation = GetActorRotation();
+	ProxyYaw = UKismetMathLibrary::NormalizedDeltaRotator(ProxyRotation, ProxyRotationLastFrame).Yaw;
+	
+	if(FMath::Abs(ProxyYaw) > TurnThreshold)
+	{
+		if(ProxyYaw > TurnThreshold)
+		{
+			TurningInPlace = ETurningInPlace::ETIP_Right;
+		}
+		else if(ProxyYaw < -TurnThreshold)
+		{
+			TurningInPlace = ETurningInPlace::ETIP_Left;
+		}
+		else
+		{
+			TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+		}
+		return;
+	}
+	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+	
 }
 
 void AEndlessBetrayalCharacter::Jump()

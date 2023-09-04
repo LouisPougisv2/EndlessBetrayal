@@ -133,7 +133,7 @@ void UCombatComponent::TraceUnderCrosshair(FHitResult& HitResult)
 		if(IsValid(Character))
 		{
 			float DistanceToCharacter = (Character->GetActorLocation() - Start).Size();
-			Start += CrosshairWorldDirection * (DistanceToCharacter + 20.0f);
+			Start += CrosshairWorldDirection * (DistanceToCharacter + 100.0f);
 		}
 		
 		FVector End = Start + CrosshairWorldDirection * TRACE_LENGTH;
@@ -143,7 +143,11 @@ void UCombatComponent::TraceUnderCrosshair(FHitResult& HitResult)
 		//Check if we've hit an actor and if the hit actor has the UInteractWithCrosshairInterface implemented
 		if(IsValid(HitResult.GetActor()) && HitResult.GetActor()->Implements<UInteractWithCrosshairInterface>())
 		{
-			HUDTexture.CrosshairColor = FLinearColor::Yellow;
+			const bool bIsHitResultLocallyControlled = Cast<AEndlessBetrayalCharacter>(HitResult.GetActor())->IsLocallyControlled();
+			if(!bIsHitResultLocallyControlled)
+			{
+				HUDTexture.CrosshairColor = FLinearColor::Red;
+			}
 		}
 		else
 		{
