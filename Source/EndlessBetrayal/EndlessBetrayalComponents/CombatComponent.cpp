@@ -83,32 +83,6 @@ void UCombatComponent::ServerSetAiming_Implementation(bool bAiming)
 	}
 }
 
-void UCombatComponent::OnRep_EquippedWeapon()
-{
-	if (EquippedWeapon && Character)
-	{
-		Character->GetCharacterMovement()->bOrientRotationToMovement = false;
-		Character->bUseControllerRotationYaw = true;
-	}
-}
-
-void UCombatComponent::FireButtonPressed(bool bPressed)
-{
-	bIsFireButtonPressed = bPressed;
-
-	if(bIsFireButtonPressed)
-	{
-		FHitResult HitResult;
-		TraceUnderCrosshair(HitResult);
-		ServerFire(HitResult.ImpactPoint);
-
-		if(IsValid(EquippedWeapon))
-		{
-			CrosshairShootingFactor += EquippedWeapon->GetCrosshairShootingFactor();
-		}
-	}
-}
-
 void UCombatComponent::TraceUnderCrosshair(FHitResult& HitResult)
 {
 	FVector2D ViewPortSize;
@@ -236,6 +210,46 @@ void UCombatComponent::ZoomInterpFOV(float DeltaTime)
 	
 }
 
+void UCombatComponent::FireButtonPressed(bool bPressed)
+{
+	bIsFireButtonPressed = bPressed;
+
+	if(bIsFireButtonPressed)
+	{
+		Fire();
+	}
+}
+
+void UCombatComponent::Fire()
+{
+	if(IsValid(EquippedWeapon) && bCanFire)
+	{
+		bCanFire = false;
+		ServerFire(HitTarget);
+
+		if(IsValid(EquippedWeapon))
+		{
+			CrosshairShootingFactor += EquippedWeapon->GetCrosshairShootingFactor();
+		}
+		StartFireTimer();
+	}
+}
+
+void UCombatComponent::StartFireTimer()
+{
+	if(!IsValid(EquippedWeapon) || !IsValid(Character)) return;
+	Character->GetWorldTimerManager().SetTimer(FireTimerHandle, this, &UCombatComponent::FireTimerFinished, EquippedWeapon->FireDelay);
+}
+
+void UCombatComponent::FireTimerFinished()
+{
+	bCanFire = true;
+	if(EquippedWeapon->bIsWeaponAutomatic && bIsFireButtonPressed)
+	{
+		Fire();
+	}
+}
+
 void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
 {
 	//Runs on Server and all clients when call from the server
@@ -271,4 +285,13 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 	Character->bUseControllerRotationYaw = true;
+}
+
+void UCombatComponent::OnRep_EquippedWeapon()
+{
+	if (EquippedWeapon && Character)
+	{
+		Character->GetCharacterMovement()->bOrientRotationToMovement = false;
+		Character->bUseControllerRotationYaw = true;
+	}
 }

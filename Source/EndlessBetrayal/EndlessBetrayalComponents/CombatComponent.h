@@ -32,7 +32,8 @@ protected:
 
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
-		
+	void Fire();
+
 	void FireButtonPressed(bool bPressed);
 
 	UFUNCTION(Server, Reliable)
@@ -107,4 +108,14 @@ private:
 
 	//FUnction to handle the Zoom in when aiming
 	void ZoomInterpFOV(float DeltaTime);
+
+	/**
+	*	Automatic Fire handle
+	**/
+
+	FTimerHandle FireTimerHandle;
+
+	bool bCanFire = true;
+	void StartFireTimer();
+	void FireTimerFinished();
 };

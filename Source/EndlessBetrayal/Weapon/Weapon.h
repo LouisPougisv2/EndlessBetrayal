@@ -30,6 +30,12 @@ public:
 	void ShowPickupWidget(bool bShowWidget);
 	virtual void Fire(const FVector& HitTarget);
 
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	bool bIsWeaponAutomatic = true;
+	
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float FireDelay = 0.15f;
+
 protected:
 	virtual void BeginPlay() override;
 
