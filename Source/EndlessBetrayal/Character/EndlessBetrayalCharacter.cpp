@@ -12,6 +12,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "EndlessBetrayal/EndlessBetrayal.h"
+#include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
 
 
 AEndlessBetrayalCharacter::AEndlessBetrayalCharacter()
@@ -54,12 +55,18 @@ void AEndlessBetrayalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePrope
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME_CONDITION(AEndlessBetrayalCharacter, OverlappingWeapon, COND_OwnerOnly);
+	DOREPLIFETIME(AEndlessBetrayalCharacter, Health);
 }
 
 void AEndlessBetrayalCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	EndlessBetrayalPlayerController = Cast<AEndlessBetrayalPlayerController>(Controller);
+	if(IsValid(EndlessBetrayalPlayerController))
+	{
+		EndlessBetrayalPlayerController->UpdateHealthHUD(Health, MaxHealth);
+	}
 }
 
 void AEndlessBetrayalCharacter::Tick(float DeltaTime)
@@ -348,6 +355,11 @@ void AEndlessBetrayalCharacter::CrouchButtonPressed()
 	{
 		Crouch();
 	}
+}
+
+void AEndlessBetrayalCharacter::OnRep_Health()
+{
+	
 }
 
 void AEndlessBetrayalCharacter::SetOverlappingWeapon(AWeapon* Weapon)

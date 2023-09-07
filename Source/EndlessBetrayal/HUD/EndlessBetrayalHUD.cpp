@@ -3,6 +3,10 @@
 
 #include "EndlessBetrayalHUD.h"
 
+#include "CharacterOverlay.h"
+#include "Blueprint/UserWidget.h"
+#include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
+
 void AEndlessBetrayalHUD::DrawHUD()
 {
 	Super::DrawHUD();
@@ -22,6 +26,23 @@ void AEndlessBetrayalHUD::DrawHUD()
 	if(IsValid(HUDTextures.CrosshairBottom)) DrawCrosshair(HUDTextures.CrosshairBottom, ViewportCenter, FVector2d(0.0f, SpreadScaled), HUDTextures.CrosshairColor);
 	if(IsValid(HUDTextures.CrosshairLeft)) DrawCrosshair(HUDTextures.CrosshairLeft, ViewportCenter, FVector2d(-SpreadScaled, 0.0f), HUDTextures.CrosshairColor);
 	
+}
+
+void AEndlessBetrayalHUD::BeginPlay()
+{
+	Super::BeginPlay();
+
+	AddCharacterOverlay();
+}
+
+void AEndlessBetrayalHUD::AddCharacterOverlay()
+{
+	AEndlessBetrayalPlayerController* PlayerController = Cast<AEndlessBetrayalPlayerController>(GetOwningPlayerController());
+	if(IsValid(PlayerController) && IsValid(CharacterOverlayClass))
+	{
+		CharacterOverlay = CreateWidget<UCharacterOverlay>(PlayerController, CharacterOverlayClass);
+		CharacterOverlay->AddToViewport();
+	}
 }
 
 void AEndlessBetrayalHUD::DrawCrosshair(UTexture2D* Texture, FVector2d ViewportCenter, FVector2d Spread, FLinearColor CrosshairColor)

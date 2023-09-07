@@ -91,6 +91,23 @@ private:
 	FRotator ProxyRotation;
 	float ProxyYaw;
 	float TimeSinceLastMovementReplication;
+
+	/**
+	* Player Health
+	**/
+
+	UPROPERTY(EditAnywhere, Category = "Player Stats")
+	float MaxHealth = 100.0f;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Health, VisibleAnywhere, Category = "Player Stats")
+	float Health = 100.0f;
+
+	//Callback function when Health is updated
+	UFUNCTION()
+	void OnRep_Health();
+
+	UPROPERTY()
+	class AEndlessBetrayalPlayerController* EndlessBetrayalPlayerController;
 public:	
 
 	void SetOverlappingWeapon(AWeapon* Weapon);
