@@ -47,13 +47,6 @@ void AProjectile::BeginPlay()
 
 void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	//TODO : Handle Damage / Health effect here
-	AEndlessBetrayalCharacter* PlayerHit = Cast<AEndlessBetrayalCharacter>(OtherActor);
-	if(IsValid(PlayerHit))
-	{
-		PlayerHit->MulticastOnPlayerHit();
-	}
-	
 	Destroy();
 }
 

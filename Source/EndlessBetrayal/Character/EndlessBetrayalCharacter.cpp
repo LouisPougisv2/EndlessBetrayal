@@ -58,14 +58,24 @@ void AEndlessBetrayalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePrope
 	DOREPLIFETIME(AEndlessBetrayalCharacter, Health);
 }
 
+void AEndlessBetrayalCharacter::UpdateHealthHUD()
+{
+	EndlessBetrayalPlayerController = !IsValid(EndlessBetrayalPlayerController) ? Cast<AEndlessBetrayalPlayerController>(Controller) : EndlessBetrayalPlayerController;
+	if(IsValid(EndlessBetrayalPlayerController))
+	{
+		EndlessBetrayalPlayerController->UpdateHealthHUD(Health, MaxHealth);
+	}
+}
+
 void AEndlessBetrayalCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	EndlessBetrayalPlayerController = Cast<AEndlessBetrayalPlayerController>(Controller);
-	if(IsValid(EndlessBetrayalPlayerController))
+	UpdateHealthHUD();
+
+	if(HasAuthority())
 	{
-		EndlessBetrayalPlayerController->UpdateHealthHUD(Health, MaxHealth);
+		OnTakeAnyDamage.AddUniqueDynamic(this, &AEndlessBetrayalCharacter::ReceiveDamage);
 	}
 }
 
@@ -158,6 +168,13 @@ void AEndlessBetrayalCharacter::PlayHitReactMontage()
 		
 		AnimInstance->Montage_JumpToSection(SectionName);
 	}
+}
+
+void AEndlessBetrayalCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
+{
+	Health = FMath::Clamp(Health - Damage, 0.0f, MaxHealth);
+	UpdateHealthHUD();
+	PlayHitReactMontage();
 }
 
 void AEndlessBetrayalCharacter::MoveForward(float Value)
@@ -359,7 +376,8 @@ void AEndlessBetrayalCharacter::CrouchButtonPressed()
 
 void AEndlessBetrayalCharacter::OnRep_Health()
 {
-	
+	UpdateHealthHUD();
+	PlayHitReactMontage();
 }
 
 void AEndlessBetrayalCharacter::SetOverlappingWeapon(AWeapon* Weapon)
@@ -389,11 +407,6 @@ void AEndlessBetrayalCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 		LastWeapon->ShowPickupWidget(false);
 	}
 	 
-}
-
-void AEndlessBetrayalCharacter::MulticastOnPlayerHit_Implementation()
-{
-	PlayHitReactMontage();
 }
 
 void AEndlessBetrayalCharacter::TurnInPlace(float DeltaTime)

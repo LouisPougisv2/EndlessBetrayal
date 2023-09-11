@@ -22,9 +22,6 @@ public:
 	virtual void OnRep_ReplicatedMovement() override;
 	void PlayFireMontage(bool bIsAiming);
 
-	UFUNCTION(NetMulticast, Unreliable)
-	void MulticastOnPlayerHit();
-
 protected:
 	virtual void BeginPlay() override;
 
@@ -43,6 +40,10 @@ protected:
 	void FireButtonPressed();
 	void FireButtonReleased();
 	void PlayHitReactMontage();
+
+	UFUNCTION() //NEEDS to be UFUNCTION or we well never get our callback called in response to a damage event 
+	void ReceiveDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
+	void UpdateHealthHUD();
 	
 private: 
 
@@ -102,7 +103,7 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_Health, VisibleAnywhere, Category = "Player Stats")
 	float Health = 100.0f;
 
-	//Callback function when Health is updated
+	//Callback function when Health is updated, only called on the client
 	UFUNCTION()
 	void OnRep_Health();
 
