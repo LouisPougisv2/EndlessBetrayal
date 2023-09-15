@@ -17,4 +17,6 @@ class ENDLESSBETRAYAL_API AEndlessBetrayalGameMode : public AGameMode
 public:
 
 	virtual void OnPlayerEliminated(class AEndlessBetrayalCharacter* EliminatedCharacter, class AEndlessBetrayalPlayerController* VictimController, AEndlessBetrayalPlayerController* AttackerController);
+	virtual void RequestRespawn(AEndlessBetrayalCharacter* EliminatedCharacter, AEndlessBetrayalPlayerController* EliminatedController);
+
 };

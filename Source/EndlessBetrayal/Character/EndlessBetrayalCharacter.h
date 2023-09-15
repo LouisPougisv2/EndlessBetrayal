@@ -23,8 +23,11 @@ public:
 	void PlayFireMontage(bool bIsAiming);
 	void PlayEliminatedMontage();
 
-	UFUNCTION(NetMulticast, Reliable)
+	//Reserved for functionalities that'll happen only on the server
 	void OnPlayerEliminated();
+	
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastOnPlayerEliminated();
 
 protected:
 	virtual void BeginPlay() override;
@@ -111,6 +114,14 @@ private:
 	float Health = 100.0f;
 	
 	bool bIsEliminated = false;
+
+	FTimerHandle OnPlayerEliminatedTimer;
+
+	UPROPERTY(EditDefaultsOnly)
+	float OnPlayerEliminatedDelayTime = 3.0f;
+
+	UFUNCTION()
+	void OnPlayerEliminatedCallBack();
 
 	//Callback function when Health is updated, only called on the client
 	UFUNCTION()

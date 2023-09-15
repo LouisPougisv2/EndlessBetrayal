@@ -156,8 +156,6 @@ void AEndlessBetrayalCharacter::PlayFireMontage(bool bIsAiming)
 
 void AEndlessBetrayalCharacter::PlayEliminatedMontage()
 {
-	if(!IsValid(CombatComponent) || !IsValid(CombatComponent->EquippedWeapon)) return;
-
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 
 	if(IsValid(AnimInstance) && IsValid(EliminationMontage))
@@ -166,10 +164,26 @@ void AEndlessBetrayalCharacter::PlayEliminatedMontage()
 	}
 }
 
-void AEndlessBetrayalCharacter::OnPlayerEliminated_Implementation()
+void AEndlessBetrayalCharacter::OnPlayerEliminated()
+{
+	MulticastOnPlayerEliminated();
+	GetWorldTimerManager().SetTimer(OnPlayerEliminatedTimer, this, &AEndlessBetrayalCharacter::OnPlayerEliminatedCallBack, OnPlayerEliminatedDelayTime);
+}
+
+void AEndlessBetrayalCharacter::MulticastOnPlayerEliminated_Implementation()
 {
 	bIsEliminated = true;
 	PlayEliminatedMontage();
+}
+
+void AEndlessBetrayalCharacter::OnPlayerEliminatedCallBack()
+{
+	//Respawn
+	AEndlessBetrayalGameMode* EndlessBetrayalGameMode = GetWorld()->GetAuthGameMode<AEndlessBetrayalGameMode>();
+	if(IsValid(EndlessBetrayalGameMode))
+	{
+		EndlessBetrayalGameMode->RequestRespawn(this, EndlessBetrayalPlayerController );
+	}
 }
 
 void AEndlessBetrayalCharacter::PlayHitReactMontage()
