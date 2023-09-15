@@ -38,6 +38,7 @@ void UEndlessBetrayalAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	bIsAiming = EndlessBetrayalCharacter->IsAiming();
 	TurningInPlace = EndlessBetrayalCharacter->GetTurningInPlace();
 	bShouldRotateRootBone = EndlessBetrayalCharacter->ShouldRotateRootBone();
+	bIsEliminated = EndlessBetrayalCharacter->IsEliminated();
 
 	//Offset yawfor straffing
 	FRotator AimRotation = EndlessBetrayalCharacter->GetBaseAimRotation();

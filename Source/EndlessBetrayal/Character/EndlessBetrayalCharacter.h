@@ -21,6 +21,10 @@ public:
 	virtual void PostInitializeComponents() override;
 	virtual void OnRep_ReplicatedMovement() override;
 	void PlayFireMontage(bool bIsAiming);
+	void PlayEliminatedMontage();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void OnPlayerEliminated();
 
 protected:
 	virtual void BeginPlay() override;
@@ -78,6 +82,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	UAnimMontage* HitReactionMontage;
 
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	UAnimMontage* EliminationMontage;
+
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	float CameraThreshold = 200.0f;
 	
@@ -102,6 +109,8 @@ private:
 
 	UPROPERTY(ReplicatedUsing = OnRep_Health, VisibleAnywhere, Category = "Player Stats")
 	float Health = 100.0f;
+	
+	bool bIsEliminated = false;
 
 	//Callback function when Health is updated, only called on the client
 	UFUNCTION()
@@ -121,6 +130,7 @@ public:
 	AWeapon* GetEquippedWeapon();
 
 	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; }
+	FORCEINLINE bool IsEliminated() const { return bIsEliminated; }
 
 	FVector GetHitTarget();
 };

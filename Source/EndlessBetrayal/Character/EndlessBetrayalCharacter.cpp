@@ -12,6 +12,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "EndlessBetrayal/EndlessBetrayal.h"
+#include "EndlessBetrayal/GameMode/EndlessBetrayalGameMode.h"
 #include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
 
 
@@ -153,6 +154,24 @@ void AEndlessBetrayalCharacter::PlayFireMontage(bool bIsAiming)
 	}
 }
 
+void AEndlessBetrayalCharacter::PlayEliminatedMontage()
+{
+	if(!IsValid(CombatComponent) || !IsValid(CombatComponent->EquippedWeapon)) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if(IsValid(AnimInstance) && IsValid(EliminationMontage))
+	{
+		AnimInstance->Montage_Play(EliminationMontage);
+	}
+}
+
+void AEndlessBetrayalCharacter::OnPlayerEliminated_Implementation()
+{
+	bIsEliminated = true;
+	PlayEliminatedMontage();
+}
+
 void AEndlessBetrayalCharacter::PlayHitReactMontage()
 {
 	if(!IsValid(CombatComponent) || !IsValid(CombatComponent->EquippedWeapon)) return;
@@ -175,6 +194,19 @@ void AEndlessBetrayalCharacter::ReceiveDamage(AActor* DamagedActor, float Damage
 	Health = FMath::Clamp(Health - Damage, 0.0f, MaxHealth);
 	UpdateHealthHUD();
 	PlayHitReactMontage();
+
+	if(Health > 0.0f) return;
+
+	AEndlessBetrayalGameMode* EndlessBetrayalGameMode = GetWorld()->GetAuthGameMode<AEndlessBetrayalGameMode>();
+	if(IsValid(EndlessBetrayalGameMode))
+	{
+		EndlessBetrayalPlayerController = !IsValid(EndlessBetrayalPlayerController) ? Cast<AEndlessBetrayalPlayerController>(Controller) : EndlessBetrayalPlayerController;
+		AEndlessBetrayalPlayerController* AttackerController = Cast<AEndlessBetrayalPlayerController>(InstigatedBy);
+		if(IsValid(EndlessBetrayalPlayerController) && IsValid(AttackerController))
+		{
+			EndlessBetrayalGameMode->OnPlayerEliminated(this, EndlessBetrayalPlayerController, AttackerController);
+		}
+	}
 }
 
 void AEndlessBetrayalCharacter::MoveForward(float Value)
@@ -377,7 +409,10 @@ void AEndlessBetrayalCharacter::CrouchButtonPressed()
 void AEndlessBetrayalCharacter::OnRep_Health()
 {
 	UpdateHealthHUD();
-	PlayHitReactMontage();
+	if(!bIsEliminated)
+	{
+		PlayHitReactMontage();
+	}
 }
 
 void AEndlessBetrayalCharacter::SetOverlappingWeapon(AWeapon* Weapon)
