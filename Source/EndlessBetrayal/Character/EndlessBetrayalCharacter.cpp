@@ -38,6 +38,8 @@ AEndlessBetrayalCharacter::AEndlessBetrayalCharacter()
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	CombatComponent->SetIsReplicated(true);
 
+	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("DissolveTimelineComponent"));
+
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 	GetMesh()->SetCollisionObjectType(ECC_SkeletalMesh);
@@ -174,6 +176,15 @@ void AEndlessBetrayalCharacter::MulticastOnPlayerEliminated_Implementation()
 {
 	bIsEliminated = true;
 	PlayEliminatedMontage();
+
+	if(IsValid(DissolveMaterialInstance))
+	{
+		DynamicDissolveMaterialInstance = UMaterialInstanceDynamic::Create(DissolveMaterialInstance, this);
+		GetMesh()->SetMaterial(0, DynamicDissolveMaterialInstance);
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Dissolve"), 0.55f);
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Glow"), 100.0f);
+		StartDissolve();
+	}
 }
 
 void AEndlessBetrayalCharacter::OnPlayerEliminatedCallBack()
@@ -417,6 +428,24 @@ void AEndlessBetrayalCharacter::CrouchButtonPressed()
 	else
 	{
 		Crouch();
+	}
+}
+
+void AEndlessBetrayalCharacter::UpdateDissolveMaterial(float DissolveValue)
+{
+	if(DynamicDissolveMaterialInstance)
+	{
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Dissolve"), DissolveValue);
+	}
+}
+
+void AEndlessBetrayalCharacter::StartDissolve()
+{
+	DissolveTrack.BindDynamic(this, &AEndlessBetrayalCharacter::UpdateDissolveMaterial);
+	if(IsValid(DissolveCurve) && IsValid(DissolveTimeline))
+	{
+		DissolveTimeline->AddInterpFloat(DissolveCurve, DissolveTrack);
+		DissolveTimeline->Play();
 	}
 }
 

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/TimelineComponent.h"
 #include "GameFramework/Character.h"
 #include "EndlessBetrayal/EndlessBetrayalTypes/TurningInPlace.h"
 #include "EndlessBetrayal/Interface/InteractWithCrosshairInterface.h"
@@ -123,6 +124,30 @@ private:
 	UFUNCTION()
 	void OnPlayerEliminatedCallBack();
 
+	/**
+	*	Dissolve Effect
+	*/
+
+	UPROPERTY(VisibleAnywhere)
+	UTimelineComponent* DissolveTimeline;
+	
+	FOnTimelineFloat DissolveTrack;
+
+	UPROPERTY(EditAnywhere)
+	UCurveFloat* DissolveCurve;
+
+	//Dynamic Instance that we can change at runtime
+	UPROPERTY(VisibleAnywhere, Category = "Elimination")
+	UMaterialInstanceDynamic* DynamicDissolveMaterialInstance;
+
+	//Material Instance set on the BP used with the Dynamic Material Instance
+	UPROPERTY(EditAnywhere, Category = "Elimination")
+	UMaterialInstance* DissolveMaterialInstance;
+	//Every TimelineComponent needs a callback called every frame as we're updating the timeline
+	UFUNCTION()	//Allows to be bound
+	void UpdateDissolveMaterial(float DissolveValue);
+	void StartDissolve();
+	
 	//Callback function when Health is updated, only called on the client
 	UFUNCTION()
 	void OnRep_Health();
