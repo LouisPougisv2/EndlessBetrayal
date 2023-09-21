@@ -161,6 +161,8 @@ public:
 	bool IsAiming();
 	FORCEINLINE float GetAO_Yaw() const { return AO_Yaw; }
 	FORCEINLINE float GetAO_Pitch() const { return AO_Pitch; }
+	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
+	FORCEINLINE float GetHealth() const { return Health; }
 	FORCEINLINE bool ShouldRotateRootBone() const { return bShouldRotateRootBone; }
 	FORCEINLINE UCameraComponent* GetFollowCamera() { return FollowCamera; }
 	AWeapon* GetEquippedWeapon();

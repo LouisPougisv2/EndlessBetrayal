@@ -27,7 +27,7 @@ void AEndlessBetrayalGameMode::RequestRespawn(AEndlessBetrayalCharacter* Elimina
 		TArray<AActor*> PlayerStartActors;
 		UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStartActors);
 		const int32 IndexSelectedPlayerStart = FMath::RandRange(0, PlayerStartActors.Num() - 1);
-		
+		EliminatedController->UpdateHealthHUD(EliminatedCharacter->GetMaxHealth(), EliminatedCharacter->GetMaxHealth());
 		RestartPlayerAtPlayerStart(EliminatedController, PlayerStartActors[IndexSelectedPlayerStart]);
 	}
 }

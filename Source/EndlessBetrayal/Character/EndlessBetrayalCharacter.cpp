@@ -168,6 +168,10 @@ void AEndlessBetrayalCharacter::PlayEliminatedMontage()
 
 void AEndlessBetrayalCharacter::OnPlayerEliminated()
 {
+	if(IsValid(CombatComponent) && IsValid(CombatComponent->EquippedWeapon))
+	{
+		CombatComponent->EquippedWeapon->OnWeaponDropped();
+	}
 	MulticastOnPlayerEliminated();
 	GetWorldTimerManager().SetTimer(OnPlayerEliminatedTimer, this, &AEndlessBetrayalCharacter::OnPlayerEliminatedCallBack, OnPlayerEliminatedDelayTime);
 }
@@ -177,6 +181,7 @@ void AEndlessBetrayalCharacter::MulticastOnPlayerEliminated_Implementation()
 	bIsEliminated = true;
 	PlayEliminatedMontage();
 
+	//Star player's mesh dissolve effect
 	if(IsValid(DissolveMaterialInstance))
 	{
 		DynamicDissolveMaterialInstance = UMaterialInstanceDynamic::Create(DissolveMaterialInstance, this);
@@ -185,6 +190,19 @@ void AEndlessBetrayalCharacter::MulticastOnPlayerEliminated_Implementation()
 		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Glow"), 100.0f);
 		StartDissolve();
 	}
+
+	//Disable movement
+	GetCharacterMovement()->DisableMovement(); //Stop movement with WASD
+	GetCharacterMovement()->StopMovementImmediately(); //Prevents us from rotating the character
+
+	if(IsValid(EndlessBetrayalPlayerController))
+	{
+		DisableInput(EndlessBetrayalPlayerController); //To prevent from firing
+	}
+
+	//Disable Collision
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }
 
 void AEndlessBetrayalCharacter::OnPlayerEliminatedCallBack()

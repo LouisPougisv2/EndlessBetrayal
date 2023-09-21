@@ -29,6 +29,7 @@ public:
 
 	void ShowPickupWidget(bool bShowWidget);
 	virtual void Fire(const FVector& HitTarget);
+	virtual void OnWeaponDropped();
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	bool bIsWeaponAutomatic = true;
