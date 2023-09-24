@@ -14,6 +14,9 @@
 #include "EndlessBetrayal/EndlessBetrayal.h"
 #include "EndlessBetrayal/GameMode/EndlessBetrayalGameMode.h"
 #include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
+#include "Kismet/GameplayStatics.h"
+#include "Particles/ParticleSystemComponent.h"
+#include "Sound/SoundCue.h"
 
 
 AEndlessBetrayalCharacter::AEndlessBetrayalCharacter()
@@ -139,6 +142,15 @@ void AEndlessBetrayalCharacter::OnRep_ReplicatedMovement()
 	TimeSinceLastMovementReplication = 0.0f;
 }
 
+void AEndlessBetrayalCharacter::Destroyed()
+{
+	if(EliminationBotComponent)
+	{
+		EliminationBotComponent->DestroyComponent();
+	}
+	Super::Destroyed();
+}
+
 void AEndlessBetrayalCharacter::PlayFireMontage(bool bIsAiming)
 {
 	if(!IsValid(CombatComponent) || !IsValid(CombatComponent->EquippedWeapon)) return;
@@ -203,6 +215,15 @@ void AEndlessBetrayalCharacter::MulticastOnPlayerEliminated_Implementation()
 	//Disable Collision
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	//Spawn EliminationBot
+	if(EliminationBotEffect && EliminationBotSound)
+	{
+		const FVector EliminationBotPoint(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z + 200.0f);
+		EliminationBotComponent = UGameplayStatics::SpawnEmitterAtLocation(this, EliminationBotEffect, EliminationBotPoint, GetActorRotation());
+
+		UGameplayStatics::PlaySoundAtLocation(this, EliminationBotSound, EliminationBotPoint);
+	}
 }
 
 void AEndlessBetrayalCharacter::OnPlayerEliminatedCallBack()

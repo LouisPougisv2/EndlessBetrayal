@@ -21,6 +21,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
 	virtual void OnRep_ReplicatedMovement() override;
+	virtual void Destroyed() override;
 	void PlayFireMontage(bool bIsAiming);
 	void PlayEliminatedMontage();
 
@@ -147,6 +148,19 @@ private:
 	UFUNCTION()	//Allows to be bound
 	void UpdateDissolveMaterial(float DissolveValue);
 	void StartDissolve();
+
+	/**
+	*	Elimination Bot
+	**/
+
+	UPROPERTY(EditAnywhere)
+	class UParticleSystem* EliminationBotEffect;
+
+	UPROPERTY(VisibleAnywhere)
+	class UParticleSystemComponent* EliminationBotComponent;
+
+	UPROPERTY(EditAnywhere)
+	class USoundCue* EliminationBotSound;
 	
 	//Callback function when Health is updated, only called on the client
 	UFUNCTION()
