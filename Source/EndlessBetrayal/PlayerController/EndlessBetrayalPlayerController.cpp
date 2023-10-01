@@ -5,6 +5,7 @@
 
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
+#include "EndlessBetrayal/Character/EndlessBetrayalCharacter.h"
 #include "EndlessBetrayal/HUD/CharacterOverlay.h"
 #include "EndlessBetrayal/HUD/EndlessBetrayalHUD.h"
 
@@ -24,6 +25,15 @@ void AEndlessBetrayalPlayerController::UpdateHealthHUD(float NewHealth, float Ma
 		FString HealthText = FString::Printf(TEXT("%d/%d"), FMath::CeilToInt(NewHealth), FMath::CeilToInt(MaxHealth));
 		EndlessBetrayalHUD->CharacterOverlay->HealthText->SetText(FText::FromString(HealthText));
 	}
+}
+
+void AEndlessBetrayalPlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+	
+	const AEndlessBetrayalCharacter* EndlessBetrayalCharacter = Cast<AEndlessBetrayalCharacter>(InPawn);
+	UpdateHealthHUD(EndlessBetrayalCharacter->GetHealth(), EndlessBetrayalCharacter->GetMaxHealth());
+
 }
 
 void AEndlessBetrayalPlayerController::BeginPlay()
