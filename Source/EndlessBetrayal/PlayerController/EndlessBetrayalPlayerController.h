@@ -18,6 +18,7 @@ public:
 
 	void UpdateHealthHUD(float NewHealth, float MaxHealth);
 	void UpdateScoreHUD(float NewScore);
+	void UpdateDeathsHUD(int32 NewDeath);
 	void OnPossess(APawn* InPawn) override;
 protected:
 

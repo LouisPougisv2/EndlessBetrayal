@@ -16,10 +16,15 @@ class ENDLESSBETRAYAL_API AEndlessBetrayalPlayerState : public APlayerState
 
 public:
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void OnRep_Score() override;
+
+	UFUNCTION()
+	virtual void OnRep_Deaths();
 
 	//Should be called only on the server, as the latter is in charge of the score
 	void AddToScore(float NewScore);
+	void AddToKills(float NewKill);
 
 private:
 
@@ -28,4 +33,7 @@ private:
 
 	UPROPERTY()
 	class AEndlessBetrayalPlayerController* EndlessBetrayalPlayerController;
+
+	UPROPERTY(ReplicatedUsing=OnRep_Deaths)
+	int32 DeathsCount;
 };

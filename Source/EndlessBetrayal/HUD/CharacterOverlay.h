@@ -24,4 +24,7 @@ public:
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Player Stats")
 	UTextBlock* ScoreValue;
+
+	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Player Stats")
+	UTextBlock* DeathsValue;
 };

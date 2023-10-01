@@ -20,6 +20,10 @@ void AEndlessBetrayalGameMode::OnPlayerEliminated(AEndlessBetrayalCharacter* Eli
 		AttackerPlayerState->AddToScore(1.0f);
 	}
 	
+	if(VictimPlayerState)
+	{
+		VictimPlayerState->AddToKills(1);
+	}
 	EliminatedCharacter->OnPlayerEliminated();
 }
 

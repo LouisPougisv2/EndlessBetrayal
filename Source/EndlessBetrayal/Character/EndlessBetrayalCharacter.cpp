@@ -86,6 +86,7 @@ void AEndlessBetrayalCharacter::PollInitialize()
 			if(IsValid(EndlessBetrayalPlayerState))
 			{
 				EndlessBetrayalPlayerState->AddToScore(0.0f);
+				EndlessBetrayalPlayerState->AddToKills(0);
 			}
 		}
 	}

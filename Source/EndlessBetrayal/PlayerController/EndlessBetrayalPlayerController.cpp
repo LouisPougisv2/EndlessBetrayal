@@ -42,6 +42,21 @@ void AEndlessBetrayalPlayerController::UpdateScoreHUD(float NewScore)
 	}
 }
 
+void AEndlessBetrayalPlayerController::UpdateDeathsHUD(int NewDeath)
+{
+	if(!IsValid(EndlessBetrayalHUD))
+	{
+		EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD());
+	}
+
+	const bool bIsHUDVariableFullyValid = IsValid(EndlessBetrayalHUD) && EndlessBetrayalHUD->CharacterOverlay && EndlessBetrayalHUD->CharacterOverlay->HealthBar && EndlessBetrayalHUD->CharacterOverlay->DeathsValue;
+	if(bIsHUDVariableFullyValid)
+	{
+		FString ScoreText = FString::Printf(TEXT("%d"), NewDeath);
+		EndlessBetrayalHUD->CharacterOverlay->DeathsValue->SetText(FText::FromString(ScoreText));
+	}
+}
+
 void AEndlessBetrayalPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
