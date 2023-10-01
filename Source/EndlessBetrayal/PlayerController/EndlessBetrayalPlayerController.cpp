@@ -39,6 +39,13 @@ void AEndlessBetrayalPlayerController::UpdateScoreHUD(float NewScore)
 	{
 		FString ScoreText = FString::Printf(TEXT("%d"), FMath::FloorToInt(NewScore));
 		EndlessBetrayalHUD->CharacterOverlay->ScoreValue->SetText(FText::FromString(ScoreText));
+
+		if(EndlessBetrayalHUD->CharacterOverlay->KillText)
+		{
+			FTimerHandle TimerHandle;
+			GetWorldTimerManager().SetTimer(TimerHandle, this, &AEndlessBetrayalPlayerController::HideMessagesOnScreenHUD, 2.0f);
+			EndlessBetrayalHUD->CharacterOverlay->KillText->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+		}
 	}
 }
 
@@ -54,6 +61,19 @@ void AEndlessBetrayalPlayerController::UpdateDeathsHUD(int NewDeath)
 	{
 		FString ScoreText = FString::Printf(TEXT("%d"), NewDeath);
 		EndlessBetrayalHUD->CharacterOverlay->DeathsValue->SetText(FText::FromString(ScoreText));
+
+		if(EndlessBetrayalHUD->CharacterOverlay->DeathText)
+		{
+			EndlessBetrayalHUD->CharacterOverlay->DeathText->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+		}
+	}
+}
+
+void AEndlessBetrayalPlayerController::HideMessagesOnScreenHUD()
+{
+	if(EndlessBetrayalHUD)
+	{
+		EndlessBetrayalHUD->HideKillDeathMessages();
 	}
 }
 
@@ -64,11 +84,16 @@ void AEndlessBetrayalPlayerController::OnPossess(APawn* InPawn)
 	const AEndlessBetrayalCharacter* EndlessBetrayalCharacter = Cast<AEndlessBetrayalCharacter>(InPawn);
 	UpdateHealthHUD(EndlessBetrayalCharacter->GetHealth(), EndlessBetrayalCharacter->GetMaxHealth());
 
+	if(IsValid(EndlessBetrayalHUD) && IsValid(EndlessBetrayalHUD->CharacterOverlay))
+	{
+		HideMessagesOnScreenHUD();
+	}
+
 }
 
 void AEndlessBetrayalPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	EndlessBetrayalHUD= Cast<AEndlessBetrayalHUD>(GetHUD());
+	EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD());
 }

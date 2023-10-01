@@ -5,6 +5,7 @@
 
 #include "CharacterOverlay.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/TextBlock.h"
 #include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
 
 void AEndlessBetrayalHUD::DrawHUD()
@@ -42,6 +43,21 @@ void AEndlessBetrayalHUD::AddCharacterOverlay()
 	{
 		CharacterOverlay = CreateWidget<UCharacterOverlay>(PlayerController, CharacterOverlayClass);
 		CharacterOverlay->AddToViewport();
+	}
+}
+
+void AEndlessBetrayalHUD::HideKillDeathMessages()
+{
+	if(!IsValid(CharacterOverlay)) return;
+	
+	if(CharacterOverlay->KillText)
+	{
+		CharacterOverlay->KillText->SetVisibility(ESlateVisibility::Collapsed);
+	}
+
+	if(CharacterOverlay->DeathText)
+	{
+		CharacterOverlay->DeathText->SetVisibility(ESlateVisibility::Collapsed);
 	}
 }
 

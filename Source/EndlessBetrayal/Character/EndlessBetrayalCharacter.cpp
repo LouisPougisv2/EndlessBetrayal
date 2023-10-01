@@ -88,6 +88,8 @@ void AEndlessBetrayalCharacter::PollInitialize()
 				EndlessBetrayalPlayerState->AddToScore(0.0f);
 				EndlessBetrayalPlayerState->AddToKills(0);
 			}
+
+			EndlessBetrayalPlayerController->HideMessagesOnScreenHUD();
 		}
 	}
 	

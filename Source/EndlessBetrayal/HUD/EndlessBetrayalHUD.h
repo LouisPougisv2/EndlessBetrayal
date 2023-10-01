@@ -48,6 +48,7 @@ public:
 	UPROPERTY()
 	class UCharacterOverlay* CharacterOverlay;
 
+	void HideKillDeathMessages();
 protected:
 
 	virtual void BeginPlay() override;

@@ -27,4 +27,10 @@ public:
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Player Stats")
 	UTextBlock* DeathsValue;
+
+	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Player Stats")
+	UTextBlock* KillText;
+	
+	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Player Stats")
+	UTextBlock* DeathText;
 };
