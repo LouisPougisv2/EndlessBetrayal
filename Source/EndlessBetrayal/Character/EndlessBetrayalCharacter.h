@@ -53,6 +53,9 @@ protected:
 	UFUNCTION() //NEEDS to be UFUNCTION or we well never get our callback called in response to a damage event 
 	void ReceiveDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 	void UpdateHealthHUD();
+
+	//Poll for any relevant classes and initialize our HUD
+	void PollInitialize();
 	
 private: 
 
@@ -161,6 +164,9 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	class USoundCue* EliminationBotSound;
+
+	UPROPERTY()
+	class AEndlessBetrayalPlayerState* EndlessBetrayalPlayerState;
 	
 	//Callback function when Health is updated, only called on the client
 	UFUNCTION()

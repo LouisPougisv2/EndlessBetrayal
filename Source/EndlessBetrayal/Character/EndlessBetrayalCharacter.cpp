@@ -13,7 +13,9 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "EndlessBetrayal/EndlessBetrayal.h"
 #include "EndlessBetrayal/GameMode/EndlessBetrayalGameMode.h"
+#include "EndlessBetrayal/GameState/EndlessBetrayalPlayerState.h"
 #include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
+#include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Sound/SoundCue.h"
@@ -73,6 +75,23 @@ void AEndlessBetrayalCharacter::UpdateHealthHUD()
 	}
 }
 
+void AEndlessBetrayalCharacter::PollInitialize()
+{
+	if(!EndlessBetrayalPlayerState)
+	{
+		EndlessBetrayalPlayerController = !IsValid(EndlessBetrayalPlayerController) ? Cast<AEndlessBetrayalPlayerController>(Controller) : EndlessBetrayalPlayerController;
+		if(IsValid(EndlessBetrayalPlayerController))
+		{
+			EndlessBetrayalPlayerState = GetPlayerState<AEndlessBetrayalPlayerState>();
+			if(IsValid(EndlessBetrayalPlayerState))
+			{
+				EndlessBetrayalPlayerState->AddToScore(0.0f);
+			}
+		}
+	}
+	
+}
+
 void AEndlessBetrayalCharacter::BeginPlay()
 {
 	Super::BeginPlay();
@@ -103,6 +122,7 @@ void AEndlessBetrayalCharacter::Tick(float DeltaTime)
 		CalculateAO_Pitch();
 	}
 	HideCameraWhenCharacterClose();
+	PollInitialize();
 }
 
 void AEndlessBetrayalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

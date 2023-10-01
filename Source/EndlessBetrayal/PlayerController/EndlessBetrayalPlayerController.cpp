@@ -13,7 +13,7 @@ void AEndlessBetrayalPlayerController::UpdateHealthHUD(float NewHealth, float Ma
 {
 	if(!IsValid(EndlessBetrayalHUD))
 	{
-		Cast<AEndlessBetrayalHUD>(GetHUD());
+		EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD());
 	}
 
 	const bool bIsHUDVariableFullyValid = IsValid(EndlessBetrayalHUD) && EndlessBetrayalHUD->CharacterOverlay && EndlessBetrayalHUD->CharacterOverlay->HealthBar && EndlessBetrayalHUD->CharacterOverlay->HealthText;
@@ -24,6 +24,21 @@ void AEndlessBetrayalPlayerController::UpdateHealthHUD(float NewHealth, float Ma
 
 		FString HealthText = FString::Printf(TEXT("%d/%d"), FMath::CeilToInt(NewHealth), FMath::CeilToInt(MaxHealth));
 		EndlessBetrayalHUD->CharacterOverlay->HealthText->SetText(FText::FromString(HealthText));
+	}
+}
+
+void AEndlessBetrayalPlayerController::UpdateScoreHUD(float NewScore)
+{
+	if(!IsValid(EndlessBetrayalHUD))
+	{
+		EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD());
+	}
+
+	const bool bIsHUDVariableFullyValid = IsValid(EndlessBetrayalHUD) && EndlessBetrayalHUD->CharacterOverlay && EndlessBetrayalHUD->CharacterOverlay->HealthBar && EndlessBetrayalHUD->CharacterOverlay->ScoreValue;
+	if(bIsHUDVariableFullyValid)
+	{
+		FString ScoreText = FString::Printf(TEXT("%d"), FMath::FloorToInt(NewScore));
+		EndlessBetrayalHUD->CharacterOverlay->ScoreValue->SetText(FText::FromString(ScoreText));
 	}
 }
 

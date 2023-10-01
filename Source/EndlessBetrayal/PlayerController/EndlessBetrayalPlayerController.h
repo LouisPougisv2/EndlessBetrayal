@@ -17,6 +17,7 @@ class ENDLESSBETRAYAL_API AEndlessBetrayalPlayerController : public APlayerContr
 public:
 
 	void UpdateHealthHUD(float NewHealth, float MaxHealth);
+	void UpdateScoreHUD(float NewScore);
 	void OnPossess(APawn* InPawn) override;
 protected:
 
