@@ -11,6 +11,14 @@
 #include "EndlessBetrayal/EndlessBetrayalComponents/CombatComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "EndlessBetrayal/EndlessBetrayal.h"
+#include "EndlessBetrayal/GameMode/EndlessBetrayalGameMode.h"
+#include "EndlessBetrayal/GameState/EndlessBetrayalPlayerState.h"
+#include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
+#include "GameFramework/PlayerState.h"
+#include "Kismet/GameplayStatics.h"
+#include "Particles/ParticleSystemComponent.h"
+#include "Sound/SoundCue.h"
 
 
 AEndlessBetrayalCharacter::AEndlessBetrayalCharacter()
@@ -35,9 +43,13 @@ AEndlessBetrayalCharacter::AEndlessBetrayalCharacter()
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	CombatComponent->SetIsReplicated(true);
 
+	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("DissolveTimelineComponent"));
+
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+	GetMesh()->SetCollisionObjectType(ECC_SkeletalMesh);
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 0.0f, 850.0f);
 
 	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
@@ -51,19 +63,69 @@ void AEndlessBetrayalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePrope
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME_CONDITION(AEndlessBetrayalCharacter, OverlappingWeapon, COND_OwnerOnly);
+	DOREPLIFETIME(AEndlessBetrayalCharacter, Health);
+}
+
+void AEndlessBetrayalCharacter::UpdateHealthHUD()
+{
+	EndlessBetrayalPlayerController = !IsValid(EndlessBetrayalPlayerController) ? Cast<AEndlessBetrayalPlayerController>(Controller) : EndlessBetrayalPlayerController;
+	if(IsValid(EndlessBetrayalPlayerController))
+	{
+		EndlessBetrayalPlayerController->UpdateHealthHUD(Health, MaxHealth);
+	}
+}
+
+void AEndlessBetrayalCharacter::PollInitialize()
+{
+	if(!EndlessBetrayalPlayerState)
+	{
+		EndlessBetrayalPlayerController = !IsValid(EndlessBetrayalPlayerController) ? Cast<AEndlessBetrayalPlayerController>(Controller) : EndlessBetrayalPlayerController;
+		if(IsValid(EndlessBetrayalPlayerController))
+		{
+			EndlessBetrayalPlayerState = GetPlayerState<AEndlessBetrayalPlayerState>();
+			if(IsValid(EndlessBetrayalPlayerState))
+			{
+				EndlessBetrayalPlayerState->AddToScore(0.0f);
+				EndlessBetrayalPlayerState->AddToKills(0);
+			}
+
+			EndlessBetrayalPlayerController->HideMessagesOnScreenHUD();
+		}
+	}
+	
 }
 
 void AEndlessBetrayalCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	UpdateHealthHUD();
+
+	if(HasAuthority())
+	{
+		OnTakeAnyDamage.AddUniqueDynamic(this, &AEndlessBetrayalCharacter::ReceiveDamage);
+	}
 }
 
 void AEndlessBetrayalCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	AimOffset(DeltaTime);
+	if(GetLocalRole() > ROLE_SimulatedProxy && IsLocallyControlled())
+	{
+		AimOffset(DeltaTime);
+	}
+	else
+	{
+		TimeSinceLastMovementReplication += DeltaTime;
+		if(TimeSinceLastMovementReplication > 0.25f)
+		{
+			OnRep_ReplicatedMovement();
+		}
+		CalculateAO_Pitch();
+	}
+	HideCameraWhenCharacterClose();
+	PollInitialize();
 }
 
 void AEndlessBetrayalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -94,6 +156,24 @@ void AEndlessBetrayalCharacter::PostInitializeComponents()
 	}
 }
 
+void AEndlessBetrayalCharacter::OnRep_ReplicatedMovement()
+{
+	Super::OnRep_ReplicatedMovement();
+
+	SimProxiesTurn();
+	
+	TimeSinceLastMovementReplication = 0.0f;
+}
+
+void AEndlessBetrayalCharacter::Destroyed()
+{
+	if(EliminationBotComponent)
+	{
+		EliminationBotComponent->DestroyComponent();
+	}
+	Super::Destroyed();
+}
+
 void AEndlessBetrayalCharacter::PlayFireMontage(bool bIsAiming)
 {
 	if(!IsValid(CombatComponent) || !IsValid(CombatComponent->EquippedWeapon)) return;
@@ -107,8 +187,112 @@ void AEndlessBetrayalCharacter::PlayFireMontage(bool bIsAiming)
 		FName SectionName;
 		SectionName = bIsAiming ? FName("FireAim") : FName("FireHip");
 		
-		//Why not use -> AnimInstance->Montage_JumpToSection(SectionName, FireWeaponMontage);
 		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+
+void AEndlessBetrayalCharacter::PlayEliminatedMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if(IsValid(AnimInstance) && IsValid(EliminationMontage))
+	{
+		AnimInstance->Montage_Play(EliminationMontage);
+	}
+}
+
+void AEndlessBetrayalCharacter::OnPlayerEliminated()
+{
+	if(IsValid(CombatComponent) && IsValid(CombatComponent->EquippedWeapon))
+	{
+		CombatComponent->EquippedWeapon->OnWeaponDropped();
+	}
+	MulticastOnPlayerEliminated();
+	GetWorldTimerManager().SetTimer(OnPlayerEliminatedTimer, this, &AEndlessBetrayalCharacter::OnPlayerEliminatedCallBack, OnPlayerEliminatedDelayTime);
+}
+
+void AEndlessBetrayalCharacter::MulticastOnPlayerEliminated_Implementation()
+{
+	bIsEliminated = true;
+	PlayEliminatedMontage();
+
+	//Star player's mesh dissolve effect
+	if(IsValid(DissolveMaterialInstance))
+	{
+		DynamicDissolveMaterialInstance = UMaterialInstanceDynamic::Create(DissolveMaterialInstance, this);
+		GetMesh()->SetMaterial(0, DynamicDissolveMaterialInstance);
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Dissolve"), 0.55f);
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Glow"), 100.0f);
+		StartDissolve();
+	}
+
+	//Disable movement
+	GetCharacterMovement()->DisableMovement(); //Stop movement with WASD
+	GetCharacterMovement()->StopMovementImmediately(); //Prevents us from rotating the character
+
+	if(IsValid(EndlessBetrayalPlayerController))
+	{
+		DisableInput(EndlessBetrayalPlayerController); //To prevent from firing
+	}
+
+	//Disable Collision
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	//Spawn EliminationBot
+	if(EliminationBotEffect && EliminationBotSound)
+	{
+		const FVector EliminationBotPoint(GetActorLocation().X, GetActorLocation().Y, GetActorLocation().Z + 200.0f);
+		EliminationBotComponent = UGameplayStatics::SpawnEmitterAtLocation(this, EliminationBotEffect, EliminationBotPoint, GetActorRotation());
+
+		UGameplayStatics::PlaySoundAtLocation(this, EliminationBotSound, EliminationBotPoint);
+	}
+}
+
+void AEndlessBetrayalCharacter::OnPlayerEliminatedCallBack()
+{
+	//Respawn
+	AEndlessBetrayalGameMode* EndlessBetrayalGameMode = GetWorld()->GetAuthGameMode<AEndlessBetrayalGameMode>();
+	if(IsValid(EndlessBetrayalGameMode))
+	{
+		EndlessBetrayalGameMode->RequestRespawn(this, EndlessBetrayalPlayerController );
+	}
+}
+
+void AEndlessBetrayalCharacter::PlayHitReactMontage()
+{
+	if(!IsValid(CombatComponent) || !IsValid(CombatComponent->EquippedWeapon)) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if(IsValid(AnimInstance) && IsValid(HitReactionMontage))
+	{
+		AnimInstance->Montage_Play(HitReactionMontage);
+
+		//TODO : Modify to select Section name based on where the player is shot
+		FName SectionName("FromFront");
+		
+		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+
+void AEndlessBetrayalCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
+{
+	Health = FMath::Clamp(Health - Damage, 0.0f, MaxHealth);
+	UpdateHealthHUD();
+	PlayHitReactMontage();
+
+	if(Health > 0.0f) return;
+
+	AEndlessBetrayalGameMode* EndlessBetrayalGameMode = GetWorld()->GetAuthGameMode<AEndlessBetrayalGameMode>();
+	if(IsValid(EndlessBetrayalGameMode))
+	{
+		EndlessBetrayalPlayerController = !IsValid(EndlessBetrayalPlayerController) ? Cast<AEndlessBetrayalPlayerController>(Controller) : EndlessBetrayalPlayerController;
+		AEndlessBetrayalPlayerController* AttackerController = Cast<AEndlessBetrayalPlayerController>(InstigatedBy);
+		if(IsValid(EndlessBetrayalPlayerController) && IsValid(AttackerController))
+		{
+			EndlessBetrayalGameMode->OnPlayerEliminated(this, EndlessBetrayalPlayerController, AttackerController);
+		}
 	}
 }
 
@@ -181,6 +365,18 @@ void AEndlessBetrayalCharacter::AimButtonReleased()
 	}
 }
 
+void AEndlessBetrayalCharacter::CalculateAO_Pitch()
+{
+	AO_Pitch = GetBaseAimRotation().Pitch;
+	if (AO_Pitch > 90.0f && !IsLocallyControlled())
+	{
+		//Mapping pitch from the range 270-360 to the range -90 - 0
+		FVector2D InRange(270.0f, 360.0);
+		FVector2D OutRange(-90.0f, 0.0f);
+		AO_Pitch = FMath::GetMappedRangeValueClamped(InRange, OutRange, AO_Pitch);
+	}
+}
+
 void AEndlessBetrayalCharacter::AimOffset(float DeltaTime)
 {
 	if (CombatComponent && CombatComponent->EquippedWeapon == nullptr) return;
@@ -201,7 +397,7 @@ void AEndlessBetrayalCharacter::AimOffset(float DeltaTime)
 			InterpAOYaw = AO_Yaw;
 		}
 		bUseControllerRotationYaw = true;
-
+		bShouldRotateRootBone = true;
 		TurnInPlace(DeltaTime);
 	}
 	if (Speed > 0.0f || bIsInAir)	//Running or jumping
@@ -210,16 +406,50 @@ void AEndlessBetrayalCharacter::AimOffset(float DeltaTime)
 		AO_Yaw = 0.0f;
 		bUseControllerRotationYaw = true;
 		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+		bShouldRotateRootBone = false;
 	}
 
-	AO_Pitch = GetBaseAimRotation().Pitch;
-	if (AO_Pitch > 90.0f && !IsLocallyControlled())
+	CalculateAO_Pitch();
+}
+
+void AEndlessBetrayalCharacter::SimProxiesTurn()
+{
+	if(!IsValid(CombatComponent) || !IsValid(CombatComponent->EquippedWeapon)) return;
+
+	FVector Velocity = GetVelocity();
+	Velocity.Z = 0.0f;
+	float Speed = Velocity.Size();
+
+	bShouldRotateRootBone = false;
+	if(Speed > 0.0f)
 	{
-		//Mapping pitch from the range 270-360 to the range -90 - 0
-		FVector2D InRange(270.0f, 360.0);
-		FVector2D OutRange(-90.0f, 0.0f);
-		AO_Pitch = FMath::GetMappedRangeValueClamped(InRange, OutRange, AO_Pitch);
+		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+		return;
 	}
+
+	CalculateAO_Pitch();
+	ProxyRotationLastFrame = ProxyRotation;
+	ProxyRotation = GetActorRotation();
+	ProxyYaw = UKismetMathLibrary::NormalizedDeltaRotator(ProxyRotation, ProxyRotationLastFrame).Yaw;
+	
+	if(FMath::Abs(ProxyYaw) > TurnThreshold)
+	{
+		if(ProxyYaw > TurnThreshold)
+		{
+			TurningInPlace = ETurningInPlace::ETIP_Right;
+		}
+		else if(ProxyYaw < -TurnThreshold)
+		{
+			TurningInPlace = ETurningInPlace::ETIP_Left;
+		}
+		else
+		{
+			TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+		}
+		return;
+	}
+	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+	
 }
 
 void AEndlessBetrayalCharacter::Jump()
@@ -260,6 +490,33 @@ void AEndlessBetrayalCharacter::CrouchButtonPressed()
 	else
 	{
 		Crouch();
+	}
+}
+
+void AEndlessBetrayalCharacter::UpdateDissolveMaterial(float DissolveValue)
+{
+	if(DynamicDissolveMaterialInstance)
+	{
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Dissolve"), DissolveValue);
+	}
+}
+
+void AEndlessBetrayalCharacter::StartDissolve()
+{
+	DissolveTrack.BindDynamic(this, &AEndlessBetrayalCharacter::UpdateDissolveMaterial);
+	if(IsValid(DissolveCurve) && IsValid(DissolveTimeline))
+	{
+		DissolveTimeline->AddInterpFloat(DissolveCurve, DissolveTrack);
+		DissolveTimeline->Play();
+	}
+}
+
+void AEndlessBetrayalCharacter::OnRep_Health()
+{
+	UpdateHealthHUD();
+	if(!bIsEliminated)
+	{
+		PlayHitReactMontage();
 	}
 }
 
@@ -313,6 +570,19 @@ void AEndlessBetrayalCharacter::TurnInPlace(float DeltaTime)
 			TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 			StartingAimRotation = FRotator(0.0f, GetBaseAimRotation().Yaw, 0.0f);
 		}
+	}
+}
+
+void AEndlessBetrayalCharacter::HideCameraWhenCharacterClose()
+{
+	if(!IsLocallyControlled()) return;
+
+	const bool bShouldBeVisible = IsValid(FollowCamera) && (FollowCamera->GetComponentLocation() - GetActorLocation()).Size() < CameraThreshold;
+
+	GetMesh()->SetVisibility(!bShouldBeVisible);
+	if(IsValid(CombatComponent) && IsValid(CombatComponent->EquippedWeapon) && IsValid(CombatComponent->EquippedWeapon->GetWeaponMesh()))
+	{
+		CombatComponent->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = bShouldBeVisible;
 	}
 }
 

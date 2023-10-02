@@ -11,9 +11,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "DrawDebugHelpers.h"
 #include "Camera/CameraComponent.h"
-#include "EndlessBetrayal/HUD/EndlessBetrayalHUD.h"
 #include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
-
 
 UCombatComponent::UCombatComponent()
 {
@@ -85,27 +83,6 @@ void UCombatComponent::ServerSetAiming_Implementation(bool bAiming)
 	}
 }
 
-void UCombatComponent::OnRep_EquippedWeapon()
-{
-	if (EquippedWeapon && Character)
-	{
-		Character->GetCharacterMovement()->bOrientRotationToMovement = false;
-		Character->bUseControllerRotationYaw = true;
-	}
-}
-
-void UCombatComponent::FireButtonPressed(bool bPressed)
-{
-	bIsFireButtonPressed = bPressed;
-
-	if(bIsFireButtonPressed)
-	{
-		FHitResult HitResult;
-		TraceUnderCrosshair(HitResult);
-		ServerFire(HitResult.ImpactPoint);
-	}
-}
-
 void UCombatComponent::TraceUnderCrosshair(FHitResult& HitResult)
 {
 	FVector2D ViewPortSize;
@@ -126,9 +103,30 @@ void UCombatComponent::TraceUnderCrosshair(FHitResult& HitResult)
 	if(bIsDeprojectScreenToWorldSuccessful)
 	{
 		FVector Start = CrosshairWorldPosition;
+
+		if(IsValid(Character))
+		{
+			float DistanceToCharacter = (Character->GetActorLocation() - Start).Size();
+			Start += CrosshairWorldDirection * (DistanceToCharacter + 100.0f);
+		}
+		
 		FVector End = Start + CrosshairWorldDirection * TRACE_LENGTH;
 
 		GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECC_Visibility);
+
+		//Check if we've hit an actor and if the hit actor has the UInteractWithCrosshairInterface implemented
+		if(IsValid(HitResult.GetActor()) && HitResult.GetActor()->Implements<UInteractWithCrosshairInterface>())
+		{
+			const bool bIsHitResultLocallyControlled = Cast<AEndlessBetrayalCharacter>(HitResult.GetActor())->IsLocallyControlled();
+			if(!bIsHitResultLocallyControlled)
+			{
+				HUDTexture.CrosshairColor = FLinearColor::Red;
+			}
+		}
+		else
+		{
+			HUDTexture.CrosshairColor = FLinearColor::White;
+		}
 	}
 }
 
@@ -142,14 +140,13 @@ void UCombatComponent::SetHUDCrosshair(float DeltaTime)
 		if(!IsValid(HUD)) HUD = Cast<AEndlessBetrayalHUD>(PlayerController->GetHUD());
 		if(IsValid(HUD))
 		{
-			FHUDTextures TempHUDTexture;
 			if(IsValid(EquippedWeapon))
 			{
-				TempHUDTexture.CrosshairCenter = EquippedWeapon->GetCrosshairCenter();
-				TempHUDTexture.CrosshairTop = EquippedWeapon->GetCrosshairTop();
-				TempHUDTexture.CrosshairRight = EquippedWeapon->GetCrosshairRight();
-				TempHUDTexture.CrosshairBottom = EquippedWeapon->GetCrosshairBottom();
-				TempHUDTexture.CrosshairLeft = EquippedWeapon->GetCrosshairLeft();
+				HUDTexture.CrosshairCenter = EquippedWeapon->GetCrosshairCenter();
+				HUDTexture.CrosshairTop = EquippedWeapon->GetCrosshairTop();
+				HUDTexture.CrosshairRight = EquippedWeapon->GetCrosshairRight();
+				HUDTexture.CrosshairBottom = EquippedWeapon->GetCrosshairBottom();
+				HUDTexture.CrosshairLeft = EquippedWeapon->GetCrosshairLeft();
 			}
 			//Calculate the Crosshair spread
 			const FVector2d WalkSpeedRange (0.0f, Character->GetCharacterMovement()->MaxWalkSpeed);
@@ -167,10 +164,25 @@ void UCombatComponent::SetHUDCrosshair(float DeltaTime)
 			{
 				CrosshairInAirFactor = FMath::FInterpTo(CrosshairInAirFactor, 0.0f, DeltaTime, 10.0f);
 			}
+
+			if(IsValid(EquippedWeapon))
+			{
+				if(bIsAiming)
+				{
+					CrosshairAimingFactor = FMath::FInterpTo(CrosshairAimingFactor, 0.6f, DeltaTime, EquippedWeapon->GetZoomInterSpeed());
+				}
+				else
+				{
+					CrosshairAimingFactor = FMath::FInterpTo(CrosshairAimingFactor, 0.0f, DeltaTime, EquippedWeapon->GetZoomInterSpeed());
+				}
+			}
+
+			//We want the Crosshair shooting factor to always interp to 0 after shooting, hence the following line
+			CrosshairShootingFactor = FMath::FInterpTo(CrosshairShootingFactor, 0.0f, DeltaTime, 5.0f);
 			
-			TempHUDTexture.CrosshairSpreadFactor = CrosshairVelocityFactor + CrosshairInAirFactor;
+			HUDTexture.CrosshairSpreadFactor = 0.25 + CrosshairVelocityFactor + CrosshairInAirFactor - CrosshairAimingFactor + CrosshairShootingFactor;
 			
-			HUD->SetHUDTexture(TempHUDTexture);
+			HUD->SetHUDTexture(HUDTexture);
 		}
 		
 	}
@@ -196,6 +208,46 @@ void UCombatComponent::ZoomInterpFOV(float DeltaTime)
 		Character->GetFollowCamera()->SetFieldOfView(CurrentFOV);
 	}
 	
+}
+
+void UCombatComponent::FireButtonPressed(bool bPressed)
+{
+	bIsFireButtonPressed = bPressed;
+
+	if(bIsFireButtonPressed)
+	{
+		Fire();
+	}
+}
+
+void UCombatComponent::Fire()
+{
+	if(IsValid(EquippedWeapon) && bCanFire)
+	{
+		bCanFire = false;
+		ServerFire(HitTarget);
+
+		if(IsValid(EquippedWeapon))
+		{
+			CrosshairShootingFactor += EquippedWeapon->GetCrosshairShootingFactor();
+		}
+		StartFireTimer();
+	}
+}
+
+void UCombatComponent::StartFireTimer()
+{
+	if(!IsValid(EquippedWeapon) || !IsValid(Character)) return;
+	Character->GetWorldTimerManager().SetTimer(FireTimerHandle, this, &UCombatComponent::FireTimerFinished, EquippedWeapon->FireDelay);
+}
+
+void UCombatComponent::FireTimerFinished()
+{
+	bCanFire = true;
+	if(EquippedWeapon->bIsWeaponAutomatic && bIsFireButtonPressed)
+	{
+		Fire();
+	}
 }
 
 void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
@@ -233,4 +285,20 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 	Character->bUseControllerRotationYaw = true;
+}
+
+void UCombatComponent::OnRep_EquippedWeapon()
+{
+	if (EquippedWeapon && Character)
+	{
+		EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
+		const USkeletalMeshSocket* HandSocket = Character->GetMesh()->GetSocketByName(FName("RightHandSocket"));
+		if (HandSocket)
+		{
+			HandSocket->AttachActor(EquippedWeapon, Character->GetMesh());
+		}
+		
+		Character->GetCharacterMovement()->bOrientRotationToMovement = false;
+		Character->bUseControllerRotationYaw = true;
+	}
 }

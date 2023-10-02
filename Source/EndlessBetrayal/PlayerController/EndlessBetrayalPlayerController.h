@@ -13,5 +13,20 @@ UCLASS()
 class ENDLESSBETRAYAL_API AEndlessBetrayalPlayerController : public APlayerController
 {
 	GENERATED_BODY()
+
+public:
+
+	void UpdateHealthHUD(float NewHealth, float MaxHealth);
+	void UpdateScoreHUD(float NewScore);
+	void UpdateDeathsHUD(int32 NewDeath);
+	void HideMessagesOnScreenHUD();
+	void OnPossess(APawn* InPawn) override;
+protected:
+
+	virtual void BeginPlay() override;
+	
+private:
+
+	class AEndlessBetrayalHUD* EndlessBetrayalHUD;
 	
 };

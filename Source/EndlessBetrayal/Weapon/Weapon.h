@@ -29,6 +29,13 @@ public:
 
 	void ShowPickupWidget(bool bShowWidget);
 	virtual void Fire(const FVector& HitTarget);
+	virtual void OnWeaponDropped();
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	bool bIsWeaponAutomatic = true;
+	
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float FireDelay = 0.15f;
 
 protected:
 	virtual void BeginPlay() override;
@@ -86,6 +93,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Zoom")
 	float ZoomInterpSpeed = 20.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Zoom")
+	float CrosshairShootingFactor = 0.75f;
 	
 	
 public:	
@@ -101,4 +111,5 @@ public:
 
 	FORCEINLINE float GetZoomedFOV() { return ZoomedFOV; }
 	FORCEINLINE float GetZoomInterSpeed() const { return ZoomInterpSpeed; }
+	FORCEINLINE float GetCrosshairShootingFactor() const { return CrosshairShootingFactor; }
 };

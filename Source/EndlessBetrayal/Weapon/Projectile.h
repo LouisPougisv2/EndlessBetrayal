@@ -24,6 +24,8 @@ protected:
 	UFUNCTION()
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
+	FORCEINLINE float GetDamage() const { return Damage; }
+
 	
 private:
 
@@ -44,5 +46,8 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	class USoundCue* ImpactSound;
+
+	UPROPERTY(EditAnywhere)
+	float Damage = 15.0f;
 
 };

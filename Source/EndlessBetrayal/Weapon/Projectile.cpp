@@ -3,10 +3,12 @@
 
 #include "Projectile.h"
 #include "Components/BoxComponent.h"
+#include "EndlessBetrayal/Character/EndlessBetrayalCharacter.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Sound/SoundCue.h"
+#include "EndlessBetrayal/EndlessBetrayal.h"
 
 
 AProjectile::AProjectile()
@@ -21,6 +23,7 @@ AProjectile::AProjectile()
 	CollisionBox->SetCollisionResponseToAllChannels(ECR_Ignore);
 	CollisionBox->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	CollisionBox->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
+	CollisionBox->SetCollisionResponseToChannel(ECC_SkeletalMesh, ECR_Block);
 
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
 	//Following line makes sure that the bullet will keep its rotation aligned with the velocity
@@ -44,8 +47,6 @@ void AProjectile::BeginPlay()
 
 void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	//TODO : Handle Damage / Health effect here
-
 	Destroy();
 }
 
