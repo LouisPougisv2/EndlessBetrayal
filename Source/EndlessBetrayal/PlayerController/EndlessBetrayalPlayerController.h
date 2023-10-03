@@ -20,6 +20,13 @@ public:
 	void UpdateScoreHUD(float NewScore);
 	void UpdateDeathsHUD(int32 NewDeath);
 	void HideMessagesOnScreenHUD();
+
+	/**
+	 * Ammo
+	 */
+	void UpdateWeaponAmmo(int32 NewAmmo);
+
+	
 	void OnPossess(APawn* InPawn) override;
 protected:
 

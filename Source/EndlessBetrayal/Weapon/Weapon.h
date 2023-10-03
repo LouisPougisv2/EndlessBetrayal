@@ -26,9 +26,11 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void OnRep_Owner() override;
 
 	void ShowPickupWidget(bool bShowWidget);
 	virtual void Fire(const FVector& HitTarget);
+	void UpdateHUDAmmo();
 	virtual void OnWeaponDropped();
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
@@ -57,8 +59,25 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_WeaponState, VisibleAnywhere, Category = "Weapon Properties")
 	EWeaponState WeaponState;
 
+	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_Ammo)
+	int32 AmmoAmount;
+
+	UPROPERTY(EditAnywhere)
+	int32 MagCapacity;
+
+	UPROPERTY()
+	class AEndlessBetrayalCharacter* WeaponOwnerCharacter;
+
+	UPROPERTY()
+	class AEndlessBetrayalPlayerController* WeaponOwnerController;
+
 	UFUNCTION()
 	void OnRep_WeaponState();
+	
+	void SpendRound();
+
+	UFUNCTION()
+	void OnRep_Ammo();
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	class UWidgetComponent* PickupWidget;

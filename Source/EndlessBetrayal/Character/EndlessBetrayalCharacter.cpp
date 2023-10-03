@@ -213,6 +213,11 @@ void AEndlessBetrayalCharacter::OnPlayerEliminated()
 
 void AEndlessBetrayalCharacter::MulticastOnPlayerEliminated_Implementation()
 {
+	if(IsValid(EndlessBetrayalPlayerController))
+	{
+		EndlessBetrayalPlayerController->UpdateWeaponAmmo(0);
+	}
+	
 	bIsEliminated = true;
 	PlayEliminatedMontage();
 
