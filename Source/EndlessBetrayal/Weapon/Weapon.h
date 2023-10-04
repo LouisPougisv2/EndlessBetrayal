@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "WeaponTypes.h"
 #include "GameFramework/Actor.h"
 #include "Weapon.generated.h"
 
@@ -71,6 +72,9 @@ private:
 	UPROPERTY()
 	class AEndlessBetrayalPlayerController* WeaponOwnerController;
 
+	UPROPERTY(EditAnywhere)
+	EWeaponType WeaponType;
+
 	UFUNCTION()
 	void OnRep_WeaponState();
 	
@@ -128,8 +132,9 @@ public:
 	FORCEINLINE UTexture2D* GetCrosshairLeft() const { return CrosshairLeft; }
 	FORCEINLINE UTexture2D* GetCrosshairRight() const { return CrosshairRight; }
 
-	FORCEINLINE float GetZoomedFOV() { return ZoomedFOV; }
+	FORCEINLINE float GetZoomedFOV() const { return ZoomedFOV; }
 	FORCEINLINE float GetZoomInterSpeed() const { return ZoomInterpSpeed; }
 	FORCEINLINE float GetCrosshairShootingFactor() const { return CrosshairShootingFactor; }
 	FORCEINLINE bool IsEmpty() const { return AmmoAmount <= 0; }
+	FORCEINLINE EWeaponType GetWeaponType() const { return WeaponType; }
 };

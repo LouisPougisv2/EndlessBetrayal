@@ -36,4 +36,7 @@ public:
 	
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Player Stats")
 	UTextBlock* WeaponAmmoAmount;
+
+	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Player Stats")
+	UTextBlock* CarriedAmmoAmount;
 };

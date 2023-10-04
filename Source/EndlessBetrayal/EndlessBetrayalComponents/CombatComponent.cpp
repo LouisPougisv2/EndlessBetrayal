@@ -34,6 +34,10 @@ void UCombatComponent::BeginPlay()
 			DefaultFOV =  Character->GetFollowCamera()->FieldOfView;
 			CurrentFOV = DefaultFOV;
 		}
+		if(Character->HasAuthority())
+		{
+			InitializeCarriedAmmo();
+		}
 	}
 }
 
@@ -43,6 +47,8 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	DOREPLIFETIME(UCombatComponent, EquippedWeapon);
 	DOREPLIFETIME(UCombatComponent, bIsAiming);
+	//CarriedAmmo will only replicate to the Owning client
+	DOREPLIFETIME_CONDITION(UCombatComponent, CarriedAmmo, COND_OwnerOnly);
 }
 
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -256,6 +262,20 @@ bool UCombatComponent::CanFire()
 	return (bCanFire && !EquippedWeapon->IsEmpty());
 }
 
+void UCombatComponent::OnRep_CarriedAmmo()
+{
+	PlayerController = PlayerController == nullptr ? Cast<AEndlessBetrayalPlayerController>(Character->Controller) : PlayerController;
+	if(IsValid(PlayerController))
+	{
+		PlayerController->UpdateWeaponCarriedAmmo(CarriedAmmo);
+	}
+}
+
+void UCombatComponent::InitializeCarriedAmmo()
+{
+	CarriedAmmoMap.Emplace(EWeaponType::EWT_AssaultRifle, StartingARAmmoAmount);
+}
+
 void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
 {
 	//Runs on Server and all clients when call from the server
@@ -294,6 +314,18 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 	EquippedWeapon->SetOwner(Character);
 	EquippedWeapon->UpdateHUDAmmo();
+
+	if(CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))
+	{
+		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
+	}
+
+	PlayerController = PlayerController == nullptr ? Cast<AEndlessBetrayalPlayerController>(Character->Controller) : PlayerController;
+	if(IsValid(PlayerController))
+	{
+		PlayerController->UpdateWeaponCarriedAmmo(CarriedAmmo);
+	}
+	
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 	Character->bUseControllerRotationYaw = true;
 }

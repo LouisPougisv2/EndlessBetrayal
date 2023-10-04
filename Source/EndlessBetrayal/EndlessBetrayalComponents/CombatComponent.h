@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "EndlessBetrayal/HUD/EndlessBetrayalHUD.h"
+#include "EndlessBetrayal/Weapon/WeaponTypes.h"
 #include "CombatComponent.generated.h"
 
 #define TRACE_LENGTH 80000.0f
@@ -119,4 +120,20 @@ private:
 	void StartFireTimer();
 	void FireTimerFinished();
 	bool CanFire();
+
+	//Carried Ammo for the Currently equipped weapon
+	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_CarriedAmmo)
+	int32 CarriedAmmo;
+
+	UFUNCTION()
+	void OnRep_CarriedAmmo();
+
+	UPROPERTY()
+	TMap<EWeaponType, int32> CarriedAmmoMap;
+
+	UPROPERTY(EditAnywhere)
+	int32 StartingARAmmoAmount = 45;
+	
+	UFUNCTION()
+	void InitializeCarriedAmmo();
 };

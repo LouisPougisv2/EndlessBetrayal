@@ -92,6 +92,21 @@ void AEndlessBetrayalPlayerController::UpdateWeaponAmmo(int32 NewAmmo)
 	}
 }
 
+void AEndlessBetrayalPlayerController::UpdateWeaponCarriedAmmo(int32 NewAmmo)
+{
+	if(!IsValid(EndlessBetrayalHUD))
+	{
+		EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD());
+	}
+
+	const bool bIsHUDVariableFullyValid = IsValid(EndlessBetrayalHUD) && EndlessBetrayalHUD->CharacterOverlay && EndlessBetrayalHUD->CharacterOverlay->HealthBar && EndlessBetrayalHUD->CharacterOverlay->CarriedAmmoAmount;
+	if(bIsHUDVariableFullyValid)
+	{
+		FString CarriedAmmoText = FString::Printf(TEXT("%d"), NewAmmo);
+		EndlessBetrayalHUD->CharacterOverlay->CarriedAmmoAmount->SetText(FText::FromString(CarriedAmmoText));
+	}
+}
+
 void AEndlessBetrayalPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
