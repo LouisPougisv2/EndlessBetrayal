@@ -164,7 +164,7 @@ void AWeapon::UpdateHUDAmmo()
 
 void AWeapon::SpendRound()
 {
-	--AmmoAmount;
+	AmmoAmount = FMath::Clamp(--AmmoAmount, 0, MagCapacity);
 	UpdateHUDAmmo();
 }
 

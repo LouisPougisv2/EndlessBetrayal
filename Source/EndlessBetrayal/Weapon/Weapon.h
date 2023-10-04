@@ -131,4 +131,5 @@ public:
 	FORCEINLINE float GetZoomedFOV() { return ZoomedFOV; }
 	FORCEINLINE float GetZoomInterSpeed() const { return ZoomInterpSpeed; }
 	FORCEINLINE float GetCrosshairShootingFactor() const { return CrosshairShootingFactor; }
+	FORCEINLINE bool IsEmpty() const { return AmmoAmount <= 0; }
 };
