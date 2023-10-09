@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/TimelineComponent.h"
+#include "EndlessBetrayal/EndlessBetrayalTypes/CombatState.h"
 #include "GameFramework/Character.h"
 #include "EndlessBetrayal/EndlessBetrayalTypes/TurningInPlace.h"
 #include "EndlessBetrayal/Interface/InteractWithCrosshairInterface.h"
@@ -23,6 +24,7 @@ public:
 	virtual void OnRep_ReplicatedMovement() override;
 	virtual void Destroyed() override;
 	void PlayFireMontage(bool bIsAiming);
+	void PlayReloadMontage();
 	void PlayEliminatedMontage();
 
 	//Reserved for functionalities that'll happen only on the server
@@ -40,6 +42,7 @@ protected:
 	void LookUp(float Value);
 	void EquipButtonPressed();
 	void CrouchButtonPressed();
+	void ReloadButtonPressed();
 	void AimButtonPressed();
 	void AimButtonReleased();
 	void CalculateAO_Pitch();
@@ -74,7 +77,7 @@ private:
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);	//Function called automatically when the variable is replicated
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UCombatComponent* CombatComponent;
 
 	UFUNCTION(Server, Reliable)
@@ -84,15 +87,20 @@ private:
 
 	void HideCameraWhenCharacterClose();
 
+	//Animation Montages
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	class UAnimMontage* FireWeaponMontage;
 
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	UAnimMontage* ReloadMontage;
+	
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	UAnimMontage* HitReactionMontage;
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	UAnimMontage* EliminationMontage;
 
+	//End of Animation Montages
 	UPROPERTY(EditAnywhere, Category = "Camera")
 	float CameraThreshold = 200.0f;
 	
@@ -189,6 +197,7 @@ public:
 
 	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; }
 	FORCEINLINE bool IsEliminated() const { return bIsEliminated; }
-
 	FVector GetHitTarget();
+	
+	ECombatState GetCombatState() const;
 };

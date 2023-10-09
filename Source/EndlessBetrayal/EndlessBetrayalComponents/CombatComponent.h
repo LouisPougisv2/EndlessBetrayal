@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "EndlessBetrayal/EndlessBetrayalTypes/CombatState.h"
 #include "EndlessBetrayal/HUD/EndlessBetrayalHUD.h"
 #include "EndlessBetrayal/Weapon/WeaponTypes.h"
 #include "CombatComponent.generated.h"
@@ -23,6 +24,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void EquipWeapon(class AWeapon* WeaponToEquip);
+	void Reload();
 protected:
 
 	virtual void BeginPlay() override;
@@ -42,6 +44,15 @@ protected:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastFire(const FVector_NetQuantize& TraceHitTarget);
+
+	UFUNCTION(Server, Reliable)
+	void ServerReload();
+
+	UFUNCTION()
+	void HandleReload();
+
+	UFUNCTION(BlueprintCallable)
+	void FinishReloading();
 	
 	void TraceUnderCrosshair(FHitResult& HitResult);
 
@@ -132,8 +143,14 @@ private:
 	TMap<EWeaponType, int32> CarriedAmmoMap;
 
 	UPROPERTY(EditAnywhere)
-	int32 StartingARAmmoAmount = 45;
+	int32 StartingARAmmoAmount = 45	;
 	
 	UFUNCTION()
 	void InitializeCarriedAmmo();
+
+	UPROPERTY(ReplicatedUsing=OnRep_CombatState)
+	ECombatState CombatState = ECombatState::ECS_Unoccupied;
+
+	UFUNCTION()
+	void OnRep_CombatState();
 };
