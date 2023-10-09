@@ -260,7 +260,7 @@ void UCombatComponent::FireTimerFinished()
 bool UCombatComponent::CanFire()
 {
 	if(!IsValid(EquippedWeapon)) return false;
-	return (bCanFire && !EquippedWeapon->IsEmpty());
+	return (bCanFire && !EquippedWeapon->IsEmpty() && CombatState != ECombatState::ECS_Reloading);
 }
 
 void UCombatComponent::OnRep_CarriedAmmo()
@@ -288,7 +288,7 @@ void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& T
 	//TODO : Add Ammo check here when adding Ammo in the future
 	if(!IsValid(EquippedWeapon)) return;
 	
-	if(IsValid(Character))
+	if(IsValid(Character) && CombatState == ECombatState::ECS_Unoccupied)
 	{
 		Character->PlayFireMontage(bIsAiming);
 		EquippedWeapon->Fire(TraceHitTarget);
@@ -359,6 +359,10 @@ void UCombatComponent::FinishReloading()
 	{
 		CombatState = ECombatState::ECS_Unoccupied;
 	}
+	if(bIsFireButtonPressed)
+	{
+		Fire();
+	}
 }
 
 
@@ -369,7 +373,11 @@ void UCombatComponent::OnRep_CombatState()
 		case ECombatState::ECS_Reloading:
 			HandleReload();
 			break;
-			
+		case ECombatState::ECS_Unoccupied:
+			if(bIsFireButtonPressed)
+			{
+				Fire();
+			}
 		default:
 			break;
 	}
