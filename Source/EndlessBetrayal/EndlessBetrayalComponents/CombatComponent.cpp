@@ -195,6 +195,22 @@ void UCombatComponent::SetHUDCrosshair(float DeltaTime)
 	}
 }
 
+int32 UCombatComponent::CalculateAmountToReload()
+{
+	if(!IsValid(EquippedWeapon)) return 0;
+
+	const int32 RoomInMag = EquippedWeapon->GetMagCapacity() - EquippedWeapon->GetAmmo();
+	if(CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))
+	{
+		const int32 AmmoCarried = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
+		const auto LeastAmmo = FMath::Min(RoomInMag, AmmoCarried);
+		return FMath::Clamp(RoomInMag, 0, LeastAmmo);
+	}
+	
+	return 0;
+	
+}
+
 void UCombatComponent::ZoomInterpFOV(float DeltaTime)
 {
 	if(!IsValid(EquippedWeapon)) return;
@@ -277,6 +293,23 @@ void UCombatComponent::InitializeCarriedAmmo()
 	CarriedAmmoMap.Emplace(EWeaponType::EWT_AssaultRifle, StartingARAmmoAmount);
 }
 
+void UCombatComponent::UpdateAmmoValues()
+{
+	const int32 ReloadAmount = CalculateAmountToReload();
+	if(CarriedAmmoMap.Contains(EquippedWeapon->GetWeaponType()))
+	{
+		CarriedAmmoMap[EquippedWeapon->GetWeaponType()] -= ReloadAmount;
+		CarriedAmmo = CarriedAmmoMap[EquippedWeapon->GetWeaponType()];
+	}
+	PlayerController = PlayerController == nullptr ? Cast<AEndlessBetrayalPlayerController>(Character->Controller) : PlayerController;
+	if(IsValid(PlayerController))
+	{
+		PlayerController->UpdateWeaponCarriedAmmo(CarriedAmmo);
+	}
+	
+	EquippedWeapon->UpdateAmmo(ReloadAmount);
+}
+
 void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
 {
 	//Runs on Server and all clients when call from the server
@@ -341,7 +374,7 @@ void UCombatComponent::Reload()
 
 void UCombatComponent::ServerReload_Implementation()
 {
-	if(!IsValid(Character)) return;
+	if(!IsValid(Character) || !IsValid(EquippedWeapon) || (CalculateAmountToReload() == 0) ) return;
 	
 	CombatState = ECombatState::ECS_Reloading;
 	HandleReload();
@@ -358,6 +391,7 @@ void UCombatComponent::FinishReloading()
 	if(Character->HasAuthority())
 	{
 		CombatState = ECombatState::ECS_Unoccupied;
+		UpdateAmmoValues();
 	}
 	if(bIsFireButtonPressed)
 	{

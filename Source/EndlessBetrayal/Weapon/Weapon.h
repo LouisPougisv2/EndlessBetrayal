@@ -33,6 +33,7 @@ public:
 	virtual void Fire(const FVector& HitTarget);
 	void UpdateHUDAmmo();
 	virtual void OnWeaponDropped();
+	void UpdateAmmo(int32 AmmoAmount);
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	bool bIsWeaponAutomatic = true;
@@ -137,4 +138,6 @@ public:
 	FORCEINLINE float GetCrosshairShootingFactor() const { return CrosshairShootingFactor; }
 	FORCEINLINE bool IsEmpty() const { return AmmoAmount <= 0; }
 	FORCEINLINE EWeaponType GetWeaponType() const { return WeaponType; }
+	FORCEINLINE int32 GetAmmo() const { return AmmoAmount; }
+	FORCEINLINE int32 GetMagCapacity() const { return MagCapacity; }
 };

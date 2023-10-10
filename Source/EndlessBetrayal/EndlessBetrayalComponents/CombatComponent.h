@@ -58,6 +58,7 @@ protected:
 
 	void SetHUDCrosshair(float DeltaTime);
 
+	int32 CalculateAmountToReload();
 private:
 
 	UPROPERTY()
@@ -147,6 +148,9 @@ private:
 	
 	UFUNCTION()
 	void InitializeCarriedAmmo();
+
+	UFUNCTION()
+	void UpdateAmmoValues();
 
 	UPROPERTY(ReplicatedUsing=OnRep_CombatState)
 	ECombatState CombatState = ECombatState::ECS_Unoccupied;

@@ -221,3 +221,9 @@ void AWeapon::OnWeaponDropped()
 	WeaponOwnerCharacter = nullptr;
 	WeaponOwnerController = nullptr;
 }
+
+void AWeapon::UpdateAmmo(int32 AmmoAmountToAdd)
+{
+	AmmoAmount = FMath::Clamp(AmmoAmount + AmmoAmountToAdd, 0, MagCapacity);
+	UpdateHUDAmmo();
+}
