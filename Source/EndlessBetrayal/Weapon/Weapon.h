@@ -41,6 +41,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	float FireDelay = 0.15f;
 
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	bool bAllowAutomaticReload = false;
+
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	class USoundCue* OnEquipSoundCue;	
 
@@ -64,10 +67,10 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_WeaponState, VisibleAnywhere, Category = "Weapon Properties")
 	EWeaponState WeaponState;
 
-	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_Ammo)
+	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_Ammo, Category = "Combat")
 	int32 AmmoAmount;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Combat")
 	int32 MagCapacity;
 
 	UPROPERTY()

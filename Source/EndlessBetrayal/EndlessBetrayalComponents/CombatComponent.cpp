@@ -272,6 +272,10 @@ void UCombatComponent::FireTimerFinished()
 	{
 		Fire();
 	}
+	if(EquippedWeapon->bAllowAutomaticReload && EquippedWeapon->IsEmpty())
+	{
+		Reload();
+	}
 }
 
 bool UCombatComponent::CanFire()
@@ -364,6 +368,12 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	if(EquippedWeapon->OnEquipSoundCue)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, EquippedWeapon->OnEquipSoundCue, Character->GetActorLocation());
+	}
+
+	//Automatically reload equipped weapon is empty
+	if(EquippedWeapon->bAllowAutomaticReload && EquippedWeapon->IsEmpty())
+	{
+		Reload();
 	}
 	
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
