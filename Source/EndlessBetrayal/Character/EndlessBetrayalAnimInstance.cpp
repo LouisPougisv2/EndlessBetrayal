@@ -83,4 +83,5 @@ void UEndlessBetrayalAnimInstance::NativeUpdateAnimation(float DeltaTime)
 		}
 
 	}
+	bShouldUseFabrik = EndlessBetrayalCharacter->GetCombatState() != ECombatState::ECS_Reloading;
 }

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "WeaponTypes.h"
 #include "GameFramework/Actor.h"
 #include "Weapon.generated.h"
 
@@ -26,16 +27,25 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void OnRep_Owner() override;
 
 	void ShowPickupWidget(bool bShowWidget);
 	virtual void Fire(const FVector& HitTarget);
+	void UpdateHUDAmmo();
 	virtual void OnWeaponDropped();
+	void UpdateAmmo(int32 AmmoAmount);
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	bool bIsWeaponAutomatic = true;
 	
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	float FireDelay = 0.15f;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	bool bAllowAutomaticReload = false;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	class USoundCue* OnEquipSoundCue;	
 
 protected:
 	virtual void BeginPlay() override;
@@ -57,8 +67,28 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_WeaponState, VisibleAnywhere, Category = "Weapon Properties")
 	EWeaponState WeaponState;
 
+	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_Ammo, Category = "Combat")
+	int32 AmmoAmount;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	int32 MagCapacity;
+
+	UPROPERTY()
+	class AEndlessBetrayalCharacter* WeaponOwnerCharacter;
+
+	UPROPERTY()
+	class AEndlessBetrayalPlayerController* WeaponOwnerController;
+
+	UPROPERTY(EditAnywhere)
+	EWeaponType WeaponType;
+
 	UFUNCTION()
 	void OnRep_WeaponState();
+	
+	void SpendRound();
+
+	UFUNCTION()
+	void OnRep_Ammo();
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	class UWidgetComponent* PickupWidget;
@@ -109,7 +139,11 @@ public:
 	FORCEINLINE UTexture2D* GetCrosshairLeft() const { return CrosshairLeft; }
 	FORCEINLINE UTexture2D* GetCrosshairRight() const { return CrosshairRight; }
 
-	FORCEINLINE float GetZoomedFOV() { return ZoomedFOV; }
+	FORCEINLINE float GetZoomedFOV() const { return ZoomedFOV; }
 	FORCEINLINE float GetZoomInterSpeed() const { return ZoomInterpSpeed; }
 	FORCEINLINE float GetCrosshairShootingFactor() const { return CrosshairShootingFactor; }
+	FORCEINLINE bool IsEmpty() const { return AmmoAmount <= 0; }
+	FORCEINLINE EWeaponType GetWeaponType() const { return WeaponType; }
+	FORCEINLINE int32 GetAmmo() const { return AmmoAmount; }
+	FORCEINLINE int32 GetMagCapacity() const { return MagCapacity; }
 };

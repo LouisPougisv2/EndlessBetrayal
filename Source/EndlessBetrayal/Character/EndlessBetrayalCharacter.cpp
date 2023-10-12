@@ -139,6 +139,7 @@ void AEndlessBetrayalCharacter::SetupPlayerInputComponent(UInputComponent* Playe
 	PlayerInputComponent->BindAction(TEXT("Aim"), EInputEvent::IE_Released, this, &AEndlessBetrayalCharacter::AimButtonReleased);
 	PlayerInputComponent->BindAction(TEXT("Fire"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::FireButtonPressed);
 	PlayerInputComponent->BindAction(TEXT("Fire"), EInputEvent::IE_Released, this, &AEndlessBetrayalCharacter::FireButtonReleased);
+	PlayerInputComponent->BindAction(TEXT("Reload"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::ReloadButtonPressed);
 
 	PlayerInputComponent->BindAxis(TEXT("MoveForward"), this, &AEndlessBetrayalCharacter::MoveForward);
 	PlayerInputComponent->BindAxis(TEXT("MoveRight"), this, &AEndlessBetrayalCharacter::MoveRight);
@@ -191,6 +192,30 @@ void AEndlessBetrayalCharacter::PlayFireMontage(bool bIsAiming)
 	}
 }
 
+void AEndlessBetrayalCharacter::PlayReloadMontage()
+{
+	if(!IsValid(CombatComponent) || !IsValid(CombatComponent->EquippedWeapon)) return;
+
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if(IsValid(AnimInstance) && IsValid(ReloadMontage))
+	{
+		AnimInstance->Montage_Play(ReloadMontage);
+		
+		FName SectionName;
+		
+		switch(CombatComponent->EquippedWeapon->GetWeaponType())
+		{
+		case EWeaponType::EWT_AssaultRifle:
+			SectionName = FName("Rifle");
+			break;
+		
+		}
+		
+		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+
 void AEndlessBetrayalCharacter::PlayEliminatedMontage()
 {
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
@@ -213,6 +238,11 @@ void AEndlessBetrayalCharacter::OnPlayerEliminated()
 
 void AEndlessBetrayalCharacter::MulticastOnPlayerEliminated_Implementation()
 {
+	if(IsValid(EndlessBetrayalPlayerController))
+	{
+		EndlessBetrayalPlayerController->UpdateWeaponAmmo(0);
+	}
+	
 	bIsEliminated = true;
 	PlayEliminatedMontage();
 
@@ -493,6 +523,14 @@ void AEndlessBetrayalCharacter::CrouchButtonPressed()
 	}
 }
 
+void AEndlessBetrayalCharacter::ReloadButtonPressed()
+{
+	if(IsValid(CombatComponent))
+	{
+		CombatComponent->Reload();
+	}
+}
+
 void AEndlessBetrayalCharacter::UpdateDissolveMaterial(float DissolveValue)
 {
 	if(DynamicDissolveMaterialInstance)
@@ -607,4 +645,10 @@ FVector AEndlessBetrayalCharacter::GetHitTarget()
 {
 	if (CombatComponent == nullptr) return FVector();
 	return CombatComponent->HitTarget;
+}
+
+ECombatState AEndlessBetrayalCharacter::GetCombatState() const
+{
+	if(!IsValid(CombatComponent)) return ECombatState::ECS_MAX;
+	return CombatComponent->CombatState;
 }

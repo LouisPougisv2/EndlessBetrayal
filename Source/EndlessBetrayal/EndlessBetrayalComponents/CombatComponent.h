@@ -4,7 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+#include "EndlessBetrayal/EndlessBetrayalTypes/CombatState.h"
 #include "EndlessBetrayal/HUD/EndlessBetrayalHUD.h"
+#include "EndlessBetrayal/Weapon/WeaponTypes.h"
 #include "CombatComponent.generated.h"
 
 #define TRACE_LENGTH 80000.0f
@@ -22,6 +24,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void EquipWeapon(class AWeapon* WeaponToEquip);
+	void Reload();
 protected:
 
 	virtual void BeginPlay() override;
@@ -41,11 +44,21 @@ protected:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastFire(const FVector_NetQuantize& TraceHitTarget);
+
+	UFUNCTION(Server, Reliable)
+	void ServerReload();
+
+	UFUNCTION()
+	void HandleReload();
+
+	UFUNCTION(BlueprintCallable)
+	void FinishReloading();
 	
 	void TraceUnderCrosshair(FHitResult& HitResult);
 
 	void SetHUDCrosshair(float DeltaTime);
 
+	int32 CalculateAmountToReload();
 private:
 
 	UPROPERTY()
@@ -118,4 +131,30 @@ private:
 	bool bCanFire = true;
 	void StartFireTimer();
 	void FireTimerFinished();
+	bool CanFire();
+
+	//Carried Ammo for the Currently equipped weapon
+	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_CarriedAmmo)
+	int32 CarriedAmmo;
+
+	UFUNCTION()
+	void OnRep_CarriedAmmo();
+
+	UPROPERTY()
+	TMap<EWeaponType, int32> CarriedAmmoMap;
+
+	UPROPERTY(EditAnywhere)
+	int32 StartingARAmmoAmount = 45	;
+	
+	UFUNCTION()
+	void InitializeCarriedAmmo();
+
+	UFUNCTION()
+	void UpdateAmmoValues();
+
+	UPROPERTY(ReplicatedUsing=OnRep_CombatState)
+	ECombatState CombatState = ECombatState::ECS_Unoccupied;
+
+	UFUNCTION()
+	void OnRep_CombatState();
 };

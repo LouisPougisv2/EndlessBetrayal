@@ -9,6 +9,7 @@
 #include "EndlessBetrayal/Character/EndlessBetrayalCharacter.h"
 #include "Net/UnrealNetwork.h"
 #include "Animation/AnimationAsset.h"
+#include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
 #include "Engine/SkeletalMeshSocket.h"
 
 
@@ -64,6 +65,23 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AWeapon, WeaponState);
+	DOREPLIFETIME(AWeapon, AmmoAmount);
+}
+
+void AWeapon::OnRep_Owner()
+{
+	Super::OnRep_Owner();
+
+	if (Owner == nullptr)
+	{
+		WeaponOwnerCharacter = nullptr;
+		WeaponOwnerController = nullptr;
+	}
+	else
+	{
+		UpdateHUDAmmo();
+	}
+	
 }
 
 
@@ -131,6 +149,33 @@ void AWeapon::OnRep_WeaponState()
 	}
 }
 
+void AWeapon::UpdateHUDAmmo()
+{
+	WeaponOwnerCharacter = WeaponOwnerCharacter == nullptr ? Cast<AEndlessBetrayalCharacter>(GetOwner()) : WeaponOwnerCharacter;
+	if(IsValid(WeaponOwnerCharacter))
+	{
+		WeaponOwnerController = WeaponOwnerController == nullptr ? Cast<AEndlessBetrayalPlayerController>(WeaponOwnerCharacter->Controller) : WeaponOwnerController;
+		if(WeaponOwnerController)
+		{
+			WeaponOwnerController->UpdateWeaponAmmo(AmmoAmount);
+		}
+	}
+}
+
+void AWeapon::SpendRound()
+{
+	AmmoAmount = FMath::Clamp(--AmmoAmount, 0, MagCapacity);
+	UpdateHUDAmmo();
+}
+
+
+
+void AWeapon::OnRep_Ammo()
+{
+	WeaponOwnerCharacter = WeaponOwnerCharacter == nullptr ? Cast<AEndlessBetrayalCharacter>(GetOwner()) : WeaponOwnerCharacter;
+	UpdateHUDAmmo();
+}
+
 void AWeapon::ShowPickupWidget(bool bShowWidget)
 {
 	if (PickupWidget)
@@ -162,6 +207,8 @@ void AWeapon::Fire(const FVector& HitTarget)
 			}
 		}
 	}
+	//Updating Ammo
+	SpendRound();
 }
 
 void AWeapon::OnWeaponDropped()
@@ -171,5 +218,12 @@ void AWeapon::OnWeaponDropped()
 	FDetachmentTransformRules DetachmentTransformRules(EDetachmentRule::KeepWorld, true);
 	WeaponMesh->DetachFromComponent(DetachmentTransformRules);
 	SetOwner(nullptr);
+	WeaponOwnerCharacter = nullptr;
+	WeaponOwnerController = nullptr;
 }
 
+void AWeapon::UpdateAmmo(int32 AmmoAmountToAdd)
+{
+	AmmoAmount = FMath::Clamp(AmmoAmount + AmmoAmountToAdd, 0, MagCapacity);
+	UpdateHUDAmmo();
+}

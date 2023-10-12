@@ -20,13 +20,21 @@ public:
 	void UpdateScoreHUD(float NewScore);
 	void UpdateDeathsHUD(int32 NewDeath);
 	void HideMessagesOnScreenHUD();
-	void OnPossess(APawn* InPawn) override;
+
+	/**
+	 * Ammo
+	 */
+	void UpdateWeaponAmmo(int32 NewAmmo);
+	void UpdateWeaponCarriedAmmo(int32 NewAmmo);
+	
+	virtual void OnPossess(APawn* InPawn) override;
 protected:
 
 	virtual void BeginPlay() override;
 	
 private:
 
+	UPROPERTY()
 	class AEndlessBetrayalHUD* EndlessBetrayalHUD;
 	
 };
