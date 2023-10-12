@@ -41,6 +41,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	float FireDelay = 0.15f;
 
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	class USoundCue* OnEquipSoundCue;	
+
 protected:
 	virtual void BeginPlay() override;
 

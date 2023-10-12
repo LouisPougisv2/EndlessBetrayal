@@ -12,6 +12,7 @@
 #include "DrawDebugHelpers.h"
 #include "Camera/CameraComponent.h"
 #include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
+#include "Sound/SoundCue.h"
 
 UCombatComponent::UCombatComponent()
 {
@@ -359,6 +360,11 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	{
 		PlayerController->UpdateWeaponCarriedAmmo(CarriedAmmo);
 	}
+
+	if(EquippedWeapon->OnEquipSoundCue)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, EquippedWeapon->OnEquipSoundCue, Character->GetActorLocation());
+	}
 	
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 	Character->bUseControllerRotationYaw = true;
@@ -427,8 +433,13 @@ void UCombatComponent::OnRep_EquippedWeapon()
 		{
 			HandSocket->AttachActor(EquippedWeapon, Character->GetMesh());
 		}
-		
+
 		Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 		Character->bUseControllerRotationYaw = true;
+		
+		if(EquippedWeapon->OnEquipSoundCue)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, EquippedWeapon->OnEquipSoundCue, Character->GetActorLocation());
+		}
 	}
 }
