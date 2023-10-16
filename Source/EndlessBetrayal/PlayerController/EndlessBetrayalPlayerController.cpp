@@ -69,6 +69,23 @@ void AEndlessBetrayalPlayerController::UpdateDeathsHUD(int NewDeath)
 	}
 }
 
+void AEndlessBetrayalPlayerController::UpdateHUDMatchCountdown(float CountdownTime)
+{
+	if(!IsValid(EndlessBetrayalHUD))
+	{
+		EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD());
+	}
+
+	const bool bIsHUDVariableFullyValid = IsValid(EndlessBetrayalHUD) && EndlessBetrayalHUD->CharacterOverlay && EndlessBetrayalHUD->CharacterOverlay->MatchCountdownText;
+	if(bIsHUDVariableFullyValid)
+	{
+		const int32 Minutes = FMath::FloorToInt(CountdownTime / 60);
+		const int32 Seconds = CountdownTime - Minutes * 60;
+		const FString CountDownText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
+		EndlessBetrayalHUD->CharacterOverlay->MatchCountdownText->SetText(FText::FromString(CountDownText));
+	}
+}
+
 void AEndlessBetrayalPlayerController::HideMessagesOnScreenHUD()
 {
 	if(EndlessBetrayalHUD)
@@ -121,9 +138,68 @@ void AEndlessBetrayalPlayerController::OnPossess(APawn* InPawn)
 
 }
 
+void AEndlessBetrayalPlayerController::ReceivedPlayer()
+{
+	Super::ReceivedPlayer();
+	if(IsLocalController())
+	{
+		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
+	}
+}
+
 void AEndlessBetrayalPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
 	EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD());
+}
+
+void AEndlessBetrayalPlayerController::CheckTimeSync(float DeltaSeconds)
+{
+	TimeSyncRunningTime += DeltaSeconds;
+	if(IsLocalController() && TimeSyncRunningTime > TimeSyncFrequency)
+	{
+		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
+		TimeSyncRunningTime = 0.0f;
+	}
+}
+
+void AEndlessBetrayalPlayerController::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	
+	SetHUDTime();
+	CheckTimeSync(DeltaSeconds);
+}
+
+void AEndlessBetrayalPlayerController::SetHUDTime()
+{
+	uint32 SecondsLeft = FMath::CeilToInt(MatchTime - GetServerTime());
+
+	if(CountDownInt != SecondsLeft)
+	{
+		UpdateHUDMatchCountdown(MatchTime - GetServerTime());
+	}
+	CountDownInt = SecondsLeft;
+}
+
+void AEndlessBetrayalPlayerController::ServerRequestServerTime_Implementation(float TimeOfClientRequest)
+{
+	const float ServerTimeOfReceipt = GetWorld()->GetTimeSeconds();
+	ClientReportServerTime(TimeOfClientRequest, ServerTimeOfReceipt);
+}
+
+void AEndlessBetrayalPlayerController::ClientReportServerTime_Implementation(float TimeOfClientRequest, float TimeServerReceivedClientRequest)
+{
+	const float RoundTripTime = GetWorld()->GetTimeSeconds() - TimeOfClientRequest;
+
+	//Approximation of Current Time on Server
+	const float CurrentServerTime = TimeServerReceivedClientRequest + ( RoundTripTime / 2);
+	ClientServerDelta = CurrentServerTime - GetWorld()->GetTimeSeconds();
+}
+
+float AEndlessBetrayalPlayerController::GetServerTime()
+{
+	if(HasAuthority()) return GetWorld()->GetTimeSeconds();
+	else return GetWorld()->GetTimeSeconds() + ClientServerDelta;	
 }
