@@ -16,7 +16,26 @@ class ENDLESSBETRAYAL_API AEndlessBetrayalGameMode : public AGameMode
 
 public:
 
+	AEndlessBetrayalGameMode();
+	virtual void Tick(float DeltaSeconds) override;
+	
 	virtual void OnPlayerEliminated(class AEndlessBetrayalCharacter* EliminatedCharacter, class AEndlessBetrayalPlayerController* VictimController, AEndlessBetrayalPlayerController* AttackerController);
 	virtual void RequestRespawn(AEndlessBetrayalCharacter* EliminatedCharacter, AEndlessBetrayalPlayerController* EliminatedController);
+
+	UPROPERTY(EditDefaultsOnly)
+	float WarmUpTime = 10.0f;
+
+	//Time that it takes from launching the game to entering EndlessBetrayal map
+	float LevelStartingTime = 0.0f;
+
+protected:
+
+	virtual void BeginPlay() override;
+	virtual void OnMatchStateSet() override;
+	
+private:
+	
+	UPROPERTY()
+	float CountDownTime = 0.0f;
 
 };

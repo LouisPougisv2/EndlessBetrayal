@@ -48,11 +48,11 @@ public:
 	UPROPERTY()
 	class UCharacterOverlay* CharacterOverlay;
 
+	void AddCharacterOverlay();
 	void HideKillDeathMessages();
 protected:
 
 	virtual void BeginPlay() override;
-	void AddCharacterOverlay();
 	
 private:
 

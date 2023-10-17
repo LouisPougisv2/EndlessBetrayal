@@ -8,6 +8,46 @@
 #include "EndlessBetrayal/Character/EndlessBetrayalCharacter.h"
 #include "EndlessBetrayal/HUD/CharacterOverlay.h"
 #include "EndlessBetrayal/HUD/EndlessBetrayalHUD.h"
+#include "GameFramework/GameMode.h"
+#include "Net/UnrealNetwork.h"
+
+
+
+void AEndlessBetrayalPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD());
+}
+
+void AEndlessBetrayalPlayerController::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	
+	SetHUDTime();
+	CheckTimeSync(DeltaSeconds);
+	PollInit();
+}
+
+void AEndlessBetrayalPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(AEndlessBetrayalPlayerController, MatchState);
+}
+
+void AEndlessBetrayalPlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+	
+	const AEndlessBetrayalCharacter* EndlessBetrayalCharacter = Cast<AEndlessBetrayalCharacter>(InPawn);
+	UpdateHealthHUD(EndlessBetrayalCharacter->GetHealth(), EndlessBetrayalCharacter->GetMaxHealth());
+
+	if(IsValid(EndlessBetrayalHUD) && IsValid(EndlessBetrayalHUD->CharacterOverlay))
+	{
+		HideMessagesOnScreenHUD();
+	}
+}
 
 void AEndlessBetrayalPlayerController::UpdateHealthHUD(float NewHealth, float MaxHealth)
 {
@@ -24,6 +64,12 @@ void AEndlessBetrayalPlayerController::UpdateHealthHUD(float NewHealth, float Ma
 
 		FString HealthText = FString::Printf(TEXT("%d/%d"), FMath::CeilToInt(NewHealth), FMath::CeilToInt(MaxHealth));
 		EndlessBetrayalHUD->CharacterOverlay->HealthText->SetText(FText::FromString(HealthText));
+	}
+	else
+	{
+		bShouldInitializeCharacterOverlay = true;
+		HUDHealth = NewHealth;
+		HUDMaxHealth = MaxHealth;
 	}
 }
 
@@ -47,6 +93,11 @@ void AEndlessBetrayalPlayerController::UpdateScoreHUD(float NewScore)
 			EndlessBetrayalHUD->CharacterOverlay->KillText->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 		}
 	}
+	else
+	{
+		bShouldInitializeCharacterOverlay = true;
+		HUDScore = NewScore;
+	}
 }
 
 void AEndlessBetrayalPlayerController::UpdateDeathsHUD(int NewDeath)
@@ -66,6 +117,11 @@ void AEndlessBetrayalPlayerController::UpdateDeathsHUD(int NewDeath)
 		{
 			EndlessBetrayalHUD->CharacterOverlay->DeathText->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 		}
+	}
+	else
+	{
+		bShouldInitializeCharacterOverlay = true;
+		HUDDeaths = NewDeath;
 	}
 }
 
@@ -124,20 +180,6 @@ void AEndlessBetrayalPlayerController::UpdateWeaponCarriedAmmo(int32 NewAmmo)
 	}
 }
 
-void AEndlessBetrayalPlayerController::OnPossess(APawn* InPawn)
-{
-	Super::OnPossess(InPawn);
-	
-	const AEndlessBetrayalCharacter* EndlessBetrayalCharacter = Cast<AEndlessBetrayalCharacter>(InPawn);
-	UpdateHealthHUD(EndlessBetrayalCharacter->GetHealth(), EndlessBetrayalCharacter->GetMaxHealth());
-
-	if(IsValid(EndlessBetrayalHUD) && IsValid(EndlessBetrayalHUD->CharacterOverlay))
-	{
-		HideMessagesOnScreenHUD();
-	}
-
-}
-
 void AEndlessBetrayalPlayerController::ReceivedPlayer()
 {
 	Super::ReceivedPlayer();
@@ -147,11 +189,30 @@ void AEndlessBetrayalPlayerController::ReceivedPlayer()
 	}
 }
 
-void AEndlessBetrayalPlayerController::BeginPlay()
+void AEndlessBetrayalPlayerController::DisplayCharacterOverlay()
 {
-	Super::BeginPlay();
+	if(MatchState == MatchState::InProgress)
+	{
+		EndlessBetrayalHUD = !IsValid(EndlessBetrayalHUD) ? EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD()) : EndlessBetrayalHUD;
+		if(IsValid(EndlessBetrayalHUD))
+		{
+			//HUD will only be displayed when the match is In Progress
+			EndlessBetrayalHUD->AddCharacterOverlay();
+		}
+	}
+}
 
-	EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD());
+void AEndlessBetrayalPlayerController::OnMatchStateSet(FName NewMatchState)
+{
+	MatchState = NewMatchState;
+
+	DisplayCharacterOverlay();
+}
+
+
+void AEndlessBetrayalPlayerController::OnRep_MatchState()
+{
+	DisplayCharacterOverlay();
 }
 
 void AEndlessBetrayalPlayerController::CheckTimeSync(float DeltaSeconds)
@@ -164,14 +225,6 @@ void AEndlessBetrayalPlayerController::CheckTimeSync(float DeltaSeconds)
 	}
 }
 
-void AEndlessBetrayalPlayerController::Tick(float DeltaSeconds)
-{
-	Super::Tick(DeltaSeconds);
-	
-	SetHUDTime();
-	CheckTimeSync(DeltaSeconds);
-}
-
 void AEndlessBetrayalPlayerController::SetHUDTime()
 {
 	uint32 SecondsLeft = FMath::CeilToInt(MatchTime - GetServerTime());
@@ -181,6 +234,23 @@ void AEndlessBetrayalPlayerController::SetHUDTime()
 		UpdateHUDMatchCountdown(MatchTime - GetServerTime());
 	}
 	CountDownInt = SecondsLeft;
+}
+
+void AEndlessBetrayalPlayerController::PollInit()
+{
+	if(!IsValid(CharacterOverlay))
+	{
+		if(IsValid(EndlessBetrayalHUD) && IsValid(EndlessBetrayalHUD->CharacterOverlay))
+		{
+			CharacterOverlay = EndlessBetrayalHUD->CharacterOverlay;
+			if(CharacterOverlay)
+			{
+				UpdateHealthHUD(HUDHealth, HUDMaxHealth);
+				UpdateScoreHUD(HUDScore);
+				UpdateDeathsHUD(HUDDeaths);
+			}
+		}
+	}
 }
 
 void AEndlessBetrayalPlayerController::ServerRequestServerTime_Implementation(float TimeOfClientRequest)

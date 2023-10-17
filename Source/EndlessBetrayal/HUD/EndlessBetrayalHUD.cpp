@@ -32,8 +32,6 @@ void AEndlessBetrayalHUD::DrawHUD()
 void AEndlessBetrayalHUD::BeginPlay()
 {
 	Super::BeginPlay();
-
-	AddCharacterOverlay();
 }
 
 void AEndlessBetrayalHUD::AddCharacterOverlay()
@@ -43,6 +41,7 @@ void AEndlessBetrayalHUD::AddCharacterOverlay()
 	{
 		CharacterOverlay = CreateWidget<UCharacterOverlay>(PlayerController, CharacterOverlayClass);
 		CharacterOverlay->AddToViewport();
+		PlayerController->PollInit();
 	}
 }
 

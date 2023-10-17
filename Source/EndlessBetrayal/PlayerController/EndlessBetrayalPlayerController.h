@@ -16,24 +16,27 @@ class ENDLESSBETRAYAL_API AEndlessBetrayalPlayerController : public APlayerContr
 
 public:
 
+	virtual void OnPossess(APawn* InPawn) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
 	void UpdateHealthHUD(float NewHealth, float MaxHealth);
 	void UpdateScoreHUD(float NewScore);
 	void UpdateDeathsHUD(int32 NewDeath);
 	void UpdateHUDMatchCountdown(float CountdownTime);
 	void HideMessagesOnScreenHUD();
-
-	/**
-	 * Ammo
-	 */
 	void UpdateWeaponAmmo(int32 NewAmmo);
 	void UpdateWeaponCarriedAmmo(int32 NewAmmo);
 	
-	virtual void OnPossess(APawn* InPawn) override;
 	//Sync with Server clock as soon as possible
 	virtual void ReceivedPlayer() override;
+	void DisplayCharacterOverlay();
+
+	//Only happening on the server
+	void OnMatchStateSet(FName NewMatchState);
 	
 	//synced with Server world clock 
 	virtual float GetServerTime();
+	void PollInit();
 protected:
 
 	virtual void BeginPlay() override;
@@ -74,5 +77,21 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	uint32 CountDownInt;
-	
+
+	UPROPERTY(ReplicatedUsing=OnRep_MatchState)
+	FName MatchState;
+
+	UFUNCTION()
+	void OnRep_MatchState();
+
+	UPROPERTY()
+	class UCharacterOverlay* CharacterOverlay;
+
+	bool bShouldInitializeCharacterOverlay = false;
+
+	//TODO : Remove during refactor
+	float HUDHealth;
+	float HUDMaxHealth;
+	float HUDScore;
+	float HUDDeaths;
 };
