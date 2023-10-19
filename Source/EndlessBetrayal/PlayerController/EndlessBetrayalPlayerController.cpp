@@ -6,9 +6,12 @@
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "EndlessBetrayal/Character/EndlessBetrayalCharacter.h"
+#include "EndlessBetrayal/GameMode/EndlessBetrayalGameMode.h"
+#include "EndlessBetrayal/HUD/AnnouncementUserWidget.h"
 #include "EndlessBetrayal/HUD/CharacterOverlay.h"
 #include "EndlessBetrayal/HUD/EndlessBetrayalHUD.h"
 #include "GameFramework/GameMode.h"
+#include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 
 
@@ -17,7 +20,7 @@ void AEndlessBetrayalPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD());
+	ServerCheckMatchState();
 }
 
 void AEndlessBetrayalPlayerController::Tick(float DeltaSeconds)
@@ -142,6 +145,24 @@ void AEndlessBetrayalPlayerController::UpdateHUDMatchCountdown(float CountdownTi
 	}
 }
 
+void AEndlessBetrayalPlayerController::UpdateHUDAnnouncementCountDown(float CountdownTime)
+{
+	if(!IsValid(EndlessBetrayalHUD))
+	{
+		EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD());
+	}
+
+	const bool bIsHUDVariableFullyValid = IsValid(EndlessBetrayalHUD) && EndlessBetrayalHUD->AnnouncementWidget && EndlessBetrayalHUD->AnnouncementWidget->AnnouncementText;
+	if(bIsHUDVariableFullyValid)
+	{
+		const int32 Minutes = FMath::FloorToInt(CountdownTime / 60);
+		const int32 Seconds = CountdownTime - Minutes * 60;
+		const FString CountDownText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
+		
+		EndlessBetrayalHUD->AnnouncementWidget->WarmUpTimeText->SetText(FText::FromString(CountDownText));
+	}
+}
+
 void AEndlessBetrayalPlayerController::HideMessagesOnScreenHUD()
 {
 	if(EndlessBetrayalHUD)
@@ -189,7 +210,7 @@ void AEndlessBetrayalPlayerController::ReceivedPlayer()
 	}
 }
 
-void AEndlessBetrayalPlayerController::DisplayCharacterOverlay()
+void AEndlessBetrayalPlayerController::HandleMatchHasStarted()
 {
 	if(MatchState == MatchState::InProgress)
 	{
@@ -198,21 +219,55 @@ void AEndlessBetrayalPlayerController::DisplayCharacterOverlay()
 		{
 			//HUD will only be displayed when the match is In Progress
 			EndlessBetrayalHUD->AddCharacterOverlay();
+			if(IsValid(EndlessBetrayalHUD->AnnouncementWidget))
+			{
+				EndlessBetrayalHUD->AnnouncementWidget->SetVisibility(ESlateVisibility::Hidden);
+			}
 		}
+	}
+}
+
+void AEndlessBetrayalPlayerController::ClientJoinMidGame_Implementation(const float InMatchTime, const float InWarmUpTime, const float InLevelStartingTime, const FName InMatchState)
+{
+	WarmUpTime = InWarmUpTime;
+	MatchTime = InMatchTime;
+	LevelStartingTime = InLevelStartingTime;
+	MatchState = InMatchState;
+
+	//Making sure that any update that needs to happen after the MatchState is set actually happens
+	OnMatchStateSet(MatchState);
+
+	EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD());
+	if(IsValid(EndlessBetrayalHUD))
+	{
+		EndlessBetrayalHUD->AddAnnouncementWidget();
+	}
+}
+
+void AEndlessBetrayalPlayerController::ServerCheckMatchState_Implementation()
+{
+	AEndlessBetrayalGameMode* EndlessBetrayalGameMode = Cast<AEndlessBetrayalGameMode>(UGameplayStatics::GetGameMode(this));
+	if(IsValid(EndlessBetrayalGameMode))
+	{
+		WarmUpTime = EndlessBetrayalGameMode->WarmUpTime;
+		MatchTime = EndlessBetrayalGameMode->MatchTime;
+		LevelStartingTime = EndlessBetrayalGameMode->LevelStartingTime;
+		MatchState = EndlessBetrayalGameMode->GetMatchState();
+		ClientJoinMidGame(MatchTime, WarmUpTime, LevelStartingTime, MatchState);
 	}
 }
 
 void AEndlessBetrayalPlayerController::OnMatchStateSet(FName NewMatchState)
 {
 	MatchState = NewMatchState;
-
-	DisplayCharacterOverlay();
+	
+	HandleMatchHasStarted();
 }
 
 
 void AEndlessBetrayalPlayerController::OnRep_MatchState()
 {
-	DisplayCharacterOverlay();
+	HandleMatchHasStarted();
 }
 
 void AEndlessBetrayalPlayerController::CheckTimeSync(float DeltaSeconds)
@@ -227,10 +282,32 @@ void AEndlessBetrayalPlayerController::CheckTimeSync(float DeltaSeconds)
 
 void AEndlessBetrayalPlayerController::SetHUDTime()
 {
-	uint32 SecondsLeft = FMath::CeilToInt(MatchTime - GetServerTime());
-
+	//Has the BeginPlay of PC is called before the GameMode one, we ensure to correctly retrieve LevelStartingTime if on the server
+	if(HasAuthority())
+	{
+		const AEndlessBetrayalGameMode* EndlessBetrayalGameMode = Cast<AEndlessBetrayalGameMode>(UGameplayStatics::GetGameMode(this));
+		if(IsValid(EndlessBetrayalGameMode))
+		{
+			LevelStartingTime = EndlessBetrayalGameMode->LevelStartingTime;
+		}
+	}
+	
+	float TimeLeft = 0.0f;
+	//Reminder, GetServerTime() return the time since the game STARTED (including the time passed on menu)
+	if(MatchState == MatchState::WaitingToStart) TimeLeft = WarmUpTime - GetServerTime() + LevelStartingTime;
+	else if(MatchState == MatchState::InProgress) TimeLeft = WarmUpTime  + MatchTime - GetServerTime() + LevelStartingTime;
+	
+	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft);
 	if(CountDownInt != SecondsLeft)
 	{
+		if(MatchState == MatchState::WaitingToStart)
+		{
+			UpdateHUDAnnouncementCountDown(TimeLeft);
+		}
+		if(MatchState == MatchState::InProgress)
+		{
+			UpdateHUDMatchCountdown(TimeLeft);
+		}
 		UpdateHUDMatchCountdown(MatchTime - GetServerTime());
 	}
 	CountDownInt = SecondsLeft;

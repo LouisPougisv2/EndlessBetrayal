@@ -23,13 +23,13 @@ public:
 	void UpdateScoreHUD(float NewScore);
 	void UpdateDeathsHUD(int32 NewDeath);
 	void UpdateHUDMatchCountdown(float CountdownTime);
+	void UpdateHUDAnnouncementCountDown(float CountdownTime);
 	void HideMessagesOnScreenHUD();
 	void UpdateWeaponAmmo(int32 NewAmmo);
 	void UpdateWeaponCarriedAmmo(int32 NewAmmo);
 	
 	//Sync with Server clock as soon as possible
 	virtual void ReceivedPlayer() override;
-	void DisplayCharacterOverlay();
 
 	//Only happening on the server
 	void OnMatchStateSet(FName NewMatchState);
@@ -43,6 +43,7 @@ protected:
 	virtual void Tick(float DeltaSeconds) override;
 	void CheckTimeSync(float DeltaSeconds);
 	void SetHUDTime();
+	void HandleMatchHasStarted();
 
 	/**
 	* Sync Time between Client and Server
@@ -55,6 +56,12 @@ protected:
 	//Reports the current server time to the client in response to ServerRequestServerTime
 	UFUNCTION(Client, Reliable)
 	void ClientReportServerTime(float TimeOfClientRequest, float TimeServerReceivedClientRequest);
+
+	UFUNCTION(Server, Reliable)
+	void ServerCheckMatchState();
+
+	UFUNCTION(Client, Reliable)
+	void ClientJoinMidGame(const float InMatchTime, const float InWarmUpTime, const float InLevelStartingTime, const FName InMatchState);
 	
 	//Difference between Client and Server Time
 	UPROPERTY()
@@ -73,7 +80,13 @@ private:
 
 	//Will be moved to GameMode when Match States will come
 	UPROPERTY(EditAnywhere)
-	float MatchTime = 180.0f;
+	float MatchTime = 0.0f;
+
+	UPROPERTY(EditAnywhere)
+	float WarmUpTime = 0.0f;
+
+	UPROPERTY(EditAnywhere)
+	float LevelStartingTime = 0.0f;
 
 	UPROPERTY(EditAnywhere)
 	uint32 CountDownInt;

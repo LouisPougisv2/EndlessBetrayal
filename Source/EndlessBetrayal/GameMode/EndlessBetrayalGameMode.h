@@ -23,9 +23,13 @@ public:
 	virtual void RequestRespawn(AEndlessBetrayalCharacter* EliminatedCharacter, AEndlessBetrayalPlayerController* EliminatedController);
 
 	UPROPERTY(EditDefaultsOnly)
-	float WarmUpTime = 10.0f;
+	float WarmUpTime = 20.0f;
+
+	UPROPERTY(EditDefaultsOnly)
+	float MatchTime = 180.0f;
 
 	//Time that it takes from launching the game to entering EndlessBetrayal map
+	UPROPERTY(EditDefaultsOnly)
 	float LevelStartingTime = 0.0f;
 
 protected:
