@@ -43,7 +43,9 @@ protected:
 	virtual void Tick(float DeltaSeconds) override;
 	void CheckTimeSync(float DeltaSeconds);
 	void SetHUDTime();
+	void HandleMatchStates();
 	void HandleMatchHasStarted();
+	void HandleCooldown();
 
 	/**
 	* Sync Time between Client and Server
@@ -61,7 +63,7 @@ protected:
 	void ServerCheckMatchState();
 
 	UFUNCTION(Client, Reliable)
-	void ClientJoinMidGame(const float InMatchTime, const float InWarmUpTime, const float InLevelStartingTime, const FName InMatchState);
+	void ClientJoinMidGame(const float InMatchTime, const float InWarmUpTime, const float InLevelStartingTime, const float InCooldownTime, const FName InMatchState);
 	
 	//Difference between Client and Server Time
 	UPROPERTY()
@@ -78,6 +80,9 @@ private:
 	UPROPERTY()
 	class AEndlessBetrayalHUD* EndlessBetrayalHUD;
 
+	UPROPERTY()
+	class AEndlessBetrayalGameMode* EndlessBetrayalGameMode;
+
 	//Will be moved to GameMode when Match States will come
 	UPROPERTY(EditAnywhere)
 	float MatchTime = 0.0f;
@@ -87,6 +92,9 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	float LevelStartingTime = 0.0f;
+
+	UPROPERTY(EditAnywhere)
+	float CooldownTime = 0.0f;
 
 	UPROPERTY(EditAnywhere)
 	uint32 CountDownInt;

@@ -8,6 +8,13 @@
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
 
+
+namespace MatchState
+{
+	const FName Cooldown = FName("Cooldown");
+}
+
+
 AEndlessBetrayalGameMode::AEndlessBetrayalGameMode()
 {
 	//Game mode will stay in waiting to start state and will stay in this state until we manually call StartMatch()
@@ -26,6 +33,18 @@ void AEndlessBetrayalGameMode::Tick(float DeltaSeconds)
 		{
 			StartMatch();
 		}
+	}
+	else if(MatchState == MatchState::InProgress)
+	{
+		CountDownTime = WarmUpTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		if(CountDownTime <= 0.0f)
+		{
+			SetMatchState(MatchState::Cooldown);
+		}
+	}
+	else if (MatchState == MatchState::Cooldown)
+	{
+		CountDownTime = CooldownTime + WarmUpTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
 	}
 }
 
