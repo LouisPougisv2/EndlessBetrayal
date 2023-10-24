@@ -273,6 +273,11 @@ void AEndlessBetrayalCharacter::MulticastOnPlayerEliminated_Implementation()
 		StartDissolve();
 	}
 
+	if(CombatComponent)
+	{
+		//If player dies while shooting, its firing stops
+		CombatComponent->FireButtonPressed(false);
+	}
 	//Disable movement
 	GetCharacterMovement()->DisableMovement(); //Stop movement with WASD
 	GetCharacterMovement()->StopMovementImmediately(); //Prevents us from rotating the character

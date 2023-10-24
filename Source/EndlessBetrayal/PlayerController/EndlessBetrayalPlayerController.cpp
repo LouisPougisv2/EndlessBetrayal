@@ -8,6 +8,8 @@
 #include "EndlessBetrayal/Character/EndlessBetrayalCharacter.h"
 #include "EndlessBetrayal/EndlessBetrayalComponents/CombatComponent.h"
 #include "EndlessBetrayal/GameMode/EndlessBetrayalGameMode.h"
+#include "EndlessBetrayal/GameState/EndlessBetrayalGameState.h"
+#include "EndlessBetrayal/GameState/EndlessBetrayalPlayerState.h"
 #include "EndlessBetrayal/HUD/AnnouncementUserWidget.h"
 #include "EndlessBetrayal/HUD/CharacterOverlay.h"
 #include "EndlessBetrayal/HUD/EndlessBetrayalHUD.h"
@@ -138,16 +140,22 @@ void AEndlessBetrayalPlayerController::UpdateHUDMatchCountdown(float InCountdown
 
 	const bool bIsHUDVariableFullyValid = IsValid(EndlessBetrayalHUD) && EndlessBetrayalHUD->CharacterOverlay && EndlessBetrayalHUD->CharacterOverlay->MatchCountdownText;
 	if(bIsHUDVariableFullyValid)
-	{
+	{		
 		if(InCountdownTime < 0.0f)
 		{
 			EndlessBetrayalHUD->CharacterOverlay->MatchCountdownText->SetText(FText());
 			return;
 		}
+
 		const int32 Minutes = FMath::FloorToInt(InCountdownTime / 60);
 		const int32 Seconds = InCountdownTime - Minutes * 60;
 		const FString CountDownText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
 		EndlessBetrayalHUD->CharacterOverlay->MatchCountdownText->SetText(FText::FromString(CountDownText));
+
+		if((InCountdownTime <= 30.0f) && (InCountdownTime > 0.0f))
+		{
+			EndlessBetrayalHUD->CharacterOverlay->MatchCountdownText->SetColorAndOpacity(FLinearColor::Red);
+		}
 	}
 }
 
@@ -224,7 +232,35 @@ void AEndlessBetrayalPlayerController::HandleCooldown()
 		{
 			EndlessBetrayalHUD->AnnouncementWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
 			EndlessBetrayalHUD->AnnouncementWidget->AnnouncementText->SetText(FText::FromString("New Match Starts In :"));
-			EndlessBetrayalHUD->AnnouncementWidget->InfoText->SetVisibility(ESlateVisibility::Hidden);
+
+			FString InfoTextString;
+			AEndlessBetrayalGameState* EndlessBetrayalGameState = Cast<AEndlessBetrayalGameState>(UGameplayStatics::GetGameState(this));
+			AEndlessBetrayalPlayerState* EndlessBetrayalPlayerState = GetPlayerState<AEndlessBetrayalPlayerState>();
+			if(IsValid(EndlessBetrayalGameState) && EndlessBetrayalPlayerState)
+			{
+				const TArray<AEndlessBetrayalPlayerState*>& TopPlayers = EndlessBetrayalGameState->TopScoringPlayers;
+				if(TopPlayers.IsEmpty())	//No winners
+				{
+					InfoTextString = FString("There is no winners");
+				}
+				else if ((TopPlayers.Num() == 1) && (TopPlayers[0] == EndlessBetrayalPlayerState) )
+				{
+					InfoTextString = FString("You are the winner!");
+				}
+				else if(TopPlayers.Num() == 1)
+				{
+					InfoTextString = FString::Printf(TEXT("Winner : \n %s"), *TopPlayers[0]->GetPlayerName());
+				}
+				else
+				{
+					InfoTextString = FString("Players tied for the win : \n");
+					for (const AEndlessBetrayalPlayerState* TiedPlayer : TopPlayers)
+					{
+						InfoTextString.Append(FString::Printf(TEXT("%s \n"), *TiedPlayer->GetPlayerName()));
+					}
+				}
+			}
+			EndlessBetrayalHUD->AnnouncementWidget->InfoText->SetText(FText::FromString(InfoTextString));
 		}
 	}
 

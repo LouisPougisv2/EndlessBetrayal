@@ -3,6 +3,7 @@
 
 #include "EndlessBetrayalGameMode.h"
 #include "EndlessBetrayal/Character/EndlessBetrayalCharacter.h"
+#include "EndlessBetrayal/GameState/EndlessBetrayalGameState.h"
 #include "EndlessBetrayal/GameState/EndlessBetrayalPlayerState.h"
 #include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
 #include "GameFramework/PlayerStart.h"
@@ -59,9 +60,11 @@ void AEndlessBetrayalGameMode::OnPlayerEliminated(AEndlessBetrayalCharacter* Eli
 	AEndlessBetrayalPlayerState* AttackerPlayerState = Cast<AEndlessBetrayalPlayerState>(AttackerController->PlayerState);
 	AEndlessBetrayalPlayerState* VictimPlayerState = Cast<AEndlessBetrayalPlayerState>(VictimController->PlayerState);
 
-	if(AttackerPlayerState && AttackerPlayerState != VictimPlayerState)
+	AEndlessBetrayalGameState* EndlessBetrayalGameState = GetGameState<AEndlessBetrayalGameState>();
+	if(AttackerPlayerState && AttackerPlayerState != VictimPlayerState && EndlessBetrayalGameState)
 	{
 		AttackerPlayerState->AddToScore(1.0f);
+		EndlessBetrayalGameState->UpdateTopScore(AttackerPlayerState);
 	}
 	
 	if(VictimPlayerState)
