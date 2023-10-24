@@ -48,6 +48,7 @@ protected:
 	void CalculateAO_Pitch();
 	void AimOffset(float DeltaTime);
 	void SimProxiesTurn();
+	void RotateInPlace(float DeltaTime);
 	virtual void Jump() override;
 	void FireButtonPressed();
 	void FireButtonReleased();
@@ -193,6 +194,8 @@ public:
 	FORCEINLINE float GetHealth() const { return Health; }
 	FORCEINLINE bool ShouldRotateRootBone() const { return bShouldRotateRootBone; }
 	FORCEINLINE UCameraComponent* GetFollowCamera() { return FollowCamera; }
+	FORCEINLINE UCombatComponent* GetCombatComponent() { return CombatComponent; }
+	FORCEINLINE bool IsGameplayDisabled() const { return bShouldDisableGameplayInput; }
 	AWeapon* GetEquippedWeapon();
 
 	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; }
@@ -200,4 +203,7 @@ public:
 	FVector GetHitTarget();
 	
 	ECombatState GetCombatState() const;
+
+	UPROPERTY(Replicated)
+	bool bShouldDisableGameplayInput = false;
 };

@@ -6,6 +6,7 @@
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "EndlessBetrayal/Character/EndlessBetrayalCharacter.h"
+#include "EndlessBetrayal/EndlessBetrayalComponents/CombatComponent.h"
 #include "EndlessBetrayal/GameMode/EndlessBetrayalGameMode.h"
 #include "EndlessBetrayal/HUD/AnnouncementUserWidget.h"
 #include "EndlessBetrayal/HUD/CharacterOverlay.h"
@@ -225,6 +226,16 @@ void AEndlessBetrayalPlayerController::HandleCooldown()
 			EndlessBetrayalHUD->AnnouncementWidget->AnnouncementText->SetText(FText::FromString("New Match Starts In :"));
 			EndlessBetrayalHUD->AnnouncementWidget->InfoText->SetVisibility(ESlateVisibility::Hidden);
 		}
+	}
+
+	AEndlessBetrayalCharacter* EndlessBetrayalCharacter = Cast<AEndlessBetrayalCharacter>(GetPawn());
+	if(IsValid(EndlessBetrayalCharacter) && EndlessBetrayalCharacter->GetCombatComponent())
+	{
+		EndlessBetrayalCharacter->bShouldDisableGameplayInput = true;
+		
+		//Beware, the above line causes the character to stop being able to send info to the CombatComponent
+		//If the player is already firing, it'll be stuck in firing, hence the following line
+		EndlessBetrayalCharacter->GetCombatComponent()->FireButtonPressed(false);
 	}
 }
 

@@ -45,6 +45,10 @@ void AEndlessBetrayalGameMode::Tick(float DeltaSeconds)
 	else if (MatchState == MatchState::Cooldown)
 	{
 		CountDownTime = CooldownTime + WarmUpTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		if(CountDownTime <= 0.0f)
+		{
+			RestartGame();
+		}
 	}
 }
 
