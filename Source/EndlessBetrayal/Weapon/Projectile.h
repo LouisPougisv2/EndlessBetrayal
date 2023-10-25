@@ -26,6 +26,8 @@ protected:
 
 	FORCEINLINE float GetDamage() const { return Damage; }
 
+	UPROPERTY(EditAnywhere)
+	float Damage = 15.0f;
 	
 private:
 
@@ -47,7 +49,5 @@ private:
 	UPROPERTY(EditAnywhere)
 	class USoundCue* ImpactSound;
 
-	UPROPERTY(EditAnywhere)
-	float Damage = 15.0f;
 
 };

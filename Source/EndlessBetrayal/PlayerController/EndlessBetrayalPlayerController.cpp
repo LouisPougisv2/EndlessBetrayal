@@ -290,7 +290,7 @@ void AEndlessBetrayalPlayerController::HandleMatchHasStarted()
 	if(IsValid(EndlessBetrayalHUD))
 	{
 		//HUD will only be displayed when the match is In Progress
-		EndlessBetrayalHUD->AddCharacterOverlay();
+		if(EndlessBetrayalHUD->CharacterOverlay == nullptr) EndlessBetrayalHUD->AddCharacterOverlay();
 		if(IsValid(EndlessBetrayalHUD->AnnouncementWidget))
 		{
 			EndlessBetrayalHUD->AnnouncementWidget->SetVisibility(ESlateVisibility::Hidden);

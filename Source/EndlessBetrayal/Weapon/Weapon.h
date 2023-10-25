@@ -79,7 +79,7 @@ private:
 	UPROPERTY()
 	class AEndlessBetrayalPlayerController* WeaponOwnerController;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	EWeaponType WeaponType;
 
 	UFUNCTION()
@@ -118,13 +118,13 @@ private:
 	*	Zoomed FOV while Zooming
 	**/
 
-	UPROPERTY(EditAnywhere, Category = "Zoom")
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	float ZoomedFOV = 30.0f;
 
-	UPROPERTY(EditAnywhere, Category = "Zoom")
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	float ZoomInterpSpeed = 20.0f;
 
-	UPROPERTY(EditAnywhere, Category = "Zoom")
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	float CrosshairShootingFactor = 0.75f;
 	
 	

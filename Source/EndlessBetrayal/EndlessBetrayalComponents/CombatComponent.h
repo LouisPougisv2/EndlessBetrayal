@@ -146,6 +146,9 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	int32 StartingARAmmoAmount = 45	;
+
+	UPROPERTY(EditAnywhere)
+	int32 StartingRocketAmmoAmount = 0	;
 	
 	UFUNCTION()
 	void InitializeCarriedAmmo();
