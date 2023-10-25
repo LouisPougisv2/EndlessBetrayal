@@ -64,6 +64,7 @@ void AEndlessBetrayalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePrope
 
 	DOREPLIFETIME_CONDITION(AEndlessBetrayalCharacter, OverlappingWeapon, COND_OwnerOnly);
 	DOREPLIFETIME(AEndlessBetrayalCharacter, Health);
+	DOREPLIFETIME(AEndlessBetrayalCharacter, bShouldDisableGameplayInput);
 }
 
 void AEndlessBetrayalCharacter::UpdateHealthHUD()
@@ -111,6 +112,20 @@ void AEndlessBetrayalCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	RotateInPlace(DeltaTime);
+	HideCameraWhenCharacterClose();
+	PollInitialize();
+}
+
+void AEndlessBetrayalCharacter::RotateInPlace(float DeltaTime)
+{
+	if(bShouldDisableGameplayInput)
+	{
+		TurningInPlace= ETurningInPlace::ETIP_NotTurning;
+		bUseControllerRotationYaw = false;
+		return;
+	}
+	
 	if(GetLocalRole() > ROLE_SimulatedProxy && IsLocallyControlled())
 	{
 		AimOffset(DeltaTime);
@@ -124,8 +139,6 @@ void AEndlessBetrayalCharacter::Tick(float DeltaTime)
 		}
 		CalculateAO_Pitch();
 	}
-	HideCameraWhenCharacterClose();
-	PollInitialize();
 }
 
 void AEndlessBetrayalCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -171,6 +184,10 @@ void AEndlessBetrayalCharacter::Destroyed()
 	if(EliminationBotComponent)
 	{
 		EliminationBotComponent->DestroyComponent();
+	}
+	if(CombatComponent && CombatComponent->EquippedWeapon)
+	{
+		CombatComponent->EquippedWeapon->OnWeaponDropped();
 	}
 	Super::Destroyed();
 }
@@ -256,6 +273,11 @@ void AEndlessBetrayalCharacter::MulticastOnPlayerEliminated_Implementation()
 		StartDissolve();
 	}
 
+	if(CombatComponent)
+	{
+		//If player dies while shooting, its firing stops
+		CombatComponent->FireButtonPressed(false);
+	}
 	//Disable movement
 	GetCharacterMovement()->DisableMovement(); //Stop movement with WASD
 	GetCharacterMovement()->StopMovementImmediately(); //Prevents us from rotating the character
@@ -328,6 +350,8 @@ void AEndlessBetrayalCharacter::ReceiveDamage(AActor* DamagedActor, float Damage
 
 void AEndlessBetrayalCharacter::MoveForward(float Value)
 {
+	if(bShouldDisableGameplayInput) return;
+
 	if ((Controller != nullptr) && (Value != 0.0f))
 	{
 		const FRotator YawRotation(0.0f, Controller->GetControlRotation().Yaw, 0.0f);
@@ -338,6 +362,8 @@ void AEndlessBetrayalCharacter::MoveForward(float Value)
 
 void AEndlessBetrayalCharacter::MoveRight(float Value)
 {
+	if(bShouldDisableGameplayInput) return;
+
 	if ((Controller != nullptr) && (Value != 0.0f))
 	{
 		const FRotator YawRotation(0.0f, Controller->GetControlRotation().Yaw, 0.0f);
@@ -382,6 +408,8 @@ void AEndlessBetrayalCharacter::ServerEquipButtonPressed_Implementation()
 
 void AEndlessBetrayalCharacter::AimButtonPressed()
 {
+	if(bShouldDisableGameplayInput) return;
+
 	if (CombatComponent)
 	{
 		CombatComponent->SetAiming(true);
@@ -389,6 +417,8 @@ void AEndlessBetrayalCharacter::AimButtonPressed()
 }
 void AEndlessBetrayalCharacter::AimButtonReleased()
 {
+	if(bShouldDisableGameplayInput) return;
+
 	if (CombatComponent)
 	{
 		CombatComponent->SetAiming(false);
@@ -484,6 +514,7 @@ void AEndlessBetrayalCharacter::SimProxiesTurn()
 
 void AEndlessBetrayalCharacter::Jump()
 {
+	if(bShouldDisableGameplayInput) return;
 	if (bIsCrouched)
 	{
 		UnCrouch();
@@ -496,6 +527,8 @@ void AEndlessBetrayalCharacter::Jump()
 
 void AEndlessBetrayalCharacter::FireButtonPressed()
 {
+	if(bShouldDisableGameplayInput) return;
+
 	if(ensureAlways(IsValid(CombatComponent)))
 	{
 		CombatComponent->FireButtonPressed(true);
@@ -504,6 +537,8 @@ void AEndlessBetrayalCharacter::FireButtonPressed()
 
 void AEndlessBetrayalCharacter::FireButtonReleased()
 {
+	if(bShouldDisableGameplayInput) return;
+
 	if(ensureAlways(IsValid(CombatComponent)))
 	{
 		CombatComponent->FireButtonPressed(false);
@@ -512,7 +547,8 @@ void AEndlessBetrayalCharacter::FireButtonReleased()
 
 void AEndlessBetrayalCharacter::CrouchButtonPressed()
 {
-	
+	if(bShouldDisableGameplayInput) return;
+
 	if (bIsCrouched)			//Inherited public variable
 	{
 		UnCrouch();
@@ -525,6 +561,8 @@ void AEndlessBetrayalCharacter::CrouchButtonPressed()
 
 void AEndlessBetrayalCharacter::ReloadButtonPressed()
 {
+	if(bShouldDisableGameplayInput) return;
+
 	if(IsValid(CombatComponent))
 	{
 		CombatComponent->Reload();

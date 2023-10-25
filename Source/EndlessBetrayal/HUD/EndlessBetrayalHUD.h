@@ -48,11 +48,18 @@ public:
 	UPROPERTY()
 	class UCharacterOverlay* CharacterOverlay;
 
+	UPROPERTY(EditAnywhere, Category = "Announcement Widget")
+	TSubclassOf<UUserWidget> AnnouncementWidgetClass;
+
+	UPROPERTY()
+	class UAnnouncementUserWidget* AnnouncementWidget;
+
+	void AddCharacterOverlay();
+	void AddAnnouncementWidget();
 	void HideKillDeathMessages();
 protected:
 
 	virtual void BeginPlay() override;
-	void AddCharacterOverlay();
 	
 private:
 

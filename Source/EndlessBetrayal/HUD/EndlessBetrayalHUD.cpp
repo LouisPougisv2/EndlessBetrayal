@@ -3,6 +3,7 @@
 
 #include "EndlessBetrayalHUD.h"
 
+#include "AnnouncementUserWidget.h"
 #include "CharacterOverlay.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/TextBlock.h"
@@ -32,8 +33,6 @@ void AEndlessBetrayalHUD::DrawHUD()
 void AEndlessBetrayalHUD::BeginPlay()
 {
 	Super::BeginPlay();
-
-	AddCharacterOverlay();
 }
 
 void AEndlessBetrayalHUD::AddCharacterOverlay()
@@ -43,6 +42,17 @@ void AEndlessBetrayalHUD::AddCharacterOverlay()
 	{
 		CharacterOverlay = CreateWidget<UCharacterOverlay>(PlayerController, CharacterOverlayClass);
 		CharacterOverlay->AddToViewport();
+		PlayerController->PollInit();
+	}
+}
+
+void AEndlessBetrayalHUD::AddAnnouncementWidget()
+{
+	AEndlessBetrayalPlayerController* PlayerController = Cast<AEndlessBetrayalPlayerController>(GetOwningPlayerController());
+	if(IsValid(PlayerController) && IsValid(AnnouncementWidgetClass))
+	{
+		AnnouncementWidget = CreateWidget<UAnnouncementUserWidget>(PlayerController, AnnouncementWidgetClass);
+		AnnouncementWidget->AddToViewport();
 	}
 }
 
