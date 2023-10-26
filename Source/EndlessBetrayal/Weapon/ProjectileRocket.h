@@ -23,6 +23,7 @@ protected:
 
 	virtual void BeginPlay() override;
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
+	void UpdateRocketEffects();
 	void DestroyOnTimerFinished();
 
 	
@@ -37,6 +38,15 @@ private:
 	UPROPERTY()
 	class UNiagaraComponent* SmokeTrailComponent;
 
+	UPROPERTY(EditAnywhere)
+	USoundCue* RocketSoundCue;
+
+	UPROPERTY()
+	UAudioComponent* RocketSoundComponent;
+
+	UPROPERTY(EditAnywhere)
+	USoundAttenuation* RocketSoundAttenuation;
+	
 	FTimerHandle DestroyTimer;
 
 	UPROPERTY(EditAnywhere)

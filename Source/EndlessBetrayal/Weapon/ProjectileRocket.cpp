@@ -6,6 +6,7 @@
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraSystemInstanceController.h"
+#include "Components/AudioComponent.h"
 #include "Components/BoxComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
@@ -34,6 +35,24 @@ void AProjectileRocket::BeginPlay()
 	if(SmokeTrailSystem)
 	{
 		SmokeTrailComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(SmokeTrailSystem, GetRootComponent(), FName(), GetActorLocation(), GetActorRotation(), EAttachLocation::KeepWorldPosition, false);
+	}
+
+	if(IsValid(RocketSoundCue) && IsValid(RocketSoundAttenuation))
+	{
+		RocketSoundComponent = UGameplayStatics::SpawnSoundAttached(RocketSoundCue,
+			GetRootComponent(),
+			FName(),
+			GetActorLocation(),
+			GetActorRotation(),
+			EAttachLocation::KeepWorldPosition,
+			false,
+			1.0f,
+			1.0f,
+			0.0f,
+			RocketSoundAttenuation,
+			nullptr,
+			false);
+		
 	}
 }
 
@@ -65,6 +84,11 @@ void AProjectileRocket::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 	
 	GetWorldTimerManager().SetTimer(DestroyTimer, this, &AProjectileRocket::DestroyOnTimerFinished, DestroyTime);
 
+	UpdateRocketEffects();
+}
+
+void AProjectileRocket::UpdateRocketEffects()
+{
 	if(IsValid(ImpactParticles))
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, GetActorTransform());
@@ -88,6 +112,11 @@ void AProjectileRocket::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 	if(SmokeTrailComponent)
 	{
 		SmokeTrailComponent->GetSystemInstanceController()->Deactivate();
+	}
+	
+	if(RocketSoundComponent && RocketSoundComponent->IsPlaying())
+	{
+		RocketSoundComponent->Stop();
 	}
 }
 
