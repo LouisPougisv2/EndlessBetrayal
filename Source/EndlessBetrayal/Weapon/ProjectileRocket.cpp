@@ -3,7 +3,12 @@
 
 #include "ProjectileRocket.h"
 
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraSystemInstanceController.h"
+#include "Components/BoxComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Sound/SoundCue.h"
 
 AProjectileRocket::AProjectileRocket()
 {
@@ -12,10 +17,30 @@ AProjectileRocket::AProjectileRocket()
 	RocketMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);	//Our rocket is purely cosmetic
 }
 
+void AProjectileRocket::Destroyed()
+{
+	
+}
+
+void AProjectileRocket::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if(!HasAuthority())
+	{
+		CollisionBox->OnComponentHit.AddUniqueDynamic(this, &AProjectileRocket::OnHit);
+	}
+
+	if(SmokeTrailSystem)
+	{
+		SmokeTrailComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(SmokeTrailSystem, GetRootComponent(), FName(), GetActorLocation(), GetActorRotation(), EAttachLocation::KeepWorldPosition, false);
+	}
+}
+
 void AProjectileRocket::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	APawn* FiringPawn = GetInstigator();
-	if(IsValid(FiringPawn))
+	if(IsValid(FiringPawn) && HasAuthority())
 	{
 		AController* FiringController = FiringPawn->GetController();
 		if(IsValid(FiringController))
@@ -36,6 +61,39 @@ void AProjectileRocket::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 		}
 	}
 	//Super call is destroying the actor (with Particles and sound), perform any functionality before
+	//Super::OnHit(HitComp, OtherActor, OtherComp, NormalImpulse, Hit);
 	
-	Super::OnHit(HitComp, OtherActor, OtherComp, NormalImpulse, Hit);
+	GetWorldTimerManager().SetTimer(DestroyTimer, this, &AProjectileRocket::DestroyOnTimerFinished, DestroyTime);
+
+	if(IsValid(ImpactParticles))
+	{
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, GetActorTransform());
+	}
+
+	if(ImpactSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
+	}
+
+	if(RocketMesh)
+	{
+		RocketMesh->SetVisibility(false);
+	}
+	
+	if(CollisionBox)
+	{
+		CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+
+	if(SmokeTrailComponent)
+	{
+		SmokeTrailComponent->GetSystemInstanceController()->Deactivate();
+	}
 }
+
+void AProjectileRocket::DestroyOnTimerFinished()
+{
+	Destroy();
+}
+
+

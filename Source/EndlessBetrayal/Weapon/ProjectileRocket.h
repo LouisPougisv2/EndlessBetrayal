@@ -17,15 +17,30 @@ class ENDLESSBETRAYAL_API AProjectileRocket : public AProjectile
 public:
 
 	AProjectileRocket();
+	virtual void Destroyed() override;
 	
 protected:
 
+	virtual void BeginPlay() override;
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
+	void DestroyOnTimerFinished();
 
+	
 private:
 
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* RocketMesh;
+
+	UPROPERTY(EditAnywhere)
+	class UNiagaraSystem* SmokeTrailSystem;
+
+	UPROPERTY()
+	class UNiagaraComponent* SmokeTrailComponent;
+
+	FTimerHandle DestroyTimer;
+
+	UPROPERTY(EditAnywhere)
+	float DestroyTime = 3.0f;
 
 	UPROPERTY(EditAnywhere)
 	float MinimumDamage = 25.0f;
