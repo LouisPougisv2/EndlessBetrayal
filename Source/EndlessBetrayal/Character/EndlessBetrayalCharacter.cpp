@@ -223,12 +223,15 @@ void AEndlessBetrayalCharacter::PlayReloadMontage()
 		
 		switch(CombatComponent->EquippedWeapon->GetWeaponType())
 		{
-		case EWeaponType::EWT_AssaultRifle:
-			SectionName = FName("Rifle");
-			break;
-		case EWeaponType::EWT_RocketLauncher:
-			SectionName = FName("Rifle");	//TODO : modify when Rocket will have a Reload animation
-			break;
+			case EWeaponType::EWT_AssaultRifle:
+				SectionName = FName("Rifle");
+				break;
+			case EWeaponType::EWT_RocketLauncher:
+				SectionName = FName("Rifle");	//TODO : modify when Rocket will have a Reload animation
+				break;
+			case EWeaponType::EWT_Pistol:
+				SectionName = FName("Rifle");	//TODO : modify when Rocket will have a Reload animation
+				break;
 		
 		}
 		
