@@ -26,6 +26,9 @@ protected:
 	void UpdateRocketEffects();
 	void DestroyOnTimerFinished();
 
+	UPROPERTY(VisibleAnywhere)
+	class URocketMovementComponent* RocketMovementComponent;
+
 	
 private:
 
