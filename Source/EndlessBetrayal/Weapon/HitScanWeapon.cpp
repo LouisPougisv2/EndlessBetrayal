@@ -8,6 +8,7 @@
 #include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
+#include "Sound/SoundCue.h"
 
 void AHitScanWeapon::Fire(const FVector& HitTarget)
 {
@@ -43,20 +44,36 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 					UGameplayStatics::ApplyDamage(HitCharacter, Damage, DamageInstigator, this, UDamageType::StaticClass());
 				}
 
-				if(ImpactParticle)
+				if(IsValid(ImpactParticle))
 				{
 					UGameplayStatics::SpawnEmitterAtLocation(World, ImpactParticle, FireHit.ImpactPoint, FireHit.ImpactNormal.Rotation());
 				}
+				if(HitSound)
+				{
+					UGameplayStatics::PlaySoundAtLocation(this, HitSound, FireHit.ImpactPoint);
+				}
 			}
-			if(BeamParticles)
+			if(IsValid(BeamParticles))
 			{
 				BeamSystemComponent = UGameplayStatics::SpawnEmitterAtLocation(World, BeamParticles, SocketTransform);
-				if(BeamSystemComponent)
+				if(IsValid(BeamSystemComponent))
 				{
 					//Setting the end point for our Beam Particle system
 					BeamSystemComponent->SetVectorParameter(TEXT("Target"), BeamEnd);
 				}
 			}
 		}
+
+		if(IsValid(MuzzleFlash))
+		{
+			UGameplayStatics::SpawnEmitterAtLocation(World, MuzzleFlash, SocketTransform);
+		}
+		
+		if(FireSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
+		}
 	}
+	//Updating Ammo
+	SpendRound();
 }

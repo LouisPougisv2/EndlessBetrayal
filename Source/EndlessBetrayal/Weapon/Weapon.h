@@ -56,6 +56,8 @@ protected:
 	UFUNCTION()
 	virtual void OnSphereOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
+	void SpendRound();
+	
 private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
@@ -85,7 +87,6 @@ private:
 	UFUNCTION()
 	void OnRep_WeaponState();
 	
-	void SpendRound();
 
 	UFUNCTION()
 	void OnRep_Ammo();
