@@ -24,6 +24,12 @@ private:
 	float Damage = 20.0f;
 
 	UPROPERTY(EditAnywhere)
-	class UParticleSystem* ImpactParticle;
+	UParticleSystem* ImpactParticle;
+
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* BeamParticles;
+
+	UPROPERTY(VisibleAnywhere)
+	UParticleSystemComponent* BeamSystemComponent;
 	
 };

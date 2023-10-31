@@ -7,6 +7,7 @@
 #include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/GameplayStatics.h"
+#include "Particles/ParticleSystemComponent.h"
 
 void AHitScanWeapon::Fire(const FVector& HitTarget)
 {
@@ -17,7 +18,7 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 	AEndlessBetrayalPlayerController* DamageInstigator = Cast<AEndlessBetrayalPlayerController>(OwnerPawn->GetController());
 	
 	const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName(FName("MuzzleFlash"));
-	if(IsValid(MuzzleFlashSocket) && IsValid(DamageInstigator))
+	if(IsValid(MuzzleFlashSocket))
 	{
 		FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
 		FVector Start = SocketTransform.GetLocation();
@@ -28,11 +29,16 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 		if(IsValid(World))
 		{
 			World->LineTraceSingleByChannel(FireHit, Start, End, ECC_Visibility);
+
+			FVector BeamEnd = End;
+			
 			if(FireHit.bBlockingHit)
 			{
+				BeamEnd = FireHit.ImpactPoint;
+				
 				AEndlessBetrayalCharacter* HitCharacter = Cast<AEndlessBetrayalCharacter>(FireHit.GetActor());
 				//We only apply damage if we're on the Server
-				if(IsValid(HitCharacter) && HasAuthority())
+				if(IsValid(HitCharacter) && HasAuthority() && IsValid(DamageInstigator))
 				{
 					UGameplayStatics::ApplyDamage(HitCharacter, Damage, DamageInstigator, this, UDamageType::StaticClass());
 				}
@@ -40,6 +46,15 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 				if(ImpactParticle)
 				{
 					UGameplayStatics::SpawnEmitterAtLocation(World, ImpactParticle, FireHit.ImpactPoint, FireHit.ImpactNormal.Rotation());
+				}
+			}
+			if(BeamParticles)
+			{
+				BeamSystemComponent = UGameplayStatics::SpawnEmitterAtLocation(World, BeamParticles, SocketTransform);
+				if(BeamSystemComponent)
+				{
+					//Setting the end point for our Beam Particle system
+					BeamSystemComponent->SetVectorParameter(TEXT("Target"), BeamEnd);
 				}
 			}
 		}
