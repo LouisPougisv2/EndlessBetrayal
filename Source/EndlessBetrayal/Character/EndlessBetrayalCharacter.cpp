@@ -234,7 +234,12 @@ void AEndlessBetrayalCharacter::PlayReloadMontage()
 				break;
 			case EWeaponType::EWT_SMG:
 				SectionName = FName("Rifle");	//TODO : modify when Rocket will have a Reload animation
-			break;
+				break;
+			case EWeaponType::EWT_Shotgun:
+				SectionName = FName("Rifle");	//TODO : modify when Rocket will have a Reload animation
+				break;
+			default:
+				break;
 		
 		}
 		

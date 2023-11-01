@@ -9,7 +9,6 @@
 #include "EndlessBetrayal/Weapon/WeaponTypes.h"
 #include "CombatComponent.generated.h"
 
-#define TRACE_LENGTH 80000.0f
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ENDLESSBETRAYAL_API UCombatComponent : public UActorComponent
@@ -155,6 +154,9 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	int32 StartingSMGAmmoAmount = 0;
+
+	UPROPERTY(EditAnywhere)
+	int32 StartingShotgunAmmoAmount = 0;
 	
 	UFUNCTION()
 	void InitializeCarriedAmmo();

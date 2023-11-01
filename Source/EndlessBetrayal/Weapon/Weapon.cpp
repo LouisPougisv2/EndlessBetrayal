@@ -210,14 +210,12 @@ void AWeapon::ShowPickupWidget(bool bShowWidget)
 
 void AWeapon::Fire(const FVector& HitTarget)
 {
-	if(!IsValid(FireAnimation)) return;
-
-	if(IsValid(WeaponMesh))
+	if(IsValid(WeaponMesh) && IsValid(FireAnimation))
 	{
 		WeaponMesh->PlayAnimation(FireAnimation, false);
 	}
 	
-	if(IsValid(BulletCasingClass) && IsValid(WeaponMesh))
+	if(IsValid(BulletCasingClass))
 	{
 		const USkeletalMeshSocket* AmmoEjectSocket = WeaponMesh->GetSocketByName(FName("AmmoEject"));
 		if(IsValid(AmmoEjectSocket))

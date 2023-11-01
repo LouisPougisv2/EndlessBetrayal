@@ -18,6 +18,10 @@ public:
 
 	virtual void Fire(const FVector& HitTarget) override;
 
+protected:
+
+	virtual FVector GetTraceEndWithScatter(const FVector& TraceStartLocation, const FVector& HitTarget);
+
 private:
 
 	UPROPERTY(EditAnywhere)
@@ -40,4 +44,17 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	USoundCue* HitSound;
+
+	/*
+	* Trace End With Scatter
+	*/
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
+	float DistanceToSphere = 800.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
+	float SphereRadius = 75.0f;
+	
+	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")	
+	bool bUseScatter = false;
 };
