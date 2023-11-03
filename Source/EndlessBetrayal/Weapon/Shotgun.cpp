@@ -24,10 +24,43 @@ void AShotgun::Fire(const FVector& HitTarget)
 		FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
 		FVector Start = SocketTransform.GetLocation();
 
+		TMap<AEndlessBetrayalCharacter*, uint32> PlayersHitMap;
 		for(uint32 i = 0; i < NumberOfPellets; ++i)
 		{
-			FVector End = GetTraceEndWithScatter(Start, HitTarget);
+			FHitResult FireHit;
+			WeaponTraceHit(Start, HitTarget, FireHit);
+			
+			AEndlessBetrayalCharacter* HitCharacter = Cast<AEndlessBetrayalCharacter>(FireHit.GetActor());
+
+			if(IsValid(HitCharacter) && HasAuthority() && IsValid(DamageInstigator))
+			{
+				if(PlayersHitMap.Contains(HitCharacter))
+				{
+					++PlayersHitMap[HitCharacter];
+				}
+				else
+				{
+					PlayersHitMap.Emplace(HitCharacter, 1);
+				}
+			}
+
+			if(IsValid(ImpactParticle))
+			{
+				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticle, FireHit.ImpactPoint, FireHit.ImpactNormal.Rotation());
+			}
+		
+			if(HitSound)
+			{
+				UGameplayStatics::PlaySoundAtLocation(this, HitSound, FireHit.ImpactPoint, 0.5f, FMath::FRandRange(-0.5f, 0.5f));
+			}
+		}
+
+		for (TPair<AEndlessBetrayalCharacter*, unsigned> PlayerHit : PlayersHitMap)
+		{
+			if(IsValid(PlayerHit.Key) && HasAuthority() && IsValid(DamageInstigator))
+			{
+				UGameplayStatics::ApplyDamage(PlayerHit.Key, Damage * PlayerHit.Value, DamageInstigator, this, UDamageType::StaticClass());
+			}
 		}
 	}
-	
 }
