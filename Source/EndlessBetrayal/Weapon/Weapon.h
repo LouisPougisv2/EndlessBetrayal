@@ -57,6 +57,8 @@ protected:
 	virtual void OnSphereOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	void SpendRound();
+
+	FORCEINLINE class AEndlessBetrayalCharacter* GetWeaponOwnerCharacter() const { return WeaponOwnerCharacter; }
 	
 private:
 
@@ -76,7 +78,7 @@ private:
 	int32 MagCapacity;
 
 	UPROPERTY()
-	class AEndlessBetrayalCharacter* WeaponOwnerCharacter;
+	AEndlessBetrayalCharacter* WeaponOwnerCharacter;
 
 	UPROPERTY()
 	class AEndlessBetrayalPlayerController* WeaponOwnerController;

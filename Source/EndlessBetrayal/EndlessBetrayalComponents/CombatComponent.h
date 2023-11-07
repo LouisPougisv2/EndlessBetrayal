@@ -25,6 +25,8 @@ public:
 	void EquipWeapon(class AWeapon* WeaponToEquip);
 	void FireButtonPressed(bool bPressed);
 	void Reload();
+
+	FORCEINLINE bool IsAiming() const { return bIsAiming; }
 	
 protected:
 
@@ -144,19 +146,22 @@ private:
 	TMap<EWeaponType, int32> CarriedAmmoMap;
 
 	UPROPERTY(EditAnywhere)
-	int32 StartingARAmmoAmount = 45;
+	int32 StartingARAmmo = 45;
 
 	UPROPERTY(EditAnywhere)
-	int32 StartingRocketAmmoAmount = 0;
+	int32 StartingRocketAmmo = 0;
 
 	UPROPERTY(EditAnywhere)
-	int32 StartingPistolAmmoAmount = 15;
+	int32 StartingPistolAmmo = 15;
 
 	UPROPERTY(EditAnywhere)
-	int32 StartingSMGAmmoAmount = 0;
+	int32 StartingSMGAmmo = 0;
 
 	UPROPERTY(EditAnywhere)
-	int32 StartingShotgunAmmoAmount = 0;
+	int32 StartingShotgunAmmo = 0;
+	
+	UPROPERTY(EditAnywhere)
+	int32 StartingSniperAmmo = 0;
 	
 	UFUNCTION()
 	void InitializeCarriedAmmo();

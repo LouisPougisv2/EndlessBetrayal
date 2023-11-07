@@ -12,6 +12,7 @@
 #include "DrawDebugHelpers.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "WeaponTypes.h"
+#include "EndlessBetrayal/EndlessBetrayalComponents/CombatComponent.h"
 
 void AHitScanWeapon::Fire(const FVector& HitTarget)
 {
@@ -63,6 +64,15 @@ void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& Hi
 {
 	UWorld* World = GetWorld();
 
+	if(GetWeaponType() == EWeaponType::EWT_SniperRifle)
+	{
+		AEndlessBetrayalCharacter* Character = Cast<AEndlessBetrayalCharacter>(GetWeaponOwnerCharacter());
+		if(IsValid(Character) && Character->GetCombatComponent())
+		{
+			bUseScatter = !Character->GetCombatComponent()->IsAiming();
+		}
+	}
+	
 	if(IsValid(World))
 	{
 		const FVector End = bUseScatter ? GetTraceEndWithScatter(TraceStart, HitTarget) : TraceStart + (HitTarget - TraceStart) * 1.25f;
@@ -95,9 +105,9 @@ FVector AHitScanWeapon::GetTraceEndWithScatter(const FVector& TraceStartLocation
 	FVector EndLocation = SphereCenter + RandVect;
 	FVector ToEndLocation = EndLocation - TraceStartLocation;
 	
-	//DrawDebugSphere(GetWorld(), SphereCenter, SphereRadius, 12, FColor::Yellow, true);
-	//DrawDebugSphere(GetWorld(), EndLocation, 4.0f, 12, FColor::Red, true);
-	//DrawDebugLine(GetWorld(), TraceStartLocation, FVector(TraceStartLocation + ToEndLocation * TRACE_LENGTH / ToEndLocation.Size()), FColor::White, true);
+	DrawDebugSphere(GetWorld(), SphereCenter, SphereRadius, 12, FColor::White, true);
+	DrawDebugSphere(GetWorld(), EndLocation, 4.0f, 12, FColor::Red, true);
+	DrawDebugLine(GetWorld(), TraceStartLocation, FVector(TraceStartLocation + ToEndLocation * TRACE_LENGTH / ToEndLocation.Size()), FColor::White, true);
 	
 	return FVector(TraceStartLocation + ToEndLocation * TRACE_LENGTH / ToEndLocation.Size());
 }
