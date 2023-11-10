@@ -70,16 +70,20 @@ void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActo
 
 void UCombatComponent::SetAiming(bool bAiming)
 {
-		bIsAiming = bAiming;
-		ServerSetAiming(bAiming);
-		if (Character)
-		{
-			Character->GetCharacterMovement()->MaxWalkSpeed = bIsAiming ? AimWalkSpeed : BaseWalkSpeed;
-		}
-		else if (Character)
-		{
-			Character->GetCharacterMovement()->MaxWalkSpeed = BaseWalkSpeed;
-		}
+	if(!IsValid(Character) || !IsValid(EquippedWeapon)) return;
+	
+	bIsAiming = bAiming;
+	ServerSetAiming(bAiming);
+	if (IsValid(Character))
+	{
+		Character->GetCharacterMovement()->MaxWalkSpeed = bIsAiming ? AimWalkSpeed : BaseWalkSpeed;
+	}
+
+	//Displaying/Hiding Sniper Scope for Client
+	if(Character->IsLocallyControlled() && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_SniperRifle)
+	{
+		Character->ShowSniperScopeWidget(bIsAiming);
+	}
 }
 
 void UCombatComponent::ServerSetAiming_Implementation(bool bAiming)

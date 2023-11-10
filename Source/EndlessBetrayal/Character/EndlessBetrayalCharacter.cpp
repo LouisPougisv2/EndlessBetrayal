@@ -295,6 +295,13 @@ void AEndlessBetrayalCharacter::MulticastOnPlayerEliminated_Implementation()
 	{
 		//If player dies while shooting, its firing stops
 		CombatComponent->FireButtonPressed(false);
+		
+		//If player was killed while aiming at sniper
+		const bool bShouldHideSniperScope = IsLocallyControlled() && CombatComponent->IsAiming() && IsValid(CombatComponent->EquippedWeapon) && CombatComponent->EquippedWeapon->GetWeaponType() == EWeaponType::EWT_SniperRifle;
+		if(bShouldHideSniperScope)
+		{
+			CombatComponent->SetAiming(false);
+		}
 	}
 	//Disable movement
 	GetCharacterMovement()->DisableMovement(); //Stop movement with WASD

@@ -33,6 +33,9 @@ public:
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastOnPlayerEliminated();
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void ShowSniperScopeWidget(bool bShouldShowScope);
+
 protected:
 	virtual void BeginPlay() override;
 
