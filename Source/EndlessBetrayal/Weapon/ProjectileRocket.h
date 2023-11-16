@@ -38,14 +38,5 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	USoundAttenuation* RocketSoundAttenuation;
-
-	UPROPERTY(EditAnywhere)
-	float MinimumDamage = 25.0f;
-
-	UPROPERTY(EditAnywhere)
-	float DamageInnerRadius = 200.0f;
-
-	UPROPERTY(EditAnywhere)
-	float DamageOuterRadius = 500.0f;
 	
 };

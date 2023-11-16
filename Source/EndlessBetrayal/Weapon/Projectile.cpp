@@ -53,6 +53,31 @@ void AProjectile::DestroyOnTimerFinished()
 	Destroy();
 }
 
+void AProjectile::ExplodeDamage()
+{
+	APawn* FiringPawn = GetInstigator();
+	if(IsValid(FiringPawn) && HasAuthority())
+	{
+		AController* FiringController = FiringPawn->GetController();
+		if(IsValid(FiringController))
+		{
+			UGameplayStatics::ApplyRadialDamageWithFalloff(
+				this,	//World Context
+				Damage,	//Base Damage
+				MinimumDamage,	//Minimum inflicted damage
+				GetActorLocation(),	//Origin
+				DamageInnerRadius,	//Damage Inner Radius
+				DamageOuterRadius,	//Damage Outer Radius
+				1.0f,	//Damage Fall off
+				UDamageType::StaticClass(),	//Damage Type
+				TArray<AActor*>(),	//Ignored actors
+				this,	//Damage Causer
+				FiringController //Instigator Controller
+				);	
+		}
+	}
+}
+
 void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	Destroy();

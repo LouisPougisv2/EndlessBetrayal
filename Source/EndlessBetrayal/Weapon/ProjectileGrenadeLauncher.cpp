@@ -30,6 +30,12 @@ void AProjectileGrenadeLauncher::BeginPlay()
 	SpawnTrailSystem();
 }
 
+void AProjectileGrenadeLauncher::Destroyed()
+{
+	ExplodeDamage();
+	Super::Destroyed();
+}
+
 void AProjectileGrenadeLauncher::OnBounce(const FHitResult& ImpactResult, const FVector& ImpactVelocity)
 {
 	if(BouncingCue)

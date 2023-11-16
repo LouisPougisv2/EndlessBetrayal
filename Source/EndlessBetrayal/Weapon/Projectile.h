@@ -23,6 +23,8 @@ protected:
 	void StartDestroyTimer();
 	void DestroyOnTimerFinished();
 
+	void ExplodeDamage();
+	
 	UFUNCTION()
 	virtual void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
@@ -56,6 +58,15 @@ protected:
 	
 private:
 
+	UPROPERTY(EditAnywhere, Category = "Zone Damage")
+	float MinimumDamage = 25.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Zone Damage")
+	float DamageInnerRadius = 200.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Zone Damage")
+	float DamageOuterRadius = 500.0f;
+	
 	UPROPERTY(EditAnywhere)
 	UParticleSystem* Tracer;
 
