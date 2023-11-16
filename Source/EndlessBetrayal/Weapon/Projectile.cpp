@@ -2,6 +2,8 @@
 
 
 #include "Projectile.h"
+
+#include "NiagaraFunctionLibrary.h"
 #include "Components/BoxComponent.h"
 #include "EndlessBetrayal/Character/EndlessBetrayalCharacter.h"
 #include "GameFramework/ProjectileMovementComponent.h"
@@ -41,9 +43,27 @@ void AProjectile::BeginPlay()
 	}
 }
 
+void AProjectile::StartDestroyTimer()
+{
+	GetWorldTimerManager().SetTimer(DestroyTimer, this, &AProjectile::DestroyOnTimerFinished, DestroyTime);
+}
+
+void AProjectile::DestroyOnTimerFinished()
+{
+	Destroy();
+}
+
 void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	Destroy();
+}
+
+void AProjectile::SpawnTrailSystem()
+{
+	if(SmokeTrailSystem)
+	{
+		SmokeTrailComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(SmokeTrailSystem, GetRootComponent(), FName(), GetActorLocation(), GetActorRotation(), EAttachLocation::KeepWorldPosition, false);
+	}
 }
 
 // Called every frame

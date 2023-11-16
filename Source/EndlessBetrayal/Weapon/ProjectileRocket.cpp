@@ -4,7 +4,6 @@
 #include "ProjectileRocket.h"
 
 #include "NiagaraComponent.h"
-#include "NiagaraFunctionLibrary.h"
 #include "NiagaraSystemInstanceController.h"
 #include "RocketMovementComponent.h"
 #include "Components/AudioComponent.h"
@@ -14,9 +13,9 @@
 
 AProjectileRocket::AProjectileRocket()
 {
-	RocketMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RocketMesh"));
-	RocketMesh->SetupAttachment(RootComponent);
-	RocketMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);	//Our rocket is purely cosmetic
+	ProjectileMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RocketMesh"));
+	ProjectileMesh->SetupAttachment(RootComponent);
+	ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);	//Our rocket is purely cosmetic
 
 	RocketMovementComponent = CreateDefaultSubobject<URocketMovementComponent>(TEXT("RocketMovementComponent"));
 	//Following line makes sure that the projectile will keep its rotation aligned with the velocity
@@ -38,10 +37,7 @@ void AProjectileRocket::BeginPlay()
 		CollisionBox->OnComponentHit.AddUniqueDynamic(this, &AProjectileRocket::OnHit);
 	}
 
-	if(SmokeTrailSystem)
-	{
-		SmokeTrailComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(SmokeTrailSystem, GetRootComponent(), FName(), GetActorLocation(), GetActorRotation(), EAttachLocation::KeepWorldPosition, false);
-	}
+	SpawnTrailSystem();
 
 	if(IsValid(RocketSoundCue) && IsValid(RocketSoundAttenuation))
 	{
@@ -89,11 +85,8 @@ void AProjectileRocket::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, 
 				);	
 		}
 	}
-	//Super call is destroying the actor (with Particles and sound), perform any functionality before
-	//Super::OnHit(HitComp, OtherActor, OtherComp, NormalImpulse, Hit);
 	
-	GetWorldTimerManager().SetTimer(DestroyTimer, this, &AProjectileRocket::DestroyOnTimerFinished, DestroyTime);
-
+	StartDestroyTimer();
 	UpdateRocketEffects();
 }
 
@@ -109,9 +102,9 @@ void AProjectileRocket::UpdateRocketEffects()
 		UGameplayStatics::PlaySoundAtLocation(this, ImpactSound, GetActorLocation());
 	}
 
-	if(RocketMesh)
+	if(ProjectileMesh)
 	{
-		RocketMesh->SetVisibility(false);
+		ProjectileMesh->SetVisibility(false);
 	}
 	
 	if(CollisionBox)
@@ -128,11 +121,6 @@ void AProjectileRocket::UpdateRocketEffects()
 	{
 		RocketSoundComponent->Stop();
 	}
-}
-
-void AProjectileRocket::DestroyOnTimerFinished()
-{
-	Destroy();
 }
 
 
