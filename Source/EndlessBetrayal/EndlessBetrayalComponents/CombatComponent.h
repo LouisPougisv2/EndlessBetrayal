@@ -61,6 +61,9 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void ThrowGrenadeFinished();
 
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastThrowGrenade();
+
 	UFUNCTION(BlueprintCallable)
 	void FinishReloading();
 	

@@ -402,15 +402,8 @@ void UCombatComponent::ThrowGrenade()
 {
 	if(CombatState != ECombatState::ECS_Unoccupied) return;
 	if(!IsValid(Character)) return;
-	
-	CombatState = ECombatState::ECS_ThrowingGrenade;
 
-	//Playing the Montage while the RPC is received by the server
-	Character->PlayThrowGrenadeMontage();
-	if(!Character->HasAuthority())
-	{
-		ServerThrowGrenade();
-	}
+	ServerThrowGrenade();
 }
 
 void UCombatComponent::ThrowGrenadeFinished()
@@ -418,13 +411,18 @@ void UCombatComponent::ThrowGrenadeFinished()
 	CombatState = ECombatState::ECS_Unoccupied;
 }
 
-void UCombatComponent::ServerThrowGrenade_Implementation()
+void UCombatComponent::MulticastThrowGrenade_Implementation()
 {
-	CombatState = ECombatState::ECS_ThrowingGrenade;
 	if(IsValid(Character))
 	{
 		Character->PlayThrowGrenadeMontage();
 	}
+}
+
+void UCombatComponent::ServerThrowGrenade_Implementation()
+{
+	CombatState = ECombatState::ECS_ThrowingGrenade;
+	MulticastThrowGrenade();
 }
 
 void UCombatComponent::ServerReload_Implementation()
@@ -468,13 +466,6 @@ void UCombatComponent::OnRep_CombatState()
 			{
 				Fire();
 			}
-		case ECombatState::ECS_ThrowingGrenade:
-			if(IsValid(Character) && !Character->IsLocallyControlled())
-			{
-				Character->PlayThrowGrenadeMontage();
-				CombatState = ECombatState::ECS_Unoccupied;
-			}
-			break;
 		default:
 			break;
 	}
