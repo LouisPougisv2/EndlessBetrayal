@@ -28,6 +28,10 @@ AWeapon::AWeapon()
 	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
+	WeaponMesh->MarkRenderStateDirty();	//Forcing the PP refresh
+	ToggleCustomDepth(true);
+
 	AreaSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AreaSphere"));
 	AreaSphere->SetupAttachment(RootComponent);
 	AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
@@ -123,6 +127,7 @@ void AWeapon::SetWeaponState(EWeaponState NewState)
 			WeaponMesh->SetCollisionResponseToChannels(ECollisionResponse::ECR_Ignore);
 			WeaponMesh->SetEnableGravity(true);
 		}
+		ToggleCustomDepth(false);
 		break;
 
 	case EWeaponState::EWS_Dropped:
@@ -135,6 +140,9 @@ void AWeapon::SetWeaponState(EWeaponState NewState)
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 		WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+		WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
+		WeaponMesh->MarkRenderStateDirty();
+		ToggleCustomDepth(true);
 		break;
 
 	default:
@@ -159,6 +167,7 @@ void AWeapon::OnRep_WeaponState()
 			WeaponMesh->SetCollisionResponseToChannels(ECollisionResponse::ECR_Ignore);
 			WeaponMesh->SetEnableGravity(true);
 		}
+		ToggleCustomDepth(false);
 		break;
 	case EWeaponState::EWS_Dropped:
 		WeaponMesh->SetSimulatePhysics(true);
@@ -166,6 +175,9 @@ void AWeapon::OnRep_WeaponState()
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 		WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+		WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
+		WeaponMesh->MarkRenderStateDirty();
+		ToggleCustomDepth(true);
 		break;
 
 	default:
@@ -248,4 +260,11 @@ void AWeapon::UpdateAmmo(int32 AmmoAmountToAdd)
 {
 	AmmoAmount = FMath::Clamp(AmmoAmount + AmmoAmountToAdd, 0, MagCapacity);
 	UpdateHUDAmmo();
+}
+
+void AWeapon::ToggleCustomDepth(bool bEnable)
+{
+	ensureAlways(IsValid(WeaponMesh));
+	
+	WeaponMesh->SetRenderCustomDepth(bEnable);
 }

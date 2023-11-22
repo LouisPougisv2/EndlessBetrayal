@@ -35,6 +35,9 @@ public:
 	virtual void OnWeaponDropped();
 	void UpdateAmmo(int32 AmmoAmount);
 
+	//Enable / Disable Custom Depth
+	void ToggleCustomDepth(bool bEnable);
+
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	bool bIsWeaponAutomatic = true;
 	
