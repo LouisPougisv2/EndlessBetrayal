@@ -333,7 +333,6 @@ void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& Trac
 
 void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
 {
-	//TODO : Add Ammo check here when adding Ammo in the future
 	if(!IsValid(EquippedWeapon)) return;
 	
 	if(IsValid(Character) && CombatState == ECombatState::ECS_Unoccupied)
@@ -346,7 +345,8 @@ void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& T
 void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 {
 	if (Character == nullptr || WeaponToEquip == nullptr) return;
-
+	if(CombatState != ECombatState::ECS_Unoccupied) return;
+	
 	if(IsValid(EquippedWeapon))
 	{
 		EquippedWeapon->OnWeaponDropped();
@@ -392,9 +392,38 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 void UCombatComponent::Reload()
 {
-	if(CarriedAmmo > 0 && CombatState != ECombatState::ECS_Reloading)
+	if(CarriedAmmo > 0 && CombatState == ECombatState::ECS_Unoccupied)
 	{
 		ServerReload();
+	}
+}
+
+void UCombatComponent::ThrowGrenade()
+{
+	if(CombatState != ECombatState::ECS_Unoccupied) return;
+	if(!IsValid(Character)) return;
+	
+	CombatState = ECombatState::ECS_ThrowingGrenade;
+
+	//Playing the Montage while the RPC is received by the server
+	Character->PlayThrowGrenadeMontage();
+	if(!Character->HasAuthority())
+	{
+		ServerThrowGrenade();
+	}
+}
+
+void UCombatComponent::ThrowGrenadeFinished()
+{
+	CombatState = ECombatState::ECS_Unoccupied;
+}
+
+void UCombatComponent::ServerThrowGrenade_Implementation()
+{
+	CombatState = ECombatState::ECS_ThrowingGrenade;
+	if(IsValid(Character))
+	{
+		Character->PlayThrowGrenadeMontage();
 	}
 }
 
@@ -410,6 +439,7 @@ void UCombatComponent::HandleReload()
 {
 	Character->PlayReloadMontage();
 }
+
 
 void UCombatComponent::FinishReloading()
 {
@@ -438,6 +468,13 @@ void UCombatComponent::OnRep_CombatState()
 			{
 				Fire();
 			}
+		case ECombatState::ECS_ThrowingGrenade:
+			if(IsValid(Character) && !Character->IsLocallyControlled())
+			{
+				Character->PlayThrowGrenadeMontage();
+				CombatState = ECombatState::ECS_Unoccupied;
+			}
+			break;
 		default:
 			break;
 	}

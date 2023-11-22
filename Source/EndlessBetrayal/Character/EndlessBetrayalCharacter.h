@@ -26,6 +26,7 @@ public:
 	void PlayFireMontage(bool bIsAiming);
 	void PlayReloadMontage();
 	void PlayEliminatedMontage();
+	void PlayThrowGrenadeMontage();
 
 	//Reserved for functionalities that'll happen only on the server
 	void OnPlayerEliminated();
@@ -56,6 +57,7 @@ protected:
 	void FireButtonPressed();
 	void FireButtonReleased();
 	void PlayHitReactMontage();
+	void GrenadeButtonPressed();
 
 	UFUNCTION() //NEEDS to be UFUNCTION or we well never get our callback called in response to a damage event 
 	void ReceiveDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
@@ -103,6 +105,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	UAnimMontage* EliminationMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	UAnimMontage* ThrowingGrenadeMontage;
 
 	//End of Animation Montages
 	UPROPERTY(EditAnywhere, Category = "Camera")

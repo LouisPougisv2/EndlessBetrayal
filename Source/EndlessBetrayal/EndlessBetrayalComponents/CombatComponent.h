@@ -53,6 +53,14 @@ protected:
 	UFUNCTION()
 	void HandleReload();
 
+	void ThrowGrenade();
+	
+	UFUNCTION(Server, Reliable)
+	void ServerThrowGrenade();
+
+	UFUNCTION(BlueprintCallable)
+	void ThrowGrenadeFinished();
+
 	UFUNCTION(BlueprintCallable)
 	void FinishReloading();
 	

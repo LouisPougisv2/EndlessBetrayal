@@ -153,6 +153,7 @@ void AEndlessBetrayalCharacter::SetupPlayerInputComponent(UInputComponent* Playe
 	PlayerInputComponent->BindAction(TEXT("Fire"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::FireButtonPressed);
 	PlayerInputComponent->BindAction(TEXT("Fire"), EInputEvent::IE_Released, this, &AEndlessBetrayalCharacter::FireButtonReleased);
 	PlayerInputComponent->BindAction(TEXT("Reload"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::ReloadButtonPressed);
+	PlayerInputComponent->BindAction(TEXT("ThrowGrenade"), IE_Pressed, this, &AEndlessBetrayalCharacter::GrenadeButtonPressed);
 
 	PlayerInputComponent->BindAxis(TEXT("MoveForward"), this, &AEndlessBetrayalCharacter::MoveForward);
 	PlayerInputComponent->BindAxis(TEXT("MoveRight"), this, &AEndlessBetrayalCharacter::MoveRight);
@@ -264,6 +265,15 @@ void AEndlessBetrayalCharacter::PlayEliminatedMontage()
 	}
 }
 
+void AEndlessBetrayalCharacter::PlayThrowGrenadeMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if(IsValid(AnimInstance) && IsValid(ThrowingGrenadeMontage))
+	{
+		AnimInstance->Montage_Play(ThrowingGrenadeMontage);
+	}
+}
+
 void AEndlessBetrayalCharacter::OnPlayerEliminated()
 {
 	if(IsValid(CombatComponent) && IsValid(CombatComponent->EquippedWeapon))
@@ -353,6 +363,14 @@ void AEndlessBetrayalCharacter::PlayHitReactMontage()
 		FName SectionName("FromFront");
 		
 		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+
+void AEndlessBetrayalCharacter::GrenadeButtonPressed()
+{
+	if(CombatComponent)
+	{
+		CombatComponent->ThrowGrenade();
 	}
 }
 
