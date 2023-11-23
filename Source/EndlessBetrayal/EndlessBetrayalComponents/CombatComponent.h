@@ -36,11 +36,16 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void ServerSetAiming(bool bAiming);
 
+	void DropEquippedWeapon();
+	void AttachActorToHand(AActor* ActorToAttach, FName SocketName);
+	void UpdateWeaponCarriedAmmo();
+	void PlayEquipSound();
+	void AutomaticReload();
+	
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
 	void Fire();
-
-
+	
 	UFUNCTION(Server, Reliable)
 	void ServerFire(const FVector_NetQuantize& TraceHitTarget);
 
