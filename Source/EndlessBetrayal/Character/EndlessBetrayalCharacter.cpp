@@ -46,9 +46,6 @@ AEndlessBetrayalCharacter::AEndlessBetrayalCharacter()
 	AttachedGrenade = CreateDefaultSubobject<UStaticMeshComponent>("AttachedGrenade");
 	AttachedGrenade->SetupAttachment(GetMesh(), FName("GrenadeSocket"));
 	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	//AttachedGrenade->SetIsReplicated(true);
-	//AttachedGrenade->SetVisibility(false);
-	//AttachedGrenade->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, FName("RightHandSocket"));
 
 	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("DissolveTimelineComponent"));
 
@@ -112,6 +109,11 @@ void AEndlessBetrayalCharacter::BeginPlay()
 	if(HasAuthority())
 	{
 		OnTakeAnyDamage.AddUniqueDynamic(this, &AEndlessBetrayalCharacter::ReceiveDamage);
+	}
+
+	if(IsValid(CombatComponent))
+	{
+		CombatComponent->SetGrenadeVisibility(false);
 	}
 }
 

@@ -212,6 +212,7 @@ public:
 	FORCEINLINE UCombatComponent* GetCombatComponent() { return CombatComponent; }
 	FORCEINLINE bool IsGameplayDisabled() const { return bShouldDisableGameplayInput; }
 	AWeapon* GetEquippedWeapon();
+	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() { return AttachedGrenade; }
 
 	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; }
 	FORCEINLINE bool IsEliminated() const { return bIsEliminated; }

@@ -440,6 +440,7 @@ void UCombatComponent::MulticastThrowGrenade_Implementation()
 {
 	if(IsValid(Character))
 	{
+		SetGrenadeVisibility(true);
 		Character->PlayThrowGrenadeMontage();
 		if(IsValid(EquippedWeapon))
 		{
@@ -467,6 +468,14 @@ void UCombatComponent::ServerReload_Implementation()
 void UCombatComponent::HandleReload()
 {
 	Character->PlayReloadMontage();
+}
+
+void UCombatComponent::SetGrenadeVisibility(bool bShouldBeVisible)
+{
+	if(IsValid(Character) && IsValid(Character->GetAttachedGrenade()))
+	{
+		Character->GetAttachedGrenade()->SetVisibility(bShouldBeVisible);
+	}
 }
 
 

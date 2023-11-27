@@ -58,6 +58,9 @@ protected:
 	UFUNCTION()
 	void HandleReload();
 
+	UFUNCTION(BlueprintCallable)
+	void SetGrenadeVisibility(bool bShouldBeVisible);
+	
 	void ThrowGrenade();
 	
 	UFUNCTION(Server, Reliable)
