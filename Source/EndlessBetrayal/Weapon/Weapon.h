@@ -31,6 +31,7 @@ public:
 
 	void ShowPickupWidget(bool bShowWidget);
 	virtual void Fire(const FVector& HitTarget);
+	bool IsFullyLoaded();
 	void UpdateHUDAmmo();
 	virtual void OnWeaponDropped();
 	void UpdateAmmo(int32 AmmoAmount);

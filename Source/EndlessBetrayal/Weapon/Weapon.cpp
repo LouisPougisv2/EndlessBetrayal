@@ -245,6 +245,11 @@ void AWeapon::Fire(const FVector& HitTarget)
 	SpendRound();
 }
 
+bool AWeapon::IsFullyLoaded()
+{
+	return AmmoAmount == MagCapacity;
+}
+
 void AWeapon::OnWeaponDropped()
 {
 	SetWeaponState(EWeaponState::EWS_Dropped);

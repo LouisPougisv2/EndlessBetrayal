@@ -191,6 +191,13 @@ private:
 
 	UPROPERTY()
 	class AEndlessBetrayalPlayerController* EndlessBetrayalPlayerController;
+	
+	/**
+	*	Grenade
+	**/
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* AttachedGrenade;
 public:	
 
 	void SetOverlappingWeapon(AWeapon* Weapon);

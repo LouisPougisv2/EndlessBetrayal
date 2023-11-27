@@ -43,6 +43,13 @@ AEndlessBetrayalCharacter::AEndlessBetrayalCharacter()
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	CombatComponent->SetIsReplicated(true);
 
+	AttachedGrenade = CreateDefaultSubobject<UStaticMeshComponent>("AttachedGrenade");
+	AttachedGrenade->SetupAttachment(GetMesh(), FName("GrenadeSocket"));
+	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	//AttachedGrenade->SetIsReplicated(true);
+	//AttachedGrenade->SetVisibility(false);
+	//AttachedGrenade->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform, FName("RightHandSocket"));
+
 	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("DissolveTimelineComponent"));
 
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
