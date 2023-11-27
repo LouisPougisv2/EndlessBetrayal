@@ -441,9 +441,12 @@ void UCombatComponent::MulticastThrowGrenade_Implementation()
 	if(IsValid(Character))
 	{
 		Character->PlayThrowGrenadeMontage();
-		const bool IsSingleHandWeapon = EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Pistol || EquippedWeapon->GetWeaponType() == EWeaponType::EWT_SMG;
-		const FName SocketName = IsSingleHandWeapon ? FName("SingleHandWeaponSocket") : FName("LeftHandSocket");
-		AttachActorToHand(EquippedWeapon, SocketName);
+		if(IsValid(EquippedWeapon))
+		{
+			const bool IsSingleHandWeapon = EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Pistol || EquippedWeapon->GetWeaponType() == EWeaponType::EWT_SMG;
+			const FName SocketName = IsSingleHandWeapon ? FName("SingleHandWeaponSocket") : FName("LeftHandSocket");
+			AttachActorToHand(EquippedWeapon, SocketName);
+		}
 	}
 }
 
