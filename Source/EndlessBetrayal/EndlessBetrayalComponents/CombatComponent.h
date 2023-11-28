@@ -9,7 +9,6 @@
 #include "EndlessBetrayal/Weapon/WeaponTypes.h"
 #include "CombatComponent.generated.h"
 
-#define TRACE_LENGTH 80000.0f
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ENDLESSBETRAYAL_API UCombatComponent : public UActorComponent
@@ -26,6 +25,16 @@ public:
 	void EquipWeapon(class AWeapon* WeaponToEquip);
 	void FireButtonPressed(bool bPressed);
 	void Reload();
+
+	FORCEINLINE bool IsAiming() const { return bIsAiming; }
+
+	UFUNCTION(BlueprintCallable)
+	void LaunchGrenade();
+
+	UFUNCTION(Server, Reliable)
+	void ServerLaunchGrenade(const FVector_NetQuantize& Target);
+
+	FORCEINLINE int32 GetGrenadesAmount() const { return AmountOfGrenades; };
 	
 protected:
 
@@ -35,11 +44,16 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void ServerSetAiming(bool bAiming);
 
+	void DropEquippedWeapon();
+	void AttachActorToHand(AActor* ActorToAttach, FName SocketName);
+	void UpdateWeaponCarriedAmmo();
+	void PlayEquipSound();
+	void AutomaticReload();
+	
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
 	void Fire();
-
-
+	
 	UFUNCTION(Server, Reliable)
 	void ServerFire(const FVector_NetQuantize& TraceHitTarget);
 
@@ -53,6 +67,20 @@ protected:
 	void HandleReload();
 
 	UFUNCTION(BlueprintCallable)
+	void SetGrenadeVisibility(bool bShouldBeVisible);
+	
+	void ThrowGrenade();
+	
+	UFUNCTION(Server, Reliable)
+	void ServerThrowGrenade();
+
+	UFUNCTION(BlueprintCallable)
+	void ThrowGrenadeFinished();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastThrowGrenade();
+
+	UFUNCTION(BlueprintCallable)
 	void FinishReloading();
 	
 	void TraceUnderCrosshair(FHitResult& HitResult);
@@ -60,6 +88,10 @@ protected:
 	void SetHUDCrosshair(float DeltaTime);
 
 	int32 CalculateAmountToReload();
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AProjectile> GrenadeClass;
+	
 private:
 
 	UPROPERTY()
@@ -145,7 +177,32 @@ private:
 	TMap<EWeaponType, int32> CarriedAmmoMap;
 
 	UPROPERTY(EditAnywhere)
-	int32 StartingARAmmoAmount = 45	;
+	int32 StartingARAmmo = 45;
+
+	UPROPERTY(EditAnywhere)
+	int32 StartingRocketAmmo = 10;
+
+	UPROPERTY(EditAnywhere)
+	int32 StartingPistolAmmo = 30;
+
+	UPROPERTY(EditAnywhere)
+	int32 StartingSMGAmmo = 50;
+
+	UPROPERTY(EditAnywhere)
+	int32 StartingShotgunAmmo = 12;
+	
+	UPROPERTY(EditAnywhere)
+	int32 StartingSniperAmmo = 6;
+	
+	UPROPERTY(EditAnywhere)
+	int32 StartingGrenadeLauncherAmmo = 5;
+
+	UPROPERTY(ReplicatedUsing = OnRep_GrenadesAmount, EditAnywhere)
+	int32 AmountOfGrenades = 2;
+
+	UPROPERTY(EditAnywhere)
+	int32 MaxAmountOfGrenades = 2;
+	
 	
 	UFUNCTION()
 	void InitializeCarriedAmmo();
@@ -158,4 +215,10 @@ private:
 
 	UFUNCTION()
 	void OnRep_CombatState();
+
+	UFUNCTION()
+	void UpdateHUDGrenadeAmount();
+	
+	UFUNCTION()
+	void OnRep_GrenadesAmount();
 };

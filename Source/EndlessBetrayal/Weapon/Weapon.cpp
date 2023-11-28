@@ -18,6 +18,7 @@ AWeapon::AWeapon()
 {
 	PrimaryActorTick.bCanEverTick = false;
 	bReplicates = true;
+	SetReplicateMovement(true);
 
 	WeaponMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WeaponMesh"));
 	WeaponMesh->SetupAttachment(RootComponent);
@@ -26,6 +27,10 @@ AWeapon::AWeapon()
 	WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
 	WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
+	WeaponMesh->MarkRenderStateDirty();	//Forcing the PP refresh
+	ToggleCustomDepth(true);
 
 	AreaSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AreaSphere"));
 	AreaSphere->SetupAttachment(RootComponent);
@@ -115,6 +120,14 @@ void AWeapon::SetWeaponState(EWeaponState NewState)
 		WeaponMesh->SetSimulatePhysics(false);
 		WeaponMesh->SetEnableGravity(false);
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		if(GetWeaponType() == EWeaponType::EWT_SMG)
+		{
+			WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+			WeaponMesh->SetCollisionResponseToChannels(ECollisionResponse::ECR_Ignore);
+			WeaponMesh->SetEnableGravity(true);
+		}
+		ToggleCustomDepth(false);
 		break;
 
 	case EWeaponState::EWS_Dropped:
@@ -125,6 +138,14 @@ void AWeapon::SetWeaponState(EWeaponState NewState)
 		WeaponMesh->SetSimulatePhysics(true);
 		WeaponMesh->SetEnableGravity(true);
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
+		WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+		WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
+		WeaponMesh->MarkRenderStateDirty();
+		ToggleCustomDepth(true);
+		break;
+
+	default:
 		break;
 
 	}
@@ -139,13 +160,28 @@ void AWeapon::OnRep_WeaponState()
 		WeaponMesh->SetSimulatePhysics(false);
 		WeaponMesh->SetEnableGravity(false);
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		if(GetWeaponType() == EWeaponType::EWT_SMG)
+		{
+			WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+			WeaponMesh->SetCollisionResponseToChannels(ECollisionResponse::ECR_Ignore);
+			WeaponMesh->SetEnableGravity(true);
+		}
+		ToggleCustomDepth(false);
 		break;
 	case EWeaponState::EWS_Dropped:
 		WeaponMesh->SetSimulatePhysics(true);
 		WeaponMesh->SetEnableGravity(true);
 		WeaponMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		WeaponMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Block);
+		WeaponMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Ignore);
+		WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
+		WeaponMesh->MarkRenderStateDirty();
+		ToggleCustomDepth(true);
 		break;
 
+	default:
+		break;
 	}
 }
 
@@ -186,14 +222,12 @@ void AWeapon::ShowPickupWidget(bool bShowWidget)
 
 void AWeapon::Fire(const FVector& HitTarget)
 {
-	if(!IsValid(FireAnimation)) return;
-
-	if(IsValid(WeaponMesh))
+	if(IsValid(WeaponMesh) && IsValid(FireAnimation))
 	{
 		WeaponMesh->PlayAnimation(FireAnimation, false);
 	}
 	
-	if(IsValid(BulletCasingClass) && IsValid(WeaponMesh))
+	if(IsValid(BulletCasingClass))
 	{
 		const USkeletalMeshSocket* AmmoEjectSocket = WeaponMesh->GetSocketByName(FName("AmmoEject"));
 		if(IsValid(AmmoEjectSocket))
@@ -211,6 +245,11 @@ void AWeapon::Fire(const FVector& HitTarget)
 	SpendRound();
 }
 
+bool AWeapon::IsFullyLoaded()
+{
+	return AmmoAmount == MagCapacity;
+}
+
 void AWeapon::OnWeaponDropped()
 {
 	SetWeaponState(EWeaponState::EWS_Dropped);
@@ -226,4 +265,11 @@ void AWeapon::UpdateAmmo(int32 AmmoAmountToAdd)
 {
 	AmmoAmount = FMath::Clamp(AmmoAmount + AmmoAmountToAdd, 0, MagCapacity);
 	UpdateHUDAmmo();
+}
+
+void AWeapon::ToggleCustomDepth(bool bEnable)
+{
+	ensureAlways(IsValid(WeaponMesh));
+	
+	WeaponMesh->SetRenderCustomDepth(bEnable);
 }

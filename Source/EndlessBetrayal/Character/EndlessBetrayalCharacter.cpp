@@ -43,6 +43,10 @@ AEndlessBetrayalCharacter::AEndlessBetrayalCharacter()
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	CombatComponent->SetIsReplicated(true);
 
+	AttachedGrenade = CreateDefaultSubobject<UStaticMeshComponent>("AttachedGrenade");
+	AttachedGrenade->SetupAttachment(GetMesh(), FName("GrenadeSocket"));
+	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("DissolveTimelineComponent"));
 
 	GetCharacterMovement()->NavAgentProps.bCanCrouch = true;
@@ -106,6 +110,11 @@ void AEndlessBetrayalCharacter::BeginPlay()
 	{
 		OnTakeAnyDamage.AddUniqueDynamic(this, &AEndlessBetrayalCharacter::ReceiveDamage);
 	}
+
+	if(IsValid(CombatComponent))
+	{
+		CombatComponent->SetGrenadeVisibility(false);
+	}
 }
 
 void AEndlessBetrayalCharacter::Tick(float DeltaTime)
@@ -153,6 +162,7 @@ void AEndlessBetrayalCharacter::SetupPlayerInputComponent(UInputComponent* Playe
 	PlayerInputComponent->BindAction(TEXT("Fire"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::FireButtonPressed);
 	PlayerInputComponent->BindAction(TEXT("Fire"), EInputEvent::IE_Released, this, &AEndlessBetrayalCharacter::FireButtonReleased);
 	PlayerInputComponent->BindAction(TEXT("Reload"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::ReloadButtonPressed);
+	PlayerInputComponent->BindAction(TEXT("ThrowGrenade"), IE_Pressed, this, &AEndlessBetrayalCharacter::GrenadeButtonPressed);
 
 	PlayerInputComponent->BindAxis(TEXT("MoveForward"), this, &AEndlessBetrayalCharacter::MoveForward);
 	PlayerInputComponent->BindAxis(TEXT("MoveRight"), this, &AEndlessBetrayalCharacter::MoveRight);
@@ -223,9 +233,30 @@ void AEndlessBetrayalCharacter::PlayReloadMontage()
 		
 		switch(CombatComponent->EquippedWeapon->GetWeaponType())
 		{
-		case EWeaponType::EWT_AssaultRifle:
-			SectionName = FName("Rifle");
-			break;
+			case EWeaponType::EWT_AssaultRifle:
+				SectionName = FName("Rifle");
+				break;
+			case EWeaponType::EWT_RocketLauncher:
+				SectionName = FName("RocketLauncher");
+				break;
+			case EWeaponType::EWT_Pistol:
+				SectionName = FName("Pistol");
+				break;
+			case EWeaponType::EWT_SMG:
+				SectionName = FName("SMG");
+				break;
+			case EWeaponType::EWT_Shotgun:
+				SectionName = FName("Shotgun");
+				break;
+			case EWeaponType::EWT_SniperRifle:
+				SectionName = FName("SniperRifle");
+				break;
+			case EWeaponType::EWT_GrenadeLauncher:
+				SectionName = FName("GrenadeLauncher");
+				break;
+			
+			default:
+				break;
 		
 		}
 		
@@ -240,6 +271,15 @@ void AEndlessBetrayalCharacter::PlayEliminatedMontage()
 	if(IsValid(AnimInstance) && IsValid(EliminationMontage))
 	{
 		AnimInstance->Montage_Play(EliminationMontage);
+	}
+}
+
+void AEndlessBetrayalCharacter::PlayThrowGrenadeMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if(IsValid(AnimInstance) && IsValid(ThrowingGrenadeMontage))
+	{
+		AnimInstance->Montage_Play(ThrowingGrenadeMontage);
 	}
 }
 
@@ -277,6 +317,13 @@ void AEndlessBetrayalCharacter::MulticastOnPlayerEliminated_Implementation()
 	{
 		//If player dies while shooting, its firing stops
 		CombatComponent->FireButtonPressed(false);
+		
+		//If player was killed while aiming at sniper
+		const bool bShouldHideSniperScope = IsLocallyControlled() && CombatComponent->IsAiming() && IsValid(CombatComponent->EquippedWeapon) && CombatComponent->EquippedWeapon->GetWeaponType() == EWeaponType::EWT_SniperRifle;
+		if(bShouldHideSniperScope)
+		{
+			CombatComponent->SetAiming(false);
+		}
 	}
 	//Disable movement
 	GetCharacterMovement()->DisableMovement(); //Stop movement with WASD
@@ -328,8 +375,18 @@ void AEndlessBetrayalCharacter::PlayHitReactMontage()
 	}
 }
 
+void AEndlessBetrayalCharacter::GrenadeButtonPressed()
+{
+	if(CombatComponent)
+	{
+		CombatComponent->ThrowGrenade();
+	}
+}
+
 void AEndlessBetrayalCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
+	if(bIsEliminated) return;
+	
 	Health = FMath::Clamp(Health - Damage, 0.0f, MaxHealth);
 	UpdateHealthHUD();
 	PlayHitReactMontage();

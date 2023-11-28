@@ -31,9 +31,13 @@ public:
 
 	void ShowPickupWidget(bool bShowWidget);
 	virtual void Fire(const FVector& HitTarget);
+	bool IsFullyLoaded();
 	void UpdateHUDAmmo();
 	virtual void OnWeaponDropped();
 	void UpdateAmmo(int32 AmmoAmount);
+
+	//Enable / Disable Custom Depth
+	void ToggleCustomDepth(bool bEnable);
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	bool bIsWeaponAutomatic = true;
@@ -56,6 +60,10 @@ protected:
 	UFUNCTION()
 	virtual void OnSphereOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
+	void SpendRound();
+
+	FORCEINLINE class AEndlessBetrayalCharacter* GetWeaponOwnerCharacter() const { return WeaponOwnerCharacter; }
+	
 private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
@@ -74,18 +82,17 @@ private:
 	int32 MagCapacity;
 
 	UPROPERTY()
-	class AEndlessBetrayalCharacter* WeaponOwnerCharacter;
+	AEndlessBetrayalCharacter* WeaponOwnerCharacter;
 
 	UPROPERTY()
 	class AEndlessBetrayalPlayerController* WeaponOwnerController;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	EWeaponType WeaponType;
 
 	UFUNCTION()
 	void OnRep_WeaponState();
 	
-	void SpendRound();
 
 	UFUNCTION()
 	void OnRep_Ammo();
@@ -118,13 +125,13 @@ private:
 	*	Zoomed FOV while Zooming
 	**/
 
-	UPROPERTY(EditAnywhere, Category = "Zoom")
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	float ZoomedFOV = 30.0f;
 
-	UPROPERTY(EditAnywhere, Category = "Zoom")
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	float ZoomInterpSpeed = 20.0f;
 
-	UPROPERTY(EditAnywhere, Category = "Zoom")
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	float CrosshairShootingFactor = 0.75f;
 	
 	

@@ -26,12 +26,16 @@ public:
 	void PlayFireMontage(bool bIsAiming);
 	void PlayReloadMontage();
 	void PlayEliminatedMontage();
+	void PlayThrowGrenadeMontage();
 
 	//Reserved for functionalities that'll happen only on the server
 	void OnPlayerEliminated();
 	
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastOnPlayerEliminated();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ShowSniperScopeWidget(bool bShouldShowScope);
 
 protected:
 	virtual void BeginPlay() override;
@@ -53,6 +57,7 @@ protected:
 	void FireButtonPressed();
 	void FireButtonReleased();
 	void PlayHitReactMontage();
+	void GrenadeButtonPressed();
 
 	UFUNCTION() //NEEDS to be UFUNCTION or we well never get our callback called in response to a damage event 
 	void ReceiveDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
@@ -100,6 +105,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	UAnimMontage* EliminationMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	UAnimMontage* ThrowingGrenadeMontage;
 
 	//End of Animation Montages
 	UPROPERTY(EditAnywhere, Category = "Camera")
@@ -183,6 +191,13 @@ private:
 
 	UPROPERTY()
 	class AEndlessBetrayalPlayerController* EndlessBetrayalPlayerController;
+	
+	/**
+	*	Grenade
+	**/
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* AttachedGrenade;
 public:	
 
 	void SetOverlappingWeapon(AWeapon* Weapon);
@@ -197,6 +212,7 @@ public:
 	FORCEINLINE UCombatComponent* GetCombatComponent() { return CombatComponent; }
 	FORCEINLINE bool IsGameplayDisabled() const { return bShouldDisableGameplayInput; }
 	AWeapon* GetEquippedWeapon();
+	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() { return AttachedGrenade; }
 
 	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; }
 	FORCEINLINE bool IsEliminated() const { return bIsEliminated; }

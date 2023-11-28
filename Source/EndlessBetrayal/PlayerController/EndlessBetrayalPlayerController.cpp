@@ -220,6 +220,21 @@ void AEndlessBetrayalPlayerController::UpdateWeaponCarriedAmmo(int32 NewAmmo)
 	}
 }
 
+void AEndlessBetrayalPlayerController::UpdateGrenadesAmmo(int32 Grenades)
+{
+	if(!IsValid(EndlessBetrayalHUD))
+	{
+		EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD());
+	}
+
+	const bool bIsHUDVariableFullyValid = IsValid(EndlessBetrayalHUD) && EndlessBetrayalHUD->CharacterOverlay && EndlessBetrayalHUD->CharacterOverlay->GrenadeAmount;
+	if(bIsHUDVariableFullyValid)
+	{
+		FString CarriedGrenadeText = FString::Printf(TEXT("%d"), Grenades);
+		EndlessBetrayalHUD->CharacterOverlay->GrenadeAmount->SetText(FText::FromString(CarriedGrenadeText));
+	}
+}
+
 void AEndlessBetrayalPlayerController::HandleCooldown()
 {
 	EndlessBetrayalHUD = !IsValid(EndlessBetrayalHUD) ? EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD()) : EndlessBetrayalHUD; 
@@ -290,7 +305,7 @@ void AEndlessBetrayalPlayerController::HandleMatchHasStarted()
 	if(IsValid(EndlessBetrayalHUD))
 	{
 		//HUD will only be displayed when the match is In Progress
-		EndlessBetrayalHUD->AddCharacterOverlay();
+		if(EndlessBetrayalHUD->CharacterOverlay == nullptr) EndlessBetrayalHUD->AddCharacterOverlay();
 		if(IsValid(EndlessBetrayalHUD->AnnouncementWidget))
 		{
 			EndlessBetrayalHUD->AnnouncementWidget->SetVisibility(ESlateVisibility::Hidden);
@@ -415,6 +430,12 @@ void AEndlessBetrayalPlayerController::PollInit()
 				UpdateHealthHUD(HUDHealth, HUDMaxHealth);
 				UpdateScoreHUD(HUDScore);
 				UpdateDeathsHUD(HUDDeaths);
+
+				AEndlessBetrayalCharacter* EndlessBetrayalCharacter = Cast<AEndlessBetrayalCharacter>(GetCharacter());
+				if(IsValid(EndlessBetrayalCharacter) && IsValid(EndlessBetrayalCharacter->GetCombatComponent()))
+				{
+					UpdateGrenadesAmmo(EndlessBetrayalCharacter->GetCombatComponent()->GetGrenadesAmount());
+				}
 			}
 		}
 	}

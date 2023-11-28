@@ -2,6 +2,8 @@
 
 
 #include "Projectile.h"
+
+#include "NiagaraFunctionLibrary.h"
 #include "Components/BoxComponent.h"
 #include "EndlessBetrayal/Character/EndlessBetrayalCharacter.h"
 #include "GameFramework/ProjectileMovementComponent.h"
@@ -24,10 +26,6 @@ AProjectile::AProjectile()
 	CollisionBox->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
 	CollisionBox->SetCollisionResponseToChannel(ECC_WorldStatic, ECR_Block);
 	CollisionBox->SetCollisionResponseToChannel(ECC_SkeletalMesh, ECR_Block);
-
-	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
-	//Following line makes sure that the bullet will keep its rotation aligned with the velocity
-	ProjectileMovementComponent->bRotationFollowsVelocity = true;
 }
 
 void AProjectile::BeginPlay()
@@ -45,9 +43,52 @@ void AProjectile::BeginPlay()
 	}
 }
 
+void AProjectile::StartDestroyTimer()
+{
+	GetWorldTimerManager().SetTimer(DestroyTimer, this, &AProjectile::DestroyOnTimerFinished, DestroyTime);
+}
+
+void AProjectile::DestroyOnTimerFinished()
+{
+	Destroy();
+}
+
+void AProjectile::ExplodeDamage()
+{
+	APawn* FiringPawn = GetInstigator();
+	if(IsValid(FiringPawn) && HasAuthority())
+	{
+		AController* FiringController = FiringPawn->GetController();
+		if(IsValid(FiringController))
+		{
+			UGameplayStatics::ApplyRadialDamageWithFalloff(
+				this,	//World Context
+				Damage,	//Base Damage
+				MinimumDamage,	//Minimum inflicted damage
+				GetActorLocation(),	//Origin
+				DamageInnerRadius,	//Damage Inner Radius
+				DamageOuterRadius,	//Damage Outer Radius
+				1.0f,	//Damage Fall off
+				UDamageType::StaticClass(),	//Damage Type
+				TArray<AActor*>(),	//Ignored actors
+				this,	//Damage Causer
+				FiringController //Instigator Controller
+				);	
+		}
+	}
+}
+
 void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	Destroy();
+}
+
+void AProjectile::SpawnTrailSystem()
+{
+	if(SmokeTrailSystem)
+	{
+		SmokeTrailComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(SmokeTrailSystem, GetRootComponent(), FName(), GetActorLocation(), GetActorRotation(), EAttachLocation::KeepWorldPosition, false);
+	}
 }
 
 // Called every frame

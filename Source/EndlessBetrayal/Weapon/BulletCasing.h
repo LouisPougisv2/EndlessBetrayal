@@ -28,7 +28,7 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Bullet Casing Properties")
 	float BulletCasingEjectImpulse;
 	
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Category = "Bullet Casing Properties")
 	class USoundCue* ImpactSound;
 
 };
