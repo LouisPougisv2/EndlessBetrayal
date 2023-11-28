@@ -12,6 +12,7 @@
 #include "DrawDebugHelpers.h"
 #include "Camera/CameraComponent.h"
 #include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
+#include "EndlessBetrayal/Weapon/Projectile.h"
 #include "Sound/SoundCue.h"
 
 UCombatComponent::UCombatComponent()
@@ -21,7 +22,6 @@ UCombatComponent::UCombatComponent()
 	BaseWalkSpeed = 600.0f;
 	AimWalkSpeed = 450.0f;
 }
-
 
 void UCombatComponent::BeginPlay()
 {
@@ -424,7 +424,7 @@ void UCombatComponent::Reload()
 
 void UCombatComponent::ThrowGrenade()
 {
-	if(CombatState != ECombatState::ECS_Unoccupied) return;
+	if((CombatState != ECombatState::ECS_Unoccupied) || !IsValid(EquippedWeapon)) return;
 	if(!IsValid(Character)) return;
 
 	ServerThrowGrenade();
@@ -455,6 +455,34 @@ void UCombatComponent::ServerThrowGrenade_Implementation()
 {
 	CombatState = ECombatState::ECS_ThrowingGrenade;
 	MulticastThrowGrenade();
+}
+
+void UCombatComponent::LaunchGrenade()
+{
+	SetGrenadeVisibility(false);
+	if(IsValid(Character) && Character->IsLocallyControlled())
+	{
+		ServerLaunchGrenade(HitTarget);
+	}
+}
+
+void UCombatComponent::ServerLaunchGrenade_Implementation(const FVector_NetQuantize& Target)
+{
+	if(IsValid(Character) && IsValid(GrenadeClass) && IsValid(Character->GetAttachedGrenade()))
+	{
+		const FVector StartingLocation = Character->GetAttachedGrenade()->GetComponentLocation();
+		const FVector ToTarget = Target - StartingLocation;
+		
+		FActorSpawnParameters SpawnParameters;
+		SpawnParameters.Owner = Character;
+		SpawnParameters.Instigator = Character;
+		
+		UWorld* World = GetWorld();
+		if(IsValid(World))
+		{
+			World->SpawnActor<AProjectile>(GrenadeClass, StartingLocation, ToTarget.Rotation(), SpawnParameters);
+		}
+	}
 }
 
 void UCombatComponent::ServerReload_Implementation()

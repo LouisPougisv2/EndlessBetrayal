@@ -27,6 +27,12 @@ public:
 	void Reload();
 
 	FORCEINLINE bool IsAiming() const { return bIsAiming; }
+
+	UFUNCTION(BlueprintCallable)
+	void LaunchGrenade();
+
+	UFUNCTION(Server, Reliable)
+	void ServerLaunchGrenade(const FVector_NetQuantize& Target);
 	
 protected:
 
@@ -80,6 +86,10 @@ protected:
 	void SetHUDCrosshair(float DeltaTime);
 
 	int32 CalculateAmountToReload();
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AProjectile> GrenadeClass;
+	
 private:
 
 	UPROPERTY()
