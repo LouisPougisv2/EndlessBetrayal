@@ -385,6 +385,8 @@ void AEndlessBetrayalCharacter::GrenadeButtonPressed()
 
 void AEndlessBetrayalCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
+	if(bIsEliminated) return;
+	
 	Health = FMath::Clamp(Health - Damage, 0.0f, MaxHealth);
 	UpdateHealthHUD();
 	PlayHitReactMontage();
