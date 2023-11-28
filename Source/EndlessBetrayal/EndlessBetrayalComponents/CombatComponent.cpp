@@ -51,6 +51,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	//CarriedAmmo will only replicate to the Owning client
 	DOREPLIFETIME_CONDITION(UCombatComponent, CarriedAmmo, COND_OwnerOnly);
 	DOREPLIFETIME(UCombatComponent, CombatState);
+	DOREPLIFETIME_CONDITION(UCombatComponent, AmountOfGrenades, COND_OwnerOnly);
 }
 
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -424,6 +425,7 @@ void UCombatComponent::Reload()
 
 void UCombatComponent::ThrowGrenade()
 {
+	if(AmountOfGrenades == 0) return;
 	if((CombatState != ECombatState::ECS_Unoccupied) || !IsValid(EquippedWeapon)) return;
 	if(!IsValid(Character)) return;
 
@@ -453,8 +455,15 @@ void UCombatComponent::MulticastThrowGrenade_Implementation()
 
 void UCombatComponent::ServerThrowGrenade_Implementation()
 {
+	if(AmountOfGrenades == 0) return;
 	CombatState = ECombatState::ECS_ThrowingGrenade;
 	MulticastThrowGrenade();
+	AmountOfGrenades = FMath::Clamp(--AmountOfGrenades, 0, MaxAmountOfGrenades);
+
+	if(IsValid(Character) && Character->IsLocallyControlled())
+	{
+		UpdateHUDGrenadeAmount();
+	}
 }
 
 void UCombatComponent::LaunchGrenade()
@@ -483,6 +492,22 @@ void UCombatComponent::ServerLaunchGrenade_Implementation(const FVector_NetQuant
 			World->SpawnActor<AProjectile>(GrenadeClass, StartingLocation, ToTarget.Rotation(), SpawnParameters);
 		}
 	}
+}
+
+void UCombatComponent::UpdateHUDGrenadeAmount()
+{
+	if(!(IsValid(Character)) || !(IsValid(Character->Controller))) return;
+	
+	if(!IsValid(PlayerController)) PlayerController = Cast<AEndlessBetrayalPlayerController>(Character->Controller);
+	if(IsValid(PlayerController))
+	{
+		PlayerController->UpdateGrenadesAmmo(AmountOfGrenades);
+	}
+}
+
+void UCombatComponent::OnRep_GrenadesAmount()
+{
+	UpdateHUDGrenadeAmount();
 }
 
 void UCombatComponent::ServerReload_Implementation()
@@ -538,7 +563,6 @@ void UCombatComponent::OnRep_CombatState()
 			break;
 	}
 }
-
 
 void UCombatComponent::OnRep_EquippedWeapon()
 {

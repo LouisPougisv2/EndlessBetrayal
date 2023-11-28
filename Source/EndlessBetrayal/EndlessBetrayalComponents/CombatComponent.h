@@ -33,6 +33,8 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void ServerLaunchGrenade(const FVector_NetQuantize& Target);
+
+	FORCEINLINE int32 GetGrenadesAmount() const { return AmountOfGrenades; };
 	
 protected:
 
@@ -194,6 +196,12 @@ private:
 	
 	UPROPERTY(EditAnywhere)
 	int32 StartingGrenadeLauncherAmmo = 5;
+
+	UPROPERTY(ReplicatedUsing = OnRep_GrenadesAmount, EditAnywhere)
+	int32 AmountOfGrenades = 2;
+
+	UPROPERTY(EditAnywhere)
+	int32 MaxAmountOfGrenades = 2;
 	
 	
 	UFUNCTION()
@@ -207,4 +215,10 @@ private:
 
 	UFUNCTION()
 	void OnRep_CombatState();
+
+	UFUNCTION()
+	void UpdateHUDGrenadeAmount();
+	
+	UFUNCTION()
+	void OnRep_GrenadesAmount();
 };

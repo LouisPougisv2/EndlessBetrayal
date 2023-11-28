@@ -41,5 +41,8 @@ public:
 	UTextBlock* CarriedAmmoAmount;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Player Stats")
+	UTextBlock* GrenadeAmount;
+
+	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Player Stats")
 	UTextBlock* MatchCountdownText;
 };

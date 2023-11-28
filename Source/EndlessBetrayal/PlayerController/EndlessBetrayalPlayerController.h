@@ -27,6 +27,7 @@ public:
 	void HideMessagesOnScreenHUD();
 	void UpdateWeaponAmmo(int32 NewAmmo);
 	void UpdateWeaponCarriedAmmo(int32 NewAmmo);
+	void UpdateGrenadesAmmo(int32 Grenades);
 	
 	//Sync with Server clock as soon as possible
 	virtual void ReceivedPlayer() override;
@@ -110,7 +111,6 @@ private:
 
 	bool bShouldInitializeCharacterOverlay = false;
 
-	//TODO : Remove during refactor
 	float HUDHealth;
 	float HUDMaxHealth;
 	float HUDScore;
