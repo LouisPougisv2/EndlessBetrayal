@@ -25,6 +25,7 @@ public:
 	void EquipWeapon(class AWeapon* WeaponToEquip);
 	void FireButtonPressed(bool bPressed);
 	void Reload();
+	void PickupAmmo(EWeaponType WeaponType, int32 AmmoToPickup);
 
 	FORCEINLINE bool IsAiming() const { return bIsAiming; }
 
@@ -169,6 +170,9 @@ private:
 	//Carried Ammo for the Currently equipped weapon
 	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_CarriedAmmo)
 	int32 CarriedAmmo;
+
+	UPROPERTY(EditAnywhere)
+	int32 MaxCarriedAmmo = 100;
 
 	UFUNCTION()
 	void OnRep_CarriedAmmo();
