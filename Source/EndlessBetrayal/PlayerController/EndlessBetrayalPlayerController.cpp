@@ -86,7 +86,7 @@ void AEndlessBetrayalPlayerController::UpdateScoreHUD(float NewScore)
 		EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD());
 	}
 
-	const bool bIsHUDVariableFullyValid = IsValid(EndlessBetrayalHUD) && EndlessBetrayalHUD->CharacterOverlay && EndlessBetrayalHUD->CharacterOverlay->HealthBar && EndlessBetrayalHUD->CharacterOverlay->ScoreValue;
+	const bool bIsHUDVariableFullyValid = IsValid(EndlessBetrayalHUD) && EndlessBetrayalHUD->CharacterOverlay && EndlessBetrayalHUD->CharacterOverlay->ScoreValue;
 	if(bIsHUDVariableFullyValid)
 	{
 		FString ScoreText = FString::Printf(TEXT("%d"), FMath::FloorToInt(NewScore));
@@ -113,7 +113,7 @@ void AEndlessBetrayalPlayerController::UpdateDeathsHUD(int NewDeath)
 		EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD());
 	}
 
-	const bool bIsHUDVariableFullyValid = IsValid(EndlessBetrayalHUD) && EndlessBetrayalHUD->CharacterOverlay && EndlessBetrayalHUD->CharacterOverlay->HealthBar && EndlessBetrayalHUD->CharacterOverlay->DeathsValue;
+	const bool bIsHUDVariableFullyValid = IsValid(EndlessBetrayalHUD) && EndlessBetrayalHUD->CharacterOverlay && EndlessBetrayalHUD->CharacterOverlay->DeathsValue;
 	if(bIsHUDVariableFullyValid)
 	{
 		FString ScoreText = FString::Printf(TEXT("%d"), NewDeath);
@@ -197,7 +197,7 @@ void AEndlessBetrayalPlayerController::UpdateWeaponAmmo(int32 NewAmmo)
 		EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD());
 	}
 
-	const bool bIsHUDVariableFullyValid = IsValid(EndlessBetrayalHUD) && EndlessBetrayalHUD->CharacterOverlay && EndlessBetrayalHUD->CharacterOverlay->HealthBar && EndlessBetrayalHUD->CharacterOverlay->WeaponAmmoAmount;
+	const bool bIsHUDVariableFullyValid = IsValid(EndlessBetrayalHUD) && EndlessBetrayalHUD->CharacterOverlay && EndlessBetrayalHUD->CharacterOverlay->WeaponAmmoAmount;
 	if(bIsHUDVariableFullyValid)
 	{
 		FString AmmoText = FString::Printf(TEXT("%d"), NewAmmo);
@@ -212,7 +212,7 @@ void AEndlessBetrayalPlayerController::UpdateWeaponCarriedAmmo(int32 NewAmmo)
 		EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD());
 	}
 
-	const bool bIsHUDVariableFullyValid = IsValid(EndlessBetrayalHUD) && EndlessBetrayalHUD->CharacterOverlay && EndlessBetrayalHUD->CharacterOverlay->HealthBar && EndlessBetrayalHUD->CharacterOverlay->CarriedAmmoAmount;
+	const bool bIsHUDVariableFullyValid = IsValid(EndlessBetrayalHUD) && EndlessBetrayalHUD->CharacterOverlay && EndlessBetrayalHUD->CharacterOverlay->CarriedAmmoAmount;
 	if(bIsHUDVariableFullyValid)
 	{
 		FString CarriedAmmoText = FString::Printf(TEXT("%d"), NewAmmo);

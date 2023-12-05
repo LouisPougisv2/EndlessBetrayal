@@ -4,6 +4,7 @@
 #include "Pickup.h"
 
 #include "Components/SphereComponent.h"
+#include "EndlessBetrayal/Weapon/WeaponTypes.h"
 #include "Sound/SoundCue.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -18,13 +19,19 @@ APickup::APickup()
 	CollisionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionSphere"));
 	CollisionSphere->SetupAttachment(RootComponent);
 	CollisionSphere->SetSphereRadius(75.0f);
+	CollisionSphere->AddLocalOffset(FVector(0.0f, 0.0f, 60.0f));
 	CollisionSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	CollisionSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
 	CollisionSphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 
 	PickupMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Pickup Mesh"));
+	PickupMesh->SetRelativeScale3D(FVector(2.0f, 2.0f, 2.0f));
 	PickupMesh->SetupAttachment(CollisionSphere);	//So if we move the collision sphere, the mesh follows
 	PickupMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	//Mesh Outline Effect
+	PickupMesh->SetRenderCustomDepth(true);
+	PickupMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_PURPLE);
 }
 
 void APickup::BeginPlay()
