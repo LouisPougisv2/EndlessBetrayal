@@ -25,7 +25,7 @@ void AHealthPickup::OnSphereOverlapBegin(UPrimitiveComponent* OverlappedComp, AA
 	AEndlessBetrayalCharacter* EndlessBetrayalCharacter = Cast<AEndlessBetrayalCharacter>(OtherActor);
 	if(IsValid(EndlessBetrayalCharacter) && IsValid(EndlessBetrayalCharacter->GetBuffComponent()))
 	{
-		//EndlessBetrayalCharacter->GetBuffComponent()-> 
+		EndlessBetrayalCharacter->GetBuffComponent()->Heal(HealthAmount, HealingTime);
 	}
 	Destroy();
 }

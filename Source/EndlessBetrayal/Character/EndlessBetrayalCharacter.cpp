@@ -653,10 +653,10 @@ void AEndlessBetrayalCharacter::StartDissolve()
 	}
 }
 
-void AEndlessBetrayalCharacter::OnRep_Health()
+void AEndlessBetrayalCharacter::OnRep_Health(float LastHealth)
 {
 	UpdateHealthHUD();
-	if(!bIsEliminated)
+	if(!bIsEliminated && (LastHealth > Health))
 	{
 		PlayHitReactMontage();
 	}

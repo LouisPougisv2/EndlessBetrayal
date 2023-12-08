@@ -20,13 +20,26 @@ public:
 	
 	friend class AEndlessBetrayalCharacter;	//As Combat component will need to access a lot of variable from The character
 
+	void Heal(float HealAmount, float HealingTime);
+
 protected:
 	
 	virtual void BeginPlay() override;
+
+	void HealRampUp(float DeltaTime);
 
 private:	
 
 	UPROPERTY()
 	class AEndlessBetrayalCharacter* Character;		//Set up in the PostInitializeComponent function in the EndlessBetrayalCharacter
-		
+
+
+	/*
+	* Healing Variables
+	*/
+
+	bool bIsHealing = false;
+	float HealingRate = 0.0f;
+	float AmountToHeal = 0.0f;
+	
 };

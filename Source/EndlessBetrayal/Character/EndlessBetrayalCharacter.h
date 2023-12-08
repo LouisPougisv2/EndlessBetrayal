@@ -23,6 +23,7 @@ public:
 	virtual void PostInitializeComponents() override;
 	virtual void OnRep_ReplicatedMovement() override;
 	virtual void Destroyed() override;
+	void UpdateHealthHUD();
 	void PlayFireMontage(bool bIsAiming);
 	void PlayReloadMontage();
 	void PlayEliminatedMontage();
@@ -61,7 +62,6 @@ protected:
 
 	UFUNCTION() //NEEDS to be UFUNCTION or we well never get our callback called in response to a damage event 
 	void ReceiveDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
-	void UpdateHealthHUD();
 
 	//Poll for any relevant classes and initialize our HUD
 	void PollInitialize();
@@ -190,7 +190,7 @@ private:
 	
 	//Callback function when Health is updated, only called on the client
 	UFUNCTION()
-	void OnRep_Health();
+	void OnRep_Health(float LastHealth);
 
 	UPROPERTY()
 	class AEndlessBetrayalPlayerController* EndlessBetrayalPlayerController;
@@ -210,6 +210,7 @@ public:
 	FORCEINLINE float GetAO_Pitch() const { return AO_Pitch; }
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 	FORCEINLINE float GetHealth() const { return Health; }
+	FORCEINLINE void SetHealth(float NewHealth) { Health = NewHealth; }
 	FORCEINLINE bool ShouldRotateRootBone() const { return bShouldRotateRootBone; }
 	FORCEINLINE UCameraComponent* GetFollowCamera() { return FollowCamera; }
 	FORCEINLINE UCombatComponent* GetCombatComponent() { return CombatComponent; }
