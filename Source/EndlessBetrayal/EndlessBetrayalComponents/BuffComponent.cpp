@@ -58,11 +58,7 @@ void UBuffComponent::Speed(float SpeedAmount, float CrouchSpeed, float SpeedingT
 	if(!IsValid(Character)) return;
 
 	Character->GetWorldTimerManager().SetTimer(SpeedBuffTimer, this, &UBuffComponent::ResetSpeeds, SpeedingTime);
-	if(Character->GetCharacterMovement())
-	{
-		Character->GetCharacterMovement()->MaxWalkSpeed = SpeedAmount;
-		Character->GetCharacterMovement()->MaxWalkSpeedCrouched = CrouchSpeed;
-	}
+	
 	MulticastSpeedBuff(SpeedAmount, CrouchSpeed);
 }
 
@@ -76,9 +72,5 @@ void UBuffComponent::MulticastSpeedBuff_Implementation(float BaseSpeed, float Cr
 
 void UBuffComponent::ResetSpeeds()
 {
-	if(!IsValid(Character) || !Character->GetMovementComponent()) return;
-	
-	Character->GetCharacterMovement()->MaxWalkSpeed = InitialBaseSpeed;
-	Character->GetCharacterMovement()->MaxWalkSpeedCrouched = InitialCrouchSpeed;
 	MulticastSpeedBuff(InitialBaseSpeed, InitialCrouchSpeed);
 }
