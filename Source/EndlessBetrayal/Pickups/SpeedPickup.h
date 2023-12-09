@@ -4,19 +4,19 @@
 
 #include "CoreMinimal.h"
 #include "Pickup.h"
-#include "HealthPickup.generated.h"
+#include "SpeedPickup.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class ENDLESSBETRAYAL_API AHealthPickup : public APickup
+class ENDLESSBETRAYAL_API ASpeedPickup : public APickup
 {
 	GENERATED_BODY()
 
 public:
 
-	AHealthPickup();
+	ASpeedPickup();
 
 protected:
 
@@ -25,8 +25,11 @@ protected:
 private:
 
 	UPROPERTY(EditAnywhere)
-	float HealthAmount = 75.0f;
+	float BaseSpeedBuff = 1400.0f;
 
 	UPROPERTY(EditAnywhere)
-	float HealingTime = 3.0f;
+	float CrouchedSpeedBuff = 850.0f;
+
+	UPROPERTY(EditAnywhere)
+	float SpeedingBuffTime = 8.0f;
 };

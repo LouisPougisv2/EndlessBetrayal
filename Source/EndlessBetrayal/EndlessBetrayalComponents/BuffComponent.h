@@ -22,6 +22,9 @@ public:
 
 	void Heal(float HealAmount, float HealingTime);
 
+	void SetInitialSpeeds(float BaseSpeed, float CrouchSpeed);
+	void Speed(float BaseSpeed, float CrouchSpeed, float SpeedingTime);
+
 protected:
 	
 	virtual void BeginPlay() override;
@@ -35,11 +38,23 @@ private:
 
 
 	/*
-	* Healing Variables
+	* Healing Buff
 	*/
 
 	bool bIsHealing = false;
 	float HealingRate = 0.0f;
 	float AmountToHeal = 0.0f;
-	
+
+	/*
+	* Speeding Buff
+	*/
+
+	FTimerHandle SpeedBuffTimer;
+	float InitialBaseSpeed;
+	float InitialCrouchSpeed;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastSpeedBuff(float BaseSpeed, float CrouchedSpeed);
+	void ResetSpeeds();
+		
 };
