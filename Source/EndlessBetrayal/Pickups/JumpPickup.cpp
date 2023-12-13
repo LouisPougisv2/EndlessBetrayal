@@ -15,8 +15,6 @@ void AJumpPickup::OnSphereOverlapBegin(UPrimitiveComponent* OverlappedComp, AAct
 {
 	Super::OnSphereOverlapBegin(OverlappedComp, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 
-	Super::OnSphereOverlapBegin(OverlappedComp, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
-
 	AEndlessBetrayalCharacter* EndlessBetrayalCharacter = Cast<AEndlessBetrayalCharacter>(OtherActor);
 	if(IsValid(EndlessBetrayalCharacter) && IsValid( EndlessBetrayalCharacter->GetBuffComponent()))
 	{
