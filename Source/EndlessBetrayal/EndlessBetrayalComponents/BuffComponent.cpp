@@ -23,7 +23,7 @@ void UBuffComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 	HealRampUp(DeltaTime);
 }
 
-void UBuffComponent::Heal(float HealAmount, float HealingTime)
+void UBuffComponent::BuffHeal(float HealAmount, float HealingTime)
 {
 	bIsHealing = true;
 	HealingRate = HealAmount / HealingTime;
@@ -53,7 +53,7 @@ void UBuffComponent::SetInitialSpeeds(float BaseSpeed, float CrouchSpeed)
 	InitialCrouchSpeed = CrouchSpeed;
 }
 
-void UBuffComponent::Speed(float SpeedAmount, float CrouchSpeed, float SpeedingTime)
+void UBuffComponent::BuffSpeed(float SpeedAmount, float CrouchSpeed, float SpeedingTime)
 {
 	if(!IsValid(Character)) return;
 
@@ -61,6 +61,7 @@ void UBuffComponent::Speed(float SpeedAmount, float CrouchSpeed, float SpeedingT
 	
 	MulticastSpeedBuff(SpeedAmount, CrouchSpeed);
 }
+
 
 void UBuffComponent::MulticastSpeedBuff_Implementation(float BaseSpeed, float CrouchedSpeed)
 {
@@ -73,4 +74,32 @@ void UBuffComponent::MulticastSpeedBuff_Implementation(float BaseSpeed, float Cr
 void UBuffComponent::ResetSpeeds()
 {
 	MulticastSpeedBuff(InitialBaseSpeed, InitialCrouchSpeed);
+}
+
+void UBuffComponent::SetInitialJumpVelocity(float JumpVelocity)
+{
+	InitialJumpVelocity = JumpVelocity;
+}
+
+void UBuffComponent::BuffJump(float BuffJumpVelocity, float BuffTime)
+{
+	if(!IsValid(Character)) return;
+
+	Character->GetWorldTimerManager().SetTimer(JumpBuffTimer, this, &UBuffComponent::ResetJumpVelocity, BuffTime);
+	
+	MulticastJumpBuff(BuffJumpVelocity);
+}
+
+
+void UBuffComponent::MulticastJumpBuff_Implementation(float JumpVelocity)
+{
+	if(!IsValid(Character) || !Character->GetMovementComponent()) return;
+
+	Character->GetCharacterMovement()->JumpZVelocity = JumpVelocity;
+
+}
+
+void UBuffComponent::ResetJumpVelocity()
+{
+	MulticastJumpBuff(InitialJumpVelocity);
 }

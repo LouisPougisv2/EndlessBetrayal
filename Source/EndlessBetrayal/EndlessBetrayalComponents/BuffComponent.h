@@ -20,10 +20,13 @@ public:
 	
 	friend class AEndlessBetrayalCharacter;	//As Combat component will need to access a lot of variable from The character
 
-	void Heal(float HealAmount, float HealingTime);
+	void BuffHeal(float HealAmount, float HealingTime);
 
 	void SetInitialSpeeds(float BaseSpeed, float CrouchSpeed);
-	void Speed(float BaseSpeed, float CrouchSpeed, float SpeedingTime);
+	void BuffSpeed(float SpeedAmount, float CrouchSpeed, float SpeedingTime);
+
+	void SetInitialJumpVelocity(float JumpVelocity);
+	void BuffJump(float BuffJumpVelocity, float BuffTime);
 
 protected:
 	
@@ -54,7 +57,18 @@ private:
 	float InitialCrouchSpeed;
 
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastSpeedBuff(float BaseSpeed, float CrouchedSpeed);
+	void MulticastSpeedBuff(const float BaseSpeed, const float CrouchedSpeed);
 	void ResetSpeeds();
+
+	/*
+	* Jumping Buff
+	*/
+
+	FTimerHandle JumpBuffTimer;
+	float InitialJumpVelocity;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastJumpBuff(const float JumpVelocity);
+	void ResetJumpVelocity();
 		
 };
