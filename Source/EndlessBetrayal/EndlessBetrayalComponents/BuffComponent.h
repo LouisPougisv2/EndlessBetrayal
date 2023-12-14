@@ -22,6 +22,8 @@ public:
 
 	void BuffHeal(float HealAmount, float HealingTime);
 
+	void RestoreShield(float ShieldAmount, float RestoringShieldTime);
+
 	void SetInitialSpeeds(float BaseSpeed, float CrouchSpeed);
 	void BuffSpeed(float SpeedAmount, float CrouchSpeed, float SpeedingTime);
 
@@ -33,6 +35,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	void HealRampUp(float DeltaTime);
+	void ShieldRampUp(float DeltaTime);
 
 private:	
 
@@ -48,6 +51,14 @@ private:
 	float HealingRate = 0.0f;
 	float AmountToHeal = 0.0f;
 
+	/*
+	* Shielding Buff
+	*/
+
+	bool bIsRestoringShield = false;
+	float RestoringShieldRate = 0.0f;
+	float AmountToShield = 0.0f;
+	
 	/*
 	* Speeding Buff
 	*/

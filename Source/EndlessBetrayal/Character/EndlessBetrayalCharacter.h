@@ -228,6 +228,7 @@ public:
 	FORCEINLINE float GetMaxShield() const { return MaxShield; }
 	FORCEINLINE float GetShield() const { return Shield; }
 	FORCEINLINE void SetHealth(float NewHealth) { Health = NewHealth; }
+	FORCEINLINE void SetShield(const float NewShield) { Shield = NewShield; }
 	FORCEINLINE bool ShouldRotateRootBone() const { return bShouldRotateRootBone; }
 	FORCEINLINE UCameraComponent* GetFollowCamera() { return FollowCamera; }
 	FORCEINLINE UCombatComponent* GetCombatComponent() { return CombatComponent; }
