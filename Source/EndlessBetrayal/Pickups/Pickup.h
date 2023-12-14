@@ -24,6 +24,9 @@ protected:
 	UFUNCTION()
 	virtual void OnSphereOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
+	UFUNCTION()
+	void BindOverlapDelegate();
+	
 	UPROPERTY(EditAnywhere, Category = "Pickup settings")
 	bool ShouldPickupRotate = true;
 	
@@ -46,5 +49,8 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	class UNiagaraSystem* PickupEffect;
-	
+
+	FTimerHandle BindOverlapTimer;
+
+	float BindOverlapTime = 0.3f;
 };

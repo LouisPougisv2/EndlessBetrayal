@@ -46,15 +46,18 @@ void APickup::BeginPlay()
 	//As it is a replicated actor, we only want the overlap on the server
 	if(HasAuthority())
 	{
-		CollisionSphere->OnComponentBeginOverlap.AddDynamic(this, &APickup::OnSphereOverlapBegin);
+		GetWorld()->GetTimerManager().SetTimer(BindOverlapTimer, this, &APickup::BindOverlapDelegate, BindOverlapTime);	
 	}
-	
-	
 }
 
 void APickup::OnSphereOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	
+}
+
+void APickup::BindOverlapDelegate()
+{
+	CollisionSphere->OnComponentBeginOverlap.AddDynamic(this, &APickup::OnSphereOverlapBegin);
 }
 
 void APickup::Tick(float DeltaTime)
