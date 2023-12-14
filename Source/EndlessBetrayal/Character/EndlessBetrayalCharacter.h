@@ -24,6 +24,7 @@ public:
 	virtual void OnRep_ReplicatedMovement() override;
 	virtual void Destroyed() override;
 	void UpdateHealthHUD();
+	void UpdateShieldHUD();
 	void PlayFireMontage(bool bIsAiming);
 	void PlayReloadMontage();
 	void PlayEliminatedMontage();
@@ -137,6 +138,24 @@ private:
 
 	UPROPERTY(ReplicatedUsing = OnRep_Health, VisibleAnywhere, Category = "Player Stats")
 	float Health = 100.0f;
+
+	//Callback function when Health is updated, only called on the client
+	UFUNCTION()
+	void OnRep_Health(float LastHealth);
+
+	/**
+	* Player Shield
+	**/
+
+	UPROPERTY(EditAnywhere, Category = "Player Stats")
+	float MaxShield = 100.0f;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Shield, VisibleAnywhere, Category = "Player Stats")
+	float Shield = 50.0f;
+
+	//Callback function when Shield is updated, only called on the client
+	UFUNCTION()
+	void OnRep_Shield(float LastShield);
 	
 	bool bIsEliminated = false;
 
@@ -187,10 +206,6 @@ private:
 
 	UPROPERTY()
 	class AEndlessBetrayalPlayerState* EndlessBetrayalPlayerState;
-	
-	//Callback function when Health is updated, only called on the client
-	UFUNCTION()
-	void OnRep_Health(float LastHealth);
 
 	UPROPERTY()
 	class AEndlessBetrayalPlayerController* EndlessBetrayalPlayerController;
@@ -210,6 +225,8 @@ public:
 	FORCEINLINE float GetAO_Pitch() const { return AO_Pitch; }
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 	FORCEINLINE float GetHealth() const { return Health; }
+	FORCEINLINE float GetMaxShield() const { return MaxShield; }
+	FORCEINLINE float GetShield() const { return Shield; }
 	FORCEINLINE void SetHealth(float NewHealth) { Health = NewHealth; }
 	FORCEINLINE bool ShouldRotateRootBone() const { return bShouldRotateRootBone; }
 	FORCEINLINE UCameraComponent* GetFollowCamera() { return FollowCamera; }

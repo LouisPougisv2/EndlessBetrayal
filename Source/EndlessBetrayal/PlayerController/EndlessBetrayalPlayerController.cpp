@@ -48,6 +48,7 @@ void AEndlessBetrayalPlayerController::OnPossess(APawn* InPawn)
 	
 	const AEndlessBetrayalCharacter* EndlessBetrayalCharacter = Cast<AEndlessBetrayalCharacter>(InPawn);
 	UpdateHealthHUD(EndlessBetrayalCharacter->GetHealth(), EndlessBetrayalCharacter->GetMaxHealth());
+	UpdateShieldHUD(EndlessBetrayalCharacter->GetShield(), EndlessBetrayalCharacter->GetMaxShield());
 
 	if(IsValid(EndlessBetrayalHUD) && IsValid(EndlessBetrayalHUD->CharacterOverlay))
 	{
@@ -76,6 +77,30 @@ void AEndlessBetrayalPlayerController::UpdateHealthHUD(float NewHealth, float Ma
 		bShouldInitializeCharacterOverlay = true;
 		HUDHealth = NewHealth;
 		HUDMaxHealth = MaxHealth;
+	}
+}
+
+void AEndlessBetrayalPlayerController::UpdateShieldHUD(float NewShieldValue, float MaxShield)
+{
+	if(!IsValid(EndlessBetrayalHUD))
+	{
+		EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD());
+	}
+
+	const bool bIsHUDVariableFullyValid = IsValid(EndlessBetrayalHUD) && EndlessBetrayalHUD->CharacterOverlay && EndlessBetrayalHUD->CharacterOverlay->ShieldBar && EndlessBetrayalHUD->CharacterOverlay->ShieldText;
+	if(bIsHUDVariableFullyValid)
+	{
+		const float ShieldPercent = NewShieldValue / MaxShield;
+		EndlessBetrayalHUD->CharacterOverlay->ShieldBar->SetPercent(ShieldPercent);
+
+		const FString ShieldText = FString::Printf(TEXT("%d/%d"), FMath::CeilToInt(NewShieldValue), FMath::CeilToInt(MaxShield));
+		EndlessBetrayalHUD->CharacterOverlay->ShieldText->SetText(FText::FromString(ShieldText));
+	}
+	else
+	{
+		bShouldInitializeCharacterOverlay = true;
+		HUDShield = NewShieldValue;
+		HUDMaxShield = MaxShield;
 	}
 }
 
@@ -232,6 +257,10 @@ void AEndlessBetrayalPlayerController::UpdateGrenadesAmmo(int32 Grenades)
 	{
 		FString CarriedGrenadeText = FString::Printf(TEXT("%d"), Grenades);
 		EndlessBetrayalHUD->CharacterOverlay->GrenadeAmount->SetText(FText::FromString(CarriedGrenadeText));
+	}
+	else
+	{
+		bShouldInitializeCharacterOverlay = true;
 	}
 }
 
@@ -428,6 +457,7 @@ void AEndlessBetrayalPlayerController::PollInit()
 			if(CharacterOverlay)
 			{
 				UpdateHealthHUD(HUDHealth, HUDMaxHealth);
+				UpdateShieldHUD(HUDShield, HUDMaxShield);
 				UpdateScoreHUD(HUDScore);
 				UpdateDeathsHUD(HUDDeaths);
 

@@ -72,6 +72,7 @@ void AEndlessBetrayalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePrope
 
 	DOREPLIFETIME_CONDITION(AEndlessBetrayalCharacter, OverlappingWeapon, COND_OwnerOnly);
 	DOREPLIFETIME(AEndlessBetrayalCharacter, Health);
+	DOREPLIFETIME(AEndlessBetrayalCharacter, Shield);
 	DOREPLIFETIME(AEndlessBetrayalCharacter, bShouldDisableGameplayInput);
 }
 
@@ -81,6 +82,15 @@ void AEndlessBetrayalCharacter::UpdateHealthHUD()
 	if(IsValid(EndlessBetrayalPlayerController))
 	{
 		EndlessBetrayalPlayerController->UpdateHealthHUD(Health, MaxHealth);
+	}
+}
+
+void AEndlessBetrayalCharacter::UpdateShieldHUD()
+{
+	EndlessBetrayalPlayerController = !IsValid(EndlessBetrayalPlayerController) ? Cast<AEndlessBetrayalPlayerController>(Controller) : EndlessBetrayalPlayerController;
+	if(IsValid(EndlessBetrayalPlayerController))
+	{
+		EndlessBetrayalPlayerController->UpdateShieldHUD(Shield, MaxShield);
 	}
 }
 
@@ -109,6 +119,7 @@ void AEndlessBetrayalCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	UpdateHealthHUD();
+	UpdateShieldHUD();
 
 	if(HasAuthority())
 	{
@@ -399,8 +410,22 @@ void AEndlessBetrayalCharacter::GrenadeButtonPressed()
 void AEndlessBetrayalCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
 	if(bIsEliminated) return;
+
+	const bool bDamageFullyAbsorbed = (Shield - Damage > 0.0f);
+	float DamageAfterShieldAbsorption = Damage;
+	if(Shield > 0.0f)
+	{
+		if(!bDamageFullyAbsorbed)
+		{
+			DamageAfterShieldAbsorption = FMath::Abs(Shield - Damage);
+		}
+		Shield = FMath::Clamp(Shield - Damage, 0.0f, MaxShield);
+		UpdateShieldHUD();
+	}
+
+	if(bDamageFullyAbsorbed) return;
 	
-	Health = FMath::Clamp(Health - Damage, 0.0f, MaxHealth);
+	Health = FMath::Clamp(Health - DamageAfterShieldAbsorption, 0.0f, MaxHealth);
 	UpdateHealthHUD();
 	PlayHitReactMontage();
 
@@ -661,6 +686,15 @@ void AEndlessBetrayalCharacter::OnRep_Health(float LastHealth)
 {
 	UpdateHealthHUD();
 	if(!bIsEliminated && (LastHealth > Health))
+	{
+		PlayHitReactMontage();
+	}
+}
+
+void AEndlessBetrayalCharacter::OnRep_Shield(float LastShield)
+{
+	UpdateShieldHUD();
+	if(LastShield > Shield)
 	{
 		PlayHitReactMontage();
 	}

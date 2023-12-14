@@ -20,6 +20,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
 	void UpdateHealthHUD(float NewHealth, float MaxHealth);
+	void UpdateShieldHUD(float NewShieldValue, float MaxShield);
 	void UpdateScoreHUD(float NewScore);
 	void UpdateDeathsHUD(int32 NewDeath);
 	void UpdateHUDMatchCountdown(float CountdownTime);
@@ -113,6 +114,8 @@ private:
 
 	float HUDHealth;
 	float HUDMaxHealth;
+	float HUDShield;
+	float HUDMaxShield;
 	float HUDScore;
 	float HUDDeaths;
 };
