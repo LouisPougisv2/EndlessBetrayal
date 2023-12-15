@@ -129,6 +129,7 @@ void AEndlessBetrayalCharacter::BeginPlay()
 	if(IsValid(CombatComponent))
 	{
 		CombatComponent->SetGrenadeVisibility(false);
+		CombatComponent->UpdateHUDGrenadeAmount();
 	}
 }
 

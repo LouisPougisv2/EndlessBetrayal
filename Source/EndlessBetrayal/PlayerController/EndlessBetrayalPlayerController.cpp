@@ -46,10 +46,15 @@ void AEndlessBetrayalPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 	
-	const AEndlessBetrayalCharacter* EndlessBetrayalCharacter = Cast<AEndlessBetrayalCharacter>(InPawn);
+	AEndlessBetrayalCharacter* EndlessBetrayalCharacter = CastChecked<AEndlessBetrayalCharacter>(InPawn);
 	UpdateHealthHUD(EndlessBetrayalCharacter->GetHealth(), EndlessBetrayalCharacter->GetMaxHealth());
 	UpdateShieldHUD(EndlessBetrayalCharacter->GetShield(), EndlessBetrayalCharacter->GetMaxShield());
 
+	if(IsValid(EndlessBetrayalCharacter->GetCombatComponent()))
+	{
+		UpdateGrenadesAmmo(EndlessBetrayalCharacter->GetCombatComponent()->GetGrenadesAmount());
+	}
+	
 	if(IsValid(EndlessBetrayalHUD) && IsValid(EndlessBetrayalHUD->CharacterOverlay))
 	{
 		HideMessagesOnScreenHUD();
