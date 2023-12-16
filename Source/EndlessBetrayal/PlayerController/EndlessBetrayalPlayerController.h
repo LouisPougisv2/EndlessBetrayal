@@ -110,12 +110,12 @@ private:
 	UPROPERTY()
 	class UCharacterOverlay* CharacterOverlay;
 
-	bool bShouldInitializeCharacterOverlay = false;
-
 	float HUDHealth;
 	float HUDMaxHealth;
 	float HUDShield;
 	float HUDMaxShield;
 	float HUDScore;
 	float HUDDeaths;
+	float HUDWeaponAmmo;
+	float HUDCarriedAmmo;
 };

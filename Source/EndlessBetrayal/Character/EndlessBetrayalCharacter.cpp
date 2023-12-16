@@ -118,6 +118,7 @@ void AEndlessBetrayalCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	SpawnDefaultWeapon();
 	UpdateHealthHUD();
 	UpdateShieldHUD();
 
@@ -227,6 +228,33 @@ void AEndlessBetrayalCharacter::Destroyed()
 	Super::Destroyed();
 }
 
+void AEndlessBetrayalCharacter::SpawnDefaultWeapon()
+{
+	//UGameplayStatics::GetGameMode(this) returns null if not on the server
+	AEndlessBetrayalGameMode* EndlessBetrayalGameMode = Cast<AEndlessBetrayalGameMode>(UGameplayStatics::GetGameMode(this));
+	UWorld* World = GetWorld();
+	
+	if(IsValid(EndlessBetrayalGameMode) && IsValid(World) && !IsEliminated() && DefaultWeaponClass)
+	{
+		AWeapon* SpawnedDefaultWeapon = World->SpawnActor<AWeapon>(DefaultWeaponClass);
+		SpawnedDefaultWeapon->bIsDefaultWeapon = true;
+		if(IsValid(CombatComponent))
+		{
+			CombatComponent->EquipWeapon(SpawnedDefaultWeapon);
+		}
+	}
+}
+
+void AEndlessBetrayalCharacter::UpdateHUDAmmo()
+{
+	EndlessBetrayalPlayerController = !IsValid(EndlessBetrayalPlayerController) ? Cast<AEndlessBetrayalPlayerController>(Controller) : EndlessBetrayalPlayerController;
+	if(IsValid(EndlessBetrayalPlayerController) && IsValid(CombatComponent) && IsValid(CombatComponent->EquippedWeapon))
+	{
+		EndlessBetrayalPlayerController->UpdateWeaponAmmo(CombatComponent->EquippedWeapon->GetAmmo());
+		EndlessBetrayalPlayerController->UpdateWeaponCarriedAmmo(CombatComponent->CarriedAmmo);
+	}
+}
+
 void AEndlessBetrayalCharacter::PlayFireMontage(bool bIsAiming)
 {
 	if(!IsValid(CombatComponent) || !IsValid(CombatComponent->EquippedWeapon)) return;
@@ -312,7 +340,15 @@ void AEndlessBetrayalCharacter::OnPlayerEliminated()
 {
 	if(IsValid(CombatComponent) && IsValid(CombatComponent->EquippedWeapon))
 	{
-		CombatComponent->EquippedWeapon->OnWeaponDropped();
+		//We don't want to drop the default AR when dying
+		if(CombatComponent->EquippedWeapon->bIsDefaultWeapon)
+		{
+			CombatComponent->EquippedWeapon->Destroy();
+		}
+		else
+		{
+			CombatComponent->EquippedWeapon->OnWeaponDropped();
+		}
 	}
 	MulticastOnPlayerEliminated();
 	GetWorldTimerManager().SetTimer(OnPlayerEliminatedTimer, this, &AEndlessBetrayalCharacter::OnPlayerEliminatedCallBack, OnPlayerEliminatedDelayTime);

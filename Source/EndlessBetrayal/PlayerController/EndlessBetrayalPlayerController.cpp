@@ -47,6 +47,7 @@ void AEndlessBetrayalPlayerController::OnPossess(APawn* InPawn)
 	Super::OnPossess(InPawn);
 	
 	AEndlessBetrayalCharacter* EndlessBetrayalCharacter = CastChecked<AEndlessBetrayalCharacter>(InPawn);
+	EndlessBetrayalCharacter->UpdateHUDAmmo();
 	UpdateHealthHUD(EndlessBetrayalCharacter->GetHealth(), EndlessBetrayalCharacter->GetMaxHealth());
 	UpdateShieldHUD(EndlessBetrayalCharacter->GetShield(), EndlessBetrayalCharacter->GetMaxShield());
 
@@ -79,7 +80,6 @@ void AEndlessBetrayalPlayerController::UpdateHealthHUD(float NewHealth, float Ma
 	}
 	else
 	{
-		bShouldInitializeCharacterOverlay = true;
 		HUDHealth = NewHealth;
 		HUDMaxHealth = MaxHealth;
 	}
@@ -103,7 +103,6 @@ void AEndlessBetrayalPlayerController::UpdateShieldHUD(float NewShieldValue, flo
 	}
 	else
 	{
-		bShouldInitializeCharacterOverlay = true;
 		HUDShield = NewShieldValue;
 		HUDMaxShield = MaxShield;
 	}
@@ -131,7 +130,6 @@ void AEndlessBetrayalPlayerController::UpdateScoreHUD(float NewScore)
 	}
 	else
 	{
-		bShouldInitializeCharacterOverlay = true;
 		HUDScore = NewScore;
 	}
 }
@@ -156,7 +154,6 @@ void AEndlessBetrayalPlayerController::UpdateDeathsHUD(int NewDeath)
 	}
 	else
 	{
-		bShouldInitializeCharacterOverlay = true;
 		HUDDeaths = NewDeath;
 	}
 }
@@ -233,6 +230,10 @@ void AEndlessBetrayalPlayerController::UpdateWeaponAmmo(int32 NewAmmo)
 		FString AmmoText = FString::Printf(TEXT("%d"), NewAmmo);
 		EndlessBetrayalHUD->CharacterOverlay->WeaponAmmoAmount->SetText(FText::FromString(AmmoText));
 	}
+	else
+	{
+		HUDWeaponAmmo = NewAmmo;
+	}
 }
 
 void AEndlessBetrayalPlayerController::UpdateWeaponCarriedAmmo(int32 NewAmmo)
@@ -248,6 +249,10 @@ void AEndlessBetrayalPlayerController::UpdateWeaponCarriedAmmo(int32 NewAmmo)
 		FString CarriedAmmoText = FString::Printf(TEXT("%d"), NewAmmo);
 		EndlessBetrayalHUD->CharacterOverlay->CarriedAmmoAmount->SetText(FText::FromString(CarriedAmmoText));
 	}
+	else
+	{
+		HUDCarriedAmmo = NewAmmo;
+	}
 }
 
 void AEndlessBetrayalPlayerController::UpdateGrenadesAmmo(int32 Grenades)
@@ -262,10 +267,6 @@ void AEndlessBetrayalPlayerController::UpdateGrenadesAmmo(int32 Grenades)
 	{
 		FString CarriedGrenadeText = FString::Printf(TEXT("%d"), Grenades);
 		EndlessBetrayalHUD->CharacterOverlay->GrenadeAmount->SetText(FText::FromString(CarriedGrenadeText));
-	}
-	else
-	{
-		bShouldInitializeCharacterOverlay = true;
 	}
 }
 
@@ -465,6 +466,8 @@ void AEndlessBetrayalPlayerController::PollInit()
 				UpdateShieldHUD(HUDShield, HUDMaxShield);
 				UpdateScoreHUD(HUDScore);
 				UpdateDeathsHUD(HUDDeaths);
+				UpdateWeaponCarriedAmmo(HUDCarriedAmmo);
+				UpdateWeaponAmmo(HUDWeaponAmmo);
 
 				AEndlessBetrayalCharacter* EndlessBetrayalCharacter = Cast<AEndlessBetrayalCharacter>(GetCharacter());
 				if(IsValid(EndlessBetrayalCharacter) && IsValid(EndlessBetrayalCharacter->GetCombatComponent()))

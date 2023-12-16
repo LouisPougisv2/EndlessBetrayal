@@ -269,7 +269,8 @@ void AWeapon::UpdateAmmo(int32 AmmoAmountToAdd)
 
 void AWeapon::ToggleCustomDepth(bool bEnable)
 {
-	ensureAlways(IsValid(WeaponMesh));
-	
-	WeaponMesh->SetRenderCustomDepth(bEnable);
+	if(IsValid(WeaponMesh))
+	{
+		WeaponMesh->SetRenderCustomDepth(bEnable);
+	}
 }

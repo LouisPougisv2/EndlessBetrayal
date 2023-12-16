@@ -344,7 +344,7 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 {
 	if (Character == nullptr || WeaponToEquip == nullptr) return;
 	if(CombatState != ECombatState::ECS_Unoccupied) return;
-	
+
 	DropEquippedWeapon();
 	
 	EquippedWeapon = WeaponToEquip;
@@ -367,7 +367,15 @@ void UCombatComponent::DropEquippedWeapon()
 {
 	if(IsValid(EquippedWeapon))
 	{
-		EquippedWeapon->OnWeaponDropped();
+		//TODO: If-check to potentially remove when Switching weapon will be implemented
+		if(EquippedWeapon->bIsDefaultWeapon)
+		{
+			EquippedWeapon->Destroy();
+		}
+		else
+		{
+			EquippedWeapon->OnWeaponDropped();
+		}
 	}
 }
 

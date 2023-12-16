@@ -23,6 +23,8 @@ public:
 	virtual void PostInitializeComponents() override;
 	virtual void OnRep_ReplicatedMovement() override;
 	virtual void Destroyed() override;
+	void SpawnDefaultWeapon();
+	void UpdateHUDAmmo();
 	void UpdateHealthHUD();
 	void UpdateShieldHUD();
 	void PlayFireMontage(bool bIsAiming);
@@ -89,6 +91,13 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	class UBuffComponent* BuffComponent;
+
+	/**
+	* Default Weapon
+	**/
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AWeapon> DefaultWeaponClass;
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquipButtonPressed();

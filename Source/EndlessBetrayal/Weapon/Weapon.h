@@ -39,6 +39,8 @@ public:
 	//Enable / Disable Custom Depth
 	void ToggleCustomDepth(bool bEnable);
 
+	bool bIsDefaultWeapon = false;
+	
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	bool bIsWeaponAutomatic = true;
 	
