@@ -814,6 +814,11 @@ void AEndlessBetrayalCharacter::HideCameraWhenCharacterClose()
 	if(IsValid(CombatComponent) && IsValid(CombatComponent->EquippedWeapon) && IsValid(CombatComponent->EquippedWeapon->GetWeaponMesh()))
 	{
 		CombatComponent->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = bShouldBeVisible;
+		
+		if(IsValid(CombatComponent->SecondaryWeapon) && IsValid(CombatComponent->SecondaryWeapon->GetWeaponMesh()))
+		{
+			CombatComponent->SecondaryWeapon->GetWeaponMesh()->bOwnerNoSee = bShouldBeVisible;
+		}
 	}
 }
 
