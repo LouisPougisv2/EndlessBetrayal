@@ -338,18 +338,7 @@ void AEndlessBetrayalCharacter::PlayThrowGrenadeMontage()
 
 void AEndlessBetrayalCharacter::OnPlayerEliminated()
 {
-	if(IsValid(CombatComponent) && IsValid(CombatComponent->EquippedWeapon))
-	{
-		//We don't want to drop the default AR when dying
-		if(CombatComponent->EquippedWeapon->bIsDefaultWeapon)
-		{
-			CombatComponent->EquippedWeapon->Destroy();
-		}
-		else
-		{
-			CombatComponent->EquippedWeapon->OnWeaponDropped();
-		}
-	}
+	DropOrDestroyWeapons();
 	MulticastOnPlayerEliminated();
 	GetWorldTimerManager().SetTimer(OnPlayerEliminatedTimer, this, &AEndlessBetrayalCharacter::OnPlayerEliminatedCallBack, OnPlayerEliminatedDelayTime);
 }
@@ -441,6 +430,38 @@ void AEndlessBetrayalCharacter::GrenadeButtonPressed()
 	if(CombatComponent)
 	{
 		CombatComponent->ThrowGrenade();
+	}
+}
+
+void AEndlessBetrayalCharacter::DropOrDestroyWeapon(AWeapon* Weapon)
+{
+	if(IsValid(Weapon))
+	{
+		//We don't want to drop the default AR when dying
+		if(Weapon->bIsDefaultWeapon)
+		{
+			Weapon->Destroy();
+		}
+		else
+		{
+			Weapon->OnWeaponDropped();
+		}
+	}
+}
+
+void AEndlessBetrayalCharacter::DropOrDestroyWeapons()
+{
+	if(IsValid(CombatComponent))
+	{
+		if(IsValid(CombatComponent->EquippedWeapon))
+		{
+			DropOrDestroyWeapon(CombatComponent->EquippedWeapon);
+		}
+
+		if(IsValid(CombatComponent->SecondaryWeapon))
+		{
+			DropOrDestroyWeapon(CombatComponent->SecondaryWeapon);
+		}
 	}
 }
 
