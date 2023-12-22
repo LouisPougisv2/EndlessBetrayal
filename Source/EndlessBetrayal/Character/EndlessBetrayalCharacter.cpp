@@ -518,14 +518,7 @@ void AEndlessBetrayalCharacter::EquipButtonPressed()
 {
 	if (CombatComponent)		
 	{
-		if (HasAuthority())		//So only the server is calling this function
-		{
-			CombatComponent->EquipWeapon(OverlappingWeapon);
-		}
-		else
-		{
-			ServerEquipButtonPressed();
-		}
+		ServerEquipButtonPressed();	//Whether we are on the client or server, this will be executed on the server
 	}
 }
 

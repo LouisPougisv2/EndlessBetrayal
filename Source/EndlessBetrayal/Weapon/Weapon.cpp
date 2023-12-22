@@ -84,7 +84,10 @@ void AWeapon::OnRep_Owner()
 	}
 	else
 	{
-		UpdateHUDAmmo();
+		if(IsValid(WeaponOwnerCharacter) && IsValid(WeaponOwnerCharacter->GetEquippedWeapon()) && (WeaponOwnerCharacter->GetEquippedWeapon() == this))
+		{
+			UpdateHUDAmmo();
+		}
 	}
 	
 }
@@ -127,7 +130,6 @@ void AWeapon::SetWeaponState(EWeaponState NewState)
 			WeaponMesh->SetCollisionResponseToChannels(ECollisionResponse::ECR_Ignore);
 			WeaponMesh->SetEnableGravity(true);
 		}
-		ToggleCustomDepth(false);
 		break;
 
 	case EWeaponState::EWS_Dropped:
@@ -167,7 +169,6 @@ void AWeapon::OnRep_WeaponState()
 			WeaponMesh->SetCollisionResponseToChannels(ECollisionResponse::ECR_Ignore);
 			WeaponMesh->SetEnableGravity(true);
 		}
-		ToggleCustomDepth(false);
 		break;
 	case EWeaponState::EWS_Dropped:
 		WeaponMesh->SetSimulatePhysics(true);
