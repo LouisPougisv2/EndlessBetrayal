@@ -23,6 +23,12 @@ public:
 	class UTextBlock* HealthText;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Player Stats")
+	UProgressBar* ShieldBar;
+
+	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Player Stats")
+	UTextBlock* ShieldText;
+
+	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Player Stats")
 	UTextBlock* ScoreValue;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Player Stats")

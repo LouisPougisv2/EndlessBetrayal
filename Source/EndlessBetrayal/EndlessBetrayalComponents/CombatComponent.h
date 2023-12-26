@@ -23,8 +23,10 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void EquipWeapon(class AWeapon* WeaponToEquip);
+	void SwapWeapons();
 	void FireButtonPressed(bool bPressed);
 	void Reload();
+	void PickupAmmo(EWeaponType WeaponType, int32 AmmoToPickup);
 
 	FORCEINLINE bool IsAiming() const { return bIsAiming; }
 
@@ -35,6 +37,7 @@ public:
 	void ServerLaunchGrenade(const FVector_NetQuantize& Target);
 
 	FORCEINLINE int32 GetGrenadesAmount() const { return AmountOfGrenades; };
+	FORCEINLINE bool ShouldSwapWeapon() const { return EquippedWeapon && SecondaryWeapon; }
 	
 protected:
 
@@ -44,14 +47,20 @@ protected:
 	UFUNCTION(Server, Reliable)
 	void ServerSetAiming(bool bAiming);
 
+	void EquipPrimaryWeapon(AWeapon* WeaponToEquip);
+	void EquipSecondaryWeapon(AWeapon* WeaponToEquip);
 	void DropEquippedWeapon();
-	void AttachActorToHand(AActor* ActorToAttach, FName SocketName);
+	void AttachActorToSocket(AActor* ActorToAttach, FName SocketName);
 	void UpdateWeaponCarriedAmmo();
-	void PlayEquipSound();
+	void PlayEquipSound(AWeapon* WeaponToEquip);
 	void AutomaticReload();
 	
 	UFUNCTION()
 	void OnRep_EquippedWeapon();
+
+	UFUNCTION()
+	void OnRep_SecondaryWeapon();
+	
 	void Fire();
 	
 	UFUNCTION(Server, Reliable)
@@ -105,6 +114,9 @@ private:
 	
 	UPROPERTY(ReplicatedUsing = OnRep_EquippedWeapon)
 	AWeapon* EquippedWeapon;
+
+	UPROPERTY(ReplicatedUsing = OnRep_SecondaryWeapon)
+	AWeapon* SecondaryWeapon;
 
 	UPROPERTY(Replicated)
 	bool bIsAiming;
@@ -170,6 +182,9 @@ private:
 	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_CarriedAmmo)
 	int32 CarriedAmmo;
 
+	UPROPERTY(EditAnywhere)
+	int32 MaxCarriedAmmo = 100;
+
 	UFUNCTION()
 	void OnRep_CarriedAmmo();
 
@@ -177,19 +192,19 @@ private:
 	TMap<EWeaponType, int32> CarriedAmmoMap;
 
 	UPROPERTY(EditAnywhere)
-	int32 StartingARAmmo = 45;
+	int32 StartingARAmmo = 30;
 
 	UPROPERTY(EditAnywhere)
-	int32 StartingRocketAmmo = 10;
+	int32 StartingRocketAmmo = 4;
 
 	UPROPERTY(EditAnywhere)
-	int32 StartingPistolAmmo = 30;
+	int32 StartingPistolAmmo = 15;
 
 	UPROPERTY(EditAnywhere)
 	int32 StartingSMGAmmo = 50;
 
 	UPROPERTY(EditAnywhere)
-	int32 StartingShotgunAmmo = 12;
+	int32 StartingShotgunAmmo = 7;
 	
 	UPROPERTY(EditAnywhere)
 	int32 StartingSniperAmmo = 6;

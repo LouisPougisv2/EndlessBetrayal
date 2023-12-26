@@ -23,6 +23,10 @@ public:
 	virtual void PostInitializeComponents() override;
 	virtual void OnRep_ReplicatedMovement() override;
 	virtual void Destroyed() override;
+	void SpawnDefaultWeapon();
+	void UpdateHUDAmmo();
+	void UpdateHealthHUD();
+	void UpdateShieldHUD();
 	void PlayFireMontage(bool bIsAiming);
 	void PlayReloadMontage();
 	void PlayEliminatedMontage();
@@ -45,6 +49,7 @@ protected:
 	void Turn(float Value);
 	void LookUp(float Value);
 	void EquipButtonPressed();
+	void SwapWeaponMouseWheelRolled();
 	void CrouchButtonPressed();
 	void ReloadButtonPressed();
 	void AimButtonPressed();
@@ -58,10 +63,11 @@ protected:
 	void FireButtonReleased();
 	void PlayHitReactMontage();
 	void GrenadeButtonPressed();
+	void DropOrDestroyWeapon(AWeapon* Weapon);
+	void DropOrDestroyWeapons();
 
 	UFUNCTION() //NEEDS to be UFUNCTION or we well never get our callback called in response to a damage event 
 	void ReceiveDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
-	void UpdateHealthHUD();
 
 	//Poll for any relevant classes and initialize our HUD
 	void PollInitialize();
@@ -86,8 +92,21 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UCombatComponent* CombatComponent;
 
+	UPROPERTY(VisibleAnywhere)
+	class UBuffComponent* BuffComponent;
+
+	/**
+	* Default Weapon
+	**/
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AWeapon> DefaultWeaponClass;
+
 	UFUNCTION(Server, Reliable)
 	void ServerEquipButtonPressed();
+
+	UFUNCTION(Server, Reliable)
+	void ServerSwapWeaponMouseWheelRolled();
 
 	void TurnInPlace(float DeltaTime);
 
@@ -134,6 +153,24 @@ private:
 
 	UPROPERTY(ReplicatedUsing = OnRep_Health, VisibleAnywhere, Category = "Player Stats")
 	float Health = 100.0f;
+
+	//Callback function when Health is updated, only called on the client
+	UFUNCTION()
+	void OnRep_Health(float LastHealth);
+
+	/**
+	* Player Shield
+	**/
+
+	UPROPERTY(EditAnywhere, Category = "Player Stats")
+	float MaxShield = 100.0f;
+
+	UPROPERTY(ReplicatedUsing = OnRep_Shield, VisibleAnywhere, Category = "Player Stats")
+	float Shield = 50.0f;
+
+	//Callback function when Shield is updated, only called on the client
+	UFUNCTION()
+	void OnRep_Shield(float LastShield);
 	
 	bool bIsEliminated = false;
 
@@ -184,10 +221,6 @@ private:
 
 	UPROPERTY()
 	class AEndlessBetrayalPlayerState* EndlessBetrayalPlayerState;
-	
-	//Callback function when Health is updated, only called on the client
-	UFUNCTION()
-	void OnRep_Health();
 
 	UPROPERTY()
 	class AEndlessBetrayalPlayerController* EndlessBetrayalPlayerController;
@@ -207,9 +240,14 @@ public:
 	FORCEINLINE float GetAO_Pitch() const { return AO_Pitch; }
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 	FORCEINLINE float GetHealth() const { return Health; }
+	FORCEINLINE float GetMaxShield() const { return MaxShield; }
+	FORCEINLINE float GetShield() const { return Shield; }
+	FORCEINLINE void SetHealth(float NewHealth) { Health = NewHealth; }
+	FORCEINLINE void SetShield(const float NewShield) { Shield = NewShield; }
 	FORCEINLINE bool ShouldRotateRootBone() const { return bShouldRotateRootBone; }
 	FORCEINLINE UCameraComponent* GetFollowCamera() { return FollowCamera; }
 	FORCEINLINE UCombatComponent* GetCombatComponent() { return CombatComponent; }
+	FORCEINLINE UBuffComponent* GetBuffComponent() { return BuffComponent; }
 	FORCEINLINE bool IsGameplayDisabled() const { return bShouldDisableGameplayInput; }
 	AWeapon* GetEquippedWeapon();
 	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() { return AttachedGrenade; }

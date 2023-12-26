@@ -12,6 +12,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "EndlessBetrayal/EndlessBetrayal.h"
+#include "EndlessBetrayal/EndlessBetrayalComponents/BuffComponent.h"
 #include "EndlessBetrayal/GameMode/EndlessBetrayalGameMode.h"
 #include "EndlessBetrayal/GameState/EndlessBetrayalPlayerState.h"
 #include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
@@ -43,6 +44,9 @@ AEndlessBetrayalCharacter::AEndlessBetrayalCharacter()
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	CombatComponent->SetIsReplicated(true);
 
+	BuffComponent = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
+	BuffComponent->SetIsReplicated(true);
+
 	AttachedGrenade = CreateDefaultSubobject<UStaticMeshComponent>("AttachedGrenade");
 	AttachedGrenade->SetupAttachment(GetMesh(), FName("GrenadeSocket"));
 	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -68,6 +72,7 @@ void AEndlessBetrayalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimePrope
 
 	DOREPLIFETIME_CONDITION(AEndlessBetrayalCharacter, OverlappingWeapon, COND_OwnerOnly);
 	DOREPLIFETIME(AEndlessBetrayalCharacter, Health);
+	DOREPLIFETIME(AEndlessBetrayalCharacter, Shield);
 	DOREPLIFETIME(AEndlessBetrayalCharacter, bShouldDisableGameplayInput);
 }
 
@@ -77,6 +82,15 @@ void AEndlessBetrayalCharacter::UpdateHealthHUD()
 	if(IsValid(EndlessBetrayalPlayerController))
 	{
 		EndlessBetrayalPlayerController->UpdateHealthHUD(Health, MaxHealth);
+	}
+}
+
+void AEndlessBetrayalCharacter::UpdateShieldHUD()
+{
+	EndlessBetrayalPlayerController = !IsValid(EndlessBetrayalPlayerController) ? Cast<AEndlessBetrayalPlayerController>(Controller) : EndlessBetrayalPlayerController;
+	if(IsValid(EndlessBetrayalPlayerController))
+	{
+		EndlessBetrayalPlayerController->UpdateShieldHUD(Shield, MaxShield);
 	}
 }
 
@@ -104,7 +118,9 @@ void AEndlessBetrayalCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	SpawnDefaultWeapon();
 	UpdateHealthHUD();
+	UpdateShieldHUD();
 
 	if(HasAuthority())
 	{
@@ -114,6 +130,7 @@ void AEndlessBetrayalCharacter::BeginPlay()
 	if(IsValid(CombatComponent))
 	{
 		CombatComponent->SetGrenadeVisibility(false);
+		CombatComponent->UpdateHUDGrenadeAmount();
 	}
 }
 
@@ -156,6 +173,7 @@ void AEndlessBetrayalCharacter::SetupPlayerInputComponent(UInputComponent* Playe
 
 	PlayerInputComponent->BindAction(TEXT("Jump"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::Jump);
 	PlayerInputComponent->BindAction(TEXT("Equip"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::EquipButtonPressed);
+	PlayerInputComponent->BindAction(TEXT("SwapWeapons"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::SwapWeaponMouseWheelRolled);
 	PlayerInputComponent->BindAction(TEXT("Crouch"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::CrouchButtonPressed);
 	PlayerInputComponent->BindAction(TEXT("Aim"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::AimButtonPressed);
 	PlayerInputComponent->BindAction(TEXT("Aim"), EInputEvent::IE_Released, this, &AEndlessBetrayalCharacter::AimButtonReleased);
@@ -177,6 +195,15 @@ void AEndlessBetrayalCharacter::PostInitializeComponents()
 	if (CombatComponent)
 	{
 		CombatComponent->Character = this;
+	}
+
+	if(BuffComponent)
+	{
+		BuffComponent->Character = this;
+		BuffComponent->SetInitialSpeeds(GetCharacterMovement()->MaxWalkSpeed, GetCharacterMovement()->MaxWalkSpeedCrouched);
+
+		ensureAlways(IsValid(GetCharacterMovement()));
+		BuffComponent->SetInitialJumpVelocity(GetCharacterMovement()->JumpZVelocity);
 	}
 }
 
@@ -200,6 +227,33 @@ void AEndlessBetrayalCharacter::Destroyed()
 		CombatComponent->EquippedWeapon->OnWeaponDropped();
 	}
 	Super::Destroyed();
+}
+
+void AEndlessBetrayalCharacter::SpawnDefaultWeapon()
+{
+	//UGameplayStatics::GetGameMode(this) returns null if not on the server
+	AEndlessBetrayalGameMode* EndlessBetrayalGameMode = Cast<AEndlessBetrayalGameMode>(UGameplayStatics::GetGameMode(this));
+	UWorld* World = GetWorld();
+	
+	if(IsValid(EndlessBetrayalGameMode) && IsValid(World) && !IsEliminated() && DefaultWeaponClass)
+	{
+		AWeapon* SpawnedDefaultWeapon = World->SpawnActor<AWeapon>(DefaultWeaponClass);
+		SpawnedDefaultWeapon->bIsDefaultWeapon = true;
+		if(IsValid(CombatComponent))
+		{
+			CombatComponent->EquipWeapon(SpawnedDefaultWeapon);
+		}
+	}
+}
+
+void AEndlessBetrayalCharacter::UpdateHUDAmmo()
+{
+	EndlessBetrayalPlayerController = !IsValid(EndlessBetrayalPlayerController) ? Cast<AEndlessBetrayalPlayerController>(Controller) : EndlessBetrayalPlayerController;
+	if(IsValid(EndlessBetrayalPlayerController) && IsValid(CombatComponent) && IsValid(CombatComponent->EquippedWeapon))
+	{
+		EndlessBetrayalPlayerController->UpdateWeaponAmmo(CombatComponent->EquippedWeapon->GetAmmo());
+		EndlessBetrayalPlayerController->UpdateWeaponCarriedAmmo(CombatComponent->CarriedAmmo);
+	}
 }
 
 void AEndlessBetrayalCharacter::PlayFireMontage(bool bIsAiming)
@@ -285,10 +339,7 @@ void AEndlessBetrayalCharacter::PlayThrowGrenadeMontage()
 
 void AEndlessBetrayalCharacter::OnPlayerEliminated()
 {
-	if(IsValid(CombatComponent) && IsValid(CombatComponent->EquippedWeapon))
-	{
-		CombatComponent->EquippedWeapon->OnWeaponDropped();
-	}
+	DropOrDestroyWeapons();
 	MulticastOnPlayerEliminated();
 	GetWorldTimerManager().SetTimer(OnPlayerEliminatedTimer, this, &AEndlessBetrayalCharacter::OnPlayerEliminatedCallBack, OnPlayerEliminatedDelayTime);
 }
@@ -383,11 +434,57 @@ void AEndlessBetrayalCharacter::GrenadeButtonPressed()
 	}
 }
 
+void AEndlessBetrayalCharacter::DropOrDestroyWeapon(AWeapon* Weapon)
+{
+	if(IsValid(Weapon))
+	{
+		//We don't want to drop the default AR when dying
+		if(Weapon->bIsDefaultWeapon)
+		{
+			Weapon->Destroy();
+		}
+		else
+		{
+			Weapon->OnWeaponDropped();
+		}
+	}
+}
+
+void AEndlessBetrayalCharacter::DropOrDestroyWeapons()
+{
+	if(IsValid(CombatComponent))
+	{
+		if(IsValid(CombatComponent->EquippedWeapon))
+		{
+			DropOrDestroyWeapon(CombatComponent->EquippedWeapon);
+		}
+
+		if(IsValid(CombatComponent->SecondaryWeapon))
+		{
+			DropOrDestroyWeapon(CombatComponent->SecondaryWeapon);
+		}
+	}
+}
+
 void AEndlessBetrayalCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
 	if(bIsEliminated) return;
+
+	const bool bDamageFullyAbsorbed = (Shield - Damage > 0.0f);
+	float DamageAfterShieldAbsorption = Damage;
+	if(Shield > 0.0f)
+	{
+		if(!bDamageFullyAbsorbed)
+		{
+			DamageAfterShieldAbsorption = FMath::Abs(Shield - Damage);
+		}
+		Shield = FMath::Clamp(Shield - Damage, 0.0f, MaxShield);
+		UpdateShieldHUD();
+	}
+
+	if(bDamageFullyAbsorbed) return;
 	
-	Health = FMath::Clamp(Health - Damage, 0.0f, MaxHealth);
+	Health = FMath::Clamp(Health - DamageAfterShieldAbsorption, 0.0f, MaxHealth);
 	UpdateHealthHUD();
 	PlayHitReactMontage();
 
@@ -443,23 +540,29 @@ void AEndlessBetrayalCharacter::EquipButtonPressed()
 {
 	if (CombatComponent)		
 	{
-		if (HasAuthority())		//So only the server is calling this function
-		{
-			CombatComponent->EquipWeapon(OverlappingWeapon);
-		}
-		else
-		{
-			ServerEquipButtonPressed();
-		}
+		ServerEquipButtonPressed();	//Whether we are on the client or server, this will be executed on the server
 	}
 }
-
 
 void AEndlessBetrayalCharacter::ServerEquipButtonPressed_Implementation()
 {
 	if (CombatComponent)		
 	{
 		CombatComponent->EquipWeapon(OverlappingWeapon);
+	}
+}
+
+void AEndlessBetrayalCharacter::SwapWeaponMouseWheelRolled()
+{
+	ServerSwapWeaponMouseWheelRolled();
+}
+
+
+void AEndlessBetrayalCharacter::ServerSwapWeaponMouseWheelRolled_Implementation()
+{
+	if(IsValid(CombatComponent))
+	{
+		CombatComponent->SwapWeapons();
 	}
 }
 
@@ -644,10 +747,19 @@ void AEndlessBetrayalCharacter::StartDissolve()
 	}
 }
 
-void AEndlessBetrayalCharacter::OnRep_Health()
+void AEndlessBetrayalCharacter::OnRep_Health(float LastHealth)
 {
 	UpdateHealthHUD();
-	if(!bIsEliminated)
+	if(!bIsEliminated && (LastHealth > Health))
+	{
+		PlayHitReactMontage();
+	}
+}
+
+void AEndlessBetrayalCharacter::OnRep_Shield(float LastShield)
+{
+	UpdateShieldHUD();
+	if(LastShield > Shield)
 	{
 		PlayHitReactMontage();
 	}
@@ -716,6 +828,11 @@ void AEndlessBetrayalCharacter::HideCameraWhenCharacterClose()
 	if(IsValid(CombatComponent) && IsValid(CombatComponent->EquippedWeapon) && IsValid(CombatComponent->EquippedWeapon->GetWeaponMesh()))
 	{
 		CombatComponent->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = bShouldBeVisible;
+		
+		if(IsValid(CombatComponent->SecondaryWeapon) && IsValid(CombatComponent->SecondaryWeapon->GetWeaponMesh()))
+		{
+			CombatComponent->SecondaryWeapon->GetWeaponMesh()->bOwnerNoSee = bShouldBeVisible;
+		}
 	}
 }
 
