@@ -354,10 +354,27 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	{
 		EquipPrimaryWeapon(WeaponToEquip);
 	}
-
 	
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
 	Character->bUseControllerRotationYaw = true;
+}
+
+void UCombatComponent::SwapWeapons()
+{
+	if(!ShouldSwapWeapon()) return;
+
+	AWeapon* TemporaryWeapon = EquippedWeapon;
+	EquippedWeapon = SecondaryWeapon;
+	SecondaryWeapon = TemporaryWeapon;
+
+	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
+	AttachActorToSocket(EquippedWeapon, FName("RightHandSocket"));
+	EquippedWeapon->UpdateHUDAmmo();
+	UpdateWeaponCarriedAmmo();
+	PlayEquipSound(EquippedWeapon);
+
+	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_EquippedSecondary);
+	AttachActorToSocket(SecondaryWeapon, FName("BackpackSocket"));
 }
 
 void UCombatComponent::EquipPrimaryWeapon(AWeapon* WeaponToEquip)
@@ -366,7 +383,6 @@ void UCombatComponent::EquipPrimaryWeapon(AWeapon* WeaponToEquip)
 	
 	EquippedWeapon = WeaponToEquip;
 	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
-	EquippedWeapon->ToggleCustomDepth(false);
 	
 	AttachActorToSocket(EquippedWeapon, FName("RightHandSocket"));
 
@@ -620,6 +636,7 @@ void UCombatComponent::OnRep_EquippedWeapon()
 	{
 		EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
 		EquippedWeapon->ToggleCustomDepth(false);
+		EquippedWeapon->UpdateHUDAmmo();
 		
 		AttachActorToSocket(EquippedWeapon, FName("RightHandSocket"));
 
@@ -637,9 +654,6 @@ void UCombatComponent::OnRep_SecondaryWeapon()
 		SecondaryWeapon->SetWeaponState(EWeaponState::EWS_EquippedSecondary);
 		
 		AttachActorToSocket(SecondaryWeapon, FName("BackpackSocket"));
-
-		//Character->GetCharacterMovement()->bOrientRotationToMovement = false;
-		//Character->bUseControllerRotationYaw = true;
 		
 		PlayEquipSound(SecondaryWeapon);
 	}

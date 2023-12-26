@@ -173,6 +173,7 @@ void AEndlessBetrayalCharacter::SetupPlayerInputComponent(UInputComponent* Playe
 
 	PlayerInputComponent->BindAction(TEXT("Jump"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::Jump);
 	PlayerInputComponent->BindAction(TEXT("Equip"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::EquipButtonPressed);
+	PlayerInputComponent->BindAction(TEXT("SwapWeapons"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::SwapWeaponMouseWheelRolled);
 	PlayerInputComponent->BindAction(TEXT("Crouch"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::CrouchButtonPressed);
 	PlayerInputComponent->BindAction(TEXT("Aim"), EInputEvent::IE_Pressed, this, &AEndlessBetrayalCharacter::AimButtonPressed);
 	PlayerInputComponent->BindAction(TEXT("Aim"), EInputEvent::IE_Released, this, &AEndlessBetrayalCharacter::AimButtonReleased);
@@ -543,12 +544,25 @@ void AEndlessBetrayalCharacter::EquipButtonPressed()
 	}
 }
 
-
 void AEndlessBetrayalCharacter::ServerEquipButtonPressed_Implementation()
 {
 	if (CombatComponent)		
 	{
 		CombatComponent->EquipWeapon(OverlappingWeapon);
+	}
+}
+
+void AEndlessBetrayalCharacter::SwapWeaponMouseWheelRolled()
+{
+	ServerSwapWeaponMouseWheelRolled();
+}
+
+
+void AEndlessBetrayalCharacter::ServerSwapWeaponMouseWheelRolled_Implementation()
+{
+	if(IsValid(CombatComponent))
+	{
+		CombatComponent->SwapWeapons();
 	}
 }
 

@@ -151,6 +151,7 @@ void AWeapon::HandleWeaponEquipped()
 	WeaponMesh->SetSimulatePhysics(false);
 	WeaponMesh->SetEnableGravity(false);
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	ToggleCustomDepth(false);
 
 	if(GetWeaponType() == EWeaponType::EWT_SMG)
 	{
@@ -183,6 +184,8 @@ void AWeapon::HandleWeaponEquippedSecondary()
 	WeaponMesh->SetSimulatePhysics(false);
 	WeaponMesh->SetEnableGravity(false);
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	ToggleCustomDepth(true);
 	WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_TAN);
 	WeaponMesh->MarkRenderStateDirty();
 

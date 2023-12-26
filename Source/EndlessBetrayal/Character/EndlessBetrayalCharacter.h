@@ -49,6 +49,7 @@ protected:
 	void Turn(float Value);
 	void LookUp(float Value);
 	void EquipButtonPressed();
+	void SwapWeaponMouseWheelRolled();
 	void CrouchButtonPressed();
 	void ReloadButtonPressed();
 	void AimButtonPressed();
@@ -103,6 +104,9 @@ private:
 
 	UFUNCTION(Server, Reliable)
 	void ServerEquipButtonPressed();
+
+	UFUNCTION(Server, Reliable)
+	void ServerSwapWeaponMouseWheelRolled();
 
 	void TurnInPlace(float DeltaTime);
 
