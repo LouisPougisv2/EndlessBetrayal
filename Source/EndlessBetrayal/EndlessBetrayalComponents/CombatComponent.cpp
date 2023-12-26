@@ -381,10 +381,8 @@ void UCombatComponent::EquipPrimaryWeapon(AWeapon* WeaponToEquip)
 void UCombatComponent::EquipSecondaryWeapon(AWeapon* WeaponToEquip)
 {
 	SecondaryWeapon = WeaponToEquip;
-	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
+	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_EquippedSecondary);
 	SecondaryWeapon->SetOwner(Character);
-	SecondaryWeapon->GetWeaponMesh()->SetCustomDepthStencilValue(CUSTOM_DEPTH_TAN);
-	SecondaryWeapon->GetWeaponMesh()->MarkRenderStateDirty();
 	
 	AttachActorToSocket(SecondaryWeapon, FName("BackpackSocket"));
 	
@@ -636,14 +634,12 @@ void UCombatComponent::OnRep_SecondaryWeapon()
 {
 	if (SecondaryWeapon && Character)
 	{
-		SecondaryWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
-		SecondaryWeapon->GetWeaponMesh()->SetCustomDepthStencilValue(CUSTOM_DEPTH_TAN);
-		SecondaryWeapon->GetWeaponMesh()->MarkRenderStateDirty();
+		SecondaryWeapon->SetWeaponState(EWeaponState::EWS_EquippedSecondary);
 		
 		AttachActorToSocket(SecondaryWeapon, FName("BackpackSocket"));
 
-		Character->GetCharacterMovement()->bOrientRotationToMovement = false;
-		Character->bUseControllerRotationYaw = true;
+		//Character->GetCharacterMovement()->bOrientRotationToMovement = false;
+		//Character->bUseControllerRotationYaw = true;
 		
 		PlayEquipSound(SecondaryWeapon);
 	}
