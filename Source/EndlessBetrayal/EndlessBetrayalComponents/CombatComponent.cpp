@@ -361,7 +361,7 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 void UCombatComponent::SwapWeapons()
 {
-	if(!ShouldSwapWeapon()) return;
+	if(!ShouldSwapWeapon() || CombatState == ECombatState::ECS_Reloading) return;
 
 	AWeapon* TemporaryWeapon = EquippedWeapon;
 	EquippedWeapon = SecondaryWeapon;
