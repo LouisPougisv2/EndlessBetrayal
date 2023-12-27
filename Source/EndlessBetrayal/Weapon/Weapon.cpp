@@ -255,7 +255,10 @@ void AWeapon::Fire(const FVector& HitTarget)
 		}
 	}
 	//Updating Ammo
-	SpendRound();
+	if(HasAuthority())
+	{
+		SpendRound();
+	}
 }
 
 bool AWeapon::IsFullyLoaded()

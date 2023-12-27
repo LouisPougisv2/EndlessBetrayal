@@ -329,10 +329,12 @@ void AEndlessBetrayalPlayerController::HandleCooldown()
 
 void AEndlessBetrayalPlayerController::CheckPing(float DeltaSeconds)
 {
+	//Server has no lag so it doesn't make sense to check the ping
+	if(HasAuthority()) return;
+	
 	HighPingRunningTime += DeltaSeconds;
 	if(HighPingRunningTime > CheckPingFrequency)
 	{
-		HighPingRunningTime = 0.0f;
 		PlayerState = !IsValid(PlayerState) ? GetPlayerState<APlayerState>() : PlayerState;
 		if(IsValid(PlayerState))
 		{
@@ -344,6 +346,7 @@ void AEndlessBetrayalPlayerController::CheckPing(float DeltaSeconds)
 				PingAnimationRunningTime = 0.0f;
 			}
 		}
+		HighPingRunningTime = 0.0f;
 	}
 
 	const bool bIsHighPingAnimationPlaying = IsValid(EndlessBetrayalHUD) && IsValid(EndlessBetrayalHUD->CharacterOverlay) && IsValid(EndlessBetrayalHUD->CharacterOverlay->HighPingImage) && EndlessBetrayalHUD->CharacterOverlay->IsAnimationPlaying(EndlessBetrayalHUD->CharacterOverlay->HighPingAnimation);
@@ -364,7 +367,7 @@ void AEndlessBetrayalPlayerController::ShowHighPingWarning()
 	const bool bIsHUDValid = IsValid(EndlessBetrayalHUD) && IsValid(EndlessBetrayalHUD->CharacterOverlay) && IsValid(EndlessBetrayalHUD->CharacterOverlay->HighPingImage) && EndlessBetrayalHUD->CharacterOverlay->HighPingAnimation;
 	if(bIsHUDValid)
 	{
-		EndlessBetrayalHUD->CharacterOverlay->HighPingImage->SetRenderOpacity(1.0f);
+		EndlessBetrayalHUD->CharacterOverlay->HighPingImage->SetOpacity(1.0f);
 		EndlessBetrayalHUD->CharacterOverlay->PlayAnimation(EndlessBetrayalHUD->CharacterOverlay->HighPingAnimation, 0.0f, 5);
 	}
 }
@@ -376,7 +379,7 @@ void AEndlessBetrayalPlayerController::HideHighPingWarning()
 	const bool bIsHUDValid = IsValid(EndlessBetrayalHUD) && IsValid(EndlessBetrayalHUD->CharacterOverlay) && IsValid(EndlessBetrayalHUD->CharacterOverlay->HighPingImage) && EndlessBetrayalHUD->CharacterOverlay->HighPingAnimation;
 	if(bIsHUDValid)
 	{
-		EndlessBetrayalHUD->CharacterOverlay->HighPingImage->SetRenderOpacity(0.0f);
+		EndlessBetrayalHUD->CharacterOverlay->HighPingImage->SetOpacity(0.0f);
 		if(EndlessBetrayalHUD->CharacterOverlay->IsAnimationPlaying(EndlessBetrayalHUD->CharacterOverlay->HighPingAnimation))
 		{
 			EndlessBetrayalHUD->CharacterOverlay->StopAnimation(EndlessBetrayalHUD->CharacterOverlay->HighPingAnimation);

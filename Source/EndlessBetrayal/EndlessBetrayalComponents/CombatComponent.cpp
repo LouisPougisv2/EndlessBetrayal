@@ -255,7 +255,8 @@ void UCombatComponent::Fire()
 	if(CanFire())
 	{
 		bCanFire = false;
-		ServerFire(HitTarget);
+		ServerFire(HitTarget); //Server Fire to authoritatively to apply damages
+		LocalFire(HitTarget); //Local Fire to directly apply cosmetic effect locally
 
 		if(IsValid(EquippedWeapon))
 		{
@@ -331,6 +332,13 @@ void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& Trac
 }
 
 void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
+{
+	//If we pass this line, we're either on the server or on a client who is not controlling
+	if(IsValid(Character) && Character->IsLocallyControlled() && !Character->HasAuthority()) return;
+	LocalFire(TraceHitTarget);
+}
+
+void UCombatComponent::LocalFire(const FVector_NetQuantize& TraceHitTarget)
 {
 	if(!IsValid(EquippedWeapon)) return;
 	
