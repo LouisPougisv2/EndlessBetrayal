@@ -48,6 +48,7 @@ protected:
 	void HandleMatchStates();
 	void HandleMatchHasStarted();
 	void HandleCooldown();
+	void CheckPing(float DeltaSeconds);
 
 	/**
 	* Sync Time between Client and Server
@@ -66,7 +67,9 @@ protected:
 
 	UFUNCTION(Client, Reliable)
 	void ClientJoinMidGame(const float InMatchTime, const float InWarmUpTime, const float InLevelStartingTime, const float InCooldownTime, const FName InMatchState);
-	
+
+	void ShowHighPingWarning();
+	void HideHighPingWarning();
 	//Difference between Client and Server Time
 	UPROPERTY()
 	float ClientServerDelta = 0.0f;
@@ -118,4 +121,19 @@ private:
 	float HUDDeaths;
 	float HUDWeaponAmmo;
 	float HUDCarriedAmmo;
+
+	/**
+	* Ping variables
+	*/
+	float HighPingRunningTime = 0.0f;
+	float PingAnimationRunningTime = 0.0f;
+
+	UPROPERTY(EditAnywhere)
+	float HighPingWarningDuration = 5.0f;
+
+	UPROPERTY(EditAnywhere)
+	float CheckPingFrequency = 20.0f;
+	
+	UPROPERTY(EditAnywhere)
+	float HighPingThreshold = 50.0f;
 };

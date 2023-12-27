@@ -3,6 +3,7 @@
 
 #include "EndlessBetrayalPlayerController.h"
 
+#include "Components/Image.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "EndlessBetrayal/Character/EndlessBetrayalCharacter.h"
@@ -33,6 +34,7 @@ void AEndlessBetrayalPlayerController::Tick(float DeltaSeconds)
 	SetHUDTime();
 	CheckTimeSync(DeltaSeconds);
 	PollInit();
+	CheckPing(DeltaSeconds);
 }
 
 void AEndlessBetrayalPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -322,6 +324,63 @@ void AEndlessBetrayalPlayerController::HandleCooldown()
 		//Beware, the above line causes the character to stop being able to send info to the CombatComponent
 		//If the player is already firing, it'll be stuck in firing, hence the following line
 		EndlessBetrayalCharacter->GetCombatComponent()->FireButtonPressed(false);
+	}
+}
+
+void AEndlessBetrayalPlayerController::CheckPing(float DeltaSeconds)
+{
+	HighPingRunningTime += DeltaSeconds;
+	if(HighPingRunningTime > CheckPingFrequency)
+	{
+		HighPingRunningTime = 0.0f;
+		PlayerState = !IsValid(PlayerState) ? GetPlayerState<APlayerState>() : PlayerState;
+		if(IsValid(PlayerState))
+		{
+			//Note : If we were to use PlayerState->GetPing, the ping is compressed by UE to fit in a uint32.
+			//The returned ping is 1/4 of the accurate one so we'd need to use GetPing * 4 to get the accurate one
+			if(PlayerState->GetPingInMilliseconds() > HighPingThreshold)
+			{
+				ShowHighPingWarning();
+				PingAnimationRunningTime = 0.0f;
+			}
+		}
+	}
+
+	const bool bIsHighPingAnimationPlaying = IsValid(EndlessBetrayalHUD) && IsValid(EndlessBetrayalHUD->CharacterOverlay) && IsValid(EndlessBetrayalHUD->CharacterOverlay->HighPingImage) && EndlessBetrayalHUD->CharacterOverlay->IsAnimationPlaying(EndlessBetrayalHUD->CharacterOverlay->HighPingAnimation);
+	if(bIsHighPingAnimationPlaying)
+	{
+		PingAnimationRunningTime += DeltaSeconds;
+		if(PingAnimationRunningTime > HighPingWarningDuration)
+		{
+			HideHighPingWarning();
+		}
+	}
+}
+
+void AEndlessBetrayalPlayerController::ShowHighPingWarning()
+{
+	EndlessBetrayalHUD = !IsValid(EndlessBetrayalHUD) ? EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD()) : EndlessBetrayalHUD;
+	
+	const bool bIsHUDValid = IsValid(EndlessBetrayalHUD) && IsValid(EndlessBetrayalHUD->CharacterOverlay) && IsValid(EndlessBetrayalHUD->CharacterOverlay->HighPingImage) && EndlessBetrayalHUD->CharacterOverlay->HighPingAnimation;
+	if(bIsHUDValid)
+	{
+		EndlessBetrayalHUD->CharacterOverlay->HighPingImage->SetRenderOpacity(1.0f);
+		EndlessBetrayalHUD->CharacterOverlay->PlayAnimation(EndlessBetrayalHUD->CharacterOverlay->HighPingAnimation, 0.0f, 5);
+	}
+}
+
+void AEndlessBetrayalPlayerController::HideHighPingWarning()
+{
+	EndlessBetrayalHUD = !IsValid(EndlessBetrayalHUD) ? EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD()) : EndlessBetrayalHUD;
+	
+	const bool bIsHUDValid = IsValid(EndlessBetrayalHUD) && IsValid(EndlessBetrayalHUD->CharacterOverlay) && IsValid(EndlessBetrayalHUD->CharacterOverlay->HighPingImage) && EndlessBetrayalHUD->CharacterOverlay->HighPingAnimation;
+	if(bIsHUDValid)
+	{
+		EndlessBetrayalHUD->CharacterOverlay->HighPingImage->SetRenderOpacity(0.0f);
+		if(EndlessBetrayalHUD->CharacterOverlay->IsAnimationPlaying(EndlessBetrayalHUD->CharacterOverlay->HighPingAnimation))
+		{
+			EndlessBetrayalHUD->CharacterOverlay->StopAnimation(EndlessBetrayalHUD->CharacterOverlay->HighPingAnimation);
+		}
 	}
 }
 
