@@ -11,6 +11,7 @@
 #include "Animation/AnimationAsset.h"
 #include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "Kismet/KismetMathLibrary.h"
 
 
 // Sets default values
@@ -281,6 +282,28 @@ void AWeapon::UpdateAmmo(int32 AmmoAmountToAdd)
 {
 	AmmoAmount = FMath::Clamp(AmmoAmount + AmmoAmountToAdd, 0, MagCapacity);
 	UpdateHUDAmmo();
+}
+
+FVector AWeapon::GetTraceEndWithScatter(const FVector& HitTarget)
+{
+	const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName(FName("MuzzleFlash"));
+	
+	if(!IsValid(MuzzleFlashSocket)) return FVector();
+	
+	const FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
+	FVector Start = SocketTransform.GetLocation();
+	
+	FVector ToTargetNormalized = (HitTarget - Start).GetSafeNormal();
+	FVector SphereCenter = Start + ToTargetNormalized * DistanceToSphere;
+	FVector	RandVect = UKismetMathLibrary::RandomUnitVector() * FMath::RandRange(0.0f, SphereRadius);
+	FVector EndLocation = SphereCenter + RandVect;
+	FVector ToEndLocation = EndLocation - Start;
+	
+	//DrawDebugSphere(GetWorld(), SphereCenter, SphereRadius, 12, FColor::White, true);
+	//DrawDebugSphere(GetWorld(), EndLocation, 4.0f, 12, FColor::Red, true);
+	//DrawDebugLine(GetWorld(), TraceStartLocation, FVector(TraceStartLocation + ToEndLocation * TRACE_LENGTH / ToEndLocation.Size()), FColor::White, true);
+	
+	return FVector(Start + ToEndLocation * TRACE_LENGTH / ToEndLocation.Size());
 }
 
 void AWeapon::ToggleCustomDepth(bool bEnable)

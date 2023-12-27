@@ -18,6 +18,16 @@ enum class EWeaponState : uint8
 	EWS_MAX UMETA(DisplayName= "DefaultMax")
 };
 
+UENUM(BlueprintType)
+enum class EFireType : uint8
+{
+	EFT_HitScanWeapon UMETA(DisplayName = "HitScan Weapon"),
+	EFT_ProjectileWeapon UMETA(DisplayName = "Projectile Weapon"),
+	EFT_ShotgunWeapon UMETA(DisplayName = "Shotgun Weapon"),
+
+	EFT_MAX UMETA(DsplayName = "DefaultMax")
+};
+
 UCLASS()
 class ENDLESSBETRAYAL_API AWeapon : public AActor
 {
@@ -36,6 +46,8 @@ public:
 	void UpdateHUDAmmo();
 	virtual void OnWeaponDropped();
 	void UpdateAmmo(int32 AmmoAmount);
+	virtual FVector GetTraceEndWithScatter(const FVector& HitTarget);
+
 
 	//Enable / Disable Custom Depth
 	void ToggleCustomDepth(bool bEnable);
@@ -44,6 +56,9 @@ public:
 	
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	bool bIsWeaponAutomatic = true;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")	
+	bool bUseScatter = false;
 	
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	float FireDelay = 0.15f;
@@ -52,7 +67,10 @@ public:
 	bool bAllowAutomaticReload = false;
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
-	class USoundCue* OnEquipSoundCue;	
+	class USoundCue* OnEquipSoundCue;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	EFireType FireType;
 
 protected:
 	virtual void BeginPlay() override;
@@ -140,6 +158,16 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	float CrosshairShootingFactor = 0.75f;
+
+	/*
+	* Trace End With Scatter
+	*/
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
+	float DistanceToSphere = 800.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
+	float SphereRadius = 75.0f;
 	
 	
 public:	

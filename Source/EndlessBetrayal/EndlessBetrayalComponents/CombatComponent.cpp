@@ -255,12 +255,25 @@ void UCombatComponent::Fire()
 	if(CanFire())
 	{
 		bCanFire = false;
-		ServerFire(HitTarget); //Server Fire to authoritatively to apply damages
-		LocalFire(HitTarget); //Local Fire to directly apply cosmetic effect locally
 
 		if(IsValid(EquippedWeapon))
 		{
 			CrosshairShootingFactor += EquippedWeapon->GetCrosshairShootingFactor();
+
+			switch (EquippedWeapon->FireType)
+			{
+				case EFireType::EFT_ProjectileWeapon:
+					FireProjectileWeapon();
+					break;
+				case EFireType::EFT_HitScanWeapon:
+					FireHitScanWeapon();
+					break;
+				case EFireType::EFT_ShotgunWeapon:
+					FireShotgun();
+					break;
+				default:
+					break;
+			}
 		}
 		StartFireTimer();
 	}
@@ -347,6 +360,27 @@ void UCombatComponent::LocalFire(const FVector_NetQuantize& TraceHitTarget)
 		Character->PlayFireMontage(bIsAiming);
 		EquippedWeapon->Fire(TraceHitTarget);
 	}
+}
+
+void UCombatComponent::FireProjectileWeapon()
+{
+	LocalFire(HitTarget); //Local Fire to directly apply cosmetic effect locally
+	ServerFire(HitTarget); //Server Fire to authoritatively to apply damages
+}
+
+void UCombatComponent::FireHitScanWeapon()
+{
+	if(IsValid(EquippedWeapon))
+	{
+		HitTarget = EquippedWeapon->bUseScatter ? EquippedWeapon->GetTraceEndWithScatter(HitTarget) : HitTarget;
+		LocalFire(HitTarget); //Local Fire to directly apply cosmetic effect locally
+		ServerFire(HitTarget); //Server Fire to authoritatively to apply damages
+	}
+}
+
+void UCombatComponent::FireShotgun()
+{
+	
 }
 
 void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)

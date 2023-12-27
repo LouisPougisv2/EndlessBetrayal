@@ -10,7 +10,6 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "Sound/SoundCue.h"
 #include "DrawDebugHelpers.h"
-#include "Kismet/KismetMathLibrary.h"
 #include "WeaponTypes.h"
 #include "EndlessBetrayal/EndlessBetrayalComponents/CombatComponent.h"
 
@@ -75,7 +74,7 @@ void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& Hi
 	
 	if(IsValid(World))
 	{
-		const FVector End = bUseScatter ? GetTraceEndWithScatter(TraceStart, HitTarget) : TraceStart + (HitTarget - TraceStart) * 1.25f;
+		const FVector End = TraceStart + (HitTarget - TraceStart) * 1.25f;
 
 		World->LineTraceSingleByChannel(OutHitResult, TraceStart, End, ECC_Visibility);
 
@@ -84,7 +83,9 @@ void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& Hi
 		{
 			BeamEnd = OutHitResult.ImpactPoint;
 		}
-
+		
+		DrawDebugSphere(GetWorld(), BeamEnd, 16.f, 12, FColor::Orange, true);
+		
 		if(IsValid(BeamParticles))
 		{
 			BeamSystemComponent = UGameplayStatics::SpawnEmitterAtLocation(World, BeamParticles, TraceStart);
@@ -95,19 +96,4 @@ void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& Hi
 			}
 		}
 	}
-}
-
-FVector AHitScanWeapon::GetTraceEndWithScatter(const FVector& TraceStartLocation, const FVector& HitTarget)
-{
-	FVector ToTargetNormalized = (HitTarget - TraceStartLocation).GetSafeNormal();
-	FVector SphereCenter = TraceStartLocation + ToTargetNormalized * DistanceToSphere;
-	FVector	RandVect = UKismetMathLibrary::RandomUnitVector() * FMath::RandRange(0.0f, SphereRadius);
-	FVector EndLocation = SphereCenter + RandVect;
-	FVector ToEndLocation = EndLocation - TraceStartLocation;
-	
-	//DrawDebugSphere(GetWorld(), SphereCenter, SphereRadius, 12, FColor::White, true);
-	//DrawDebugSphere(GetWorld(), EndLocation, 4.0f, 12, FColor::Red, true);
-	//DrawDebugLine(GetWorld(), TraceStartLocation, FVector(TraceStartLocation + ToEndLocation * TRACE_LENGTH / ToEndLocation.Size()), FColor::White, true);
-	
-	return FVector(TraceStartLocation + ToEndLocation * TRACE_LENGTH / ToEndLocation.Size());
 }
