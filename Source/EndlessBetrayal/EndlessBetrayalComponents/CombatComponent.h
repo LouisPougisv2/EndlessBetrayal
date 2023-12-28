@@ -70,6 +70,15 @@ protected:
 	void MulticastFire(const FVector_NetQuantize& TraceHitTarget);
 
 	void LocalFire(const FVector_NetQuantize& TraceHitTarget);
+
+	UFUNCTION(Server, Reliable)
+	void ServerShotgunFire(const TArray<FVector_NetQuantize>& TraceHitTargets);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastShotgunFire(const TArray<FVector_NetQuantize>& TraceHitTargets);
+
+	void LocalShotgunFire(const TArray<FVector_NetQuantize>& TraceHitTargets);
+	
 	void FireProjectileWeapon();
 	void FireHitScanWeapon();
 	void FireShotgun();

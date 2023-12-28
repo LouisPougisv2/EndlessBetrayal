@@ -363,24 +363,55 @@ void UCombatComponent::LocalFire(const FVector_NetQuantize& TraceHitTarget)
 	}
 }
 
+void UCombatComponent::ServerShotgunFire_Implementation(const TArray<FVector_NetQuantize>& TraceHitTargets)
+{
+	MulticastShotgunFire(TraceHitTargets);
+}
+
+void UCombatComponent::MulticastShotgunFire_Implementation(const TArray<FVector_NetQuantize>& TraceHitTargets)
+{
+	//If we pass this line, we're either on the server or on a client who is not controlling
+	if(IsValid(Character) && Character->IsLocallyControlled() && !Character->HasAuthority()) return;
+	LocalShotgunFire(TraceHitTargets);
+}
+
+void UCombatComponent::LocalShotgunFire(const TArray<FVector_NetQuantize>& TraceHitTargets)
+{
+	if(!IsValid(EquippedWeapon) || !IsValid(Character)) return;
+	AShotgun* Shotgun = Cast<AShotgun>(EquippedWeapon);
+	if(!IsValid(Shotgun)) return;
+	
+	if(CombatState == ECombatState::ECS_Unoccupied)
+	{
+		Character->PlayFireMontage(bIsAiming);
+		Shotgun->FireShotgun(TraceHitTargets);
+	}
+}
+
 void UCombatComponent::FireProjectileWeapon()
 {
-	if(IsValid(EquippedWeapon))
+	if(IsValid(EquippedWeapon) && Character)
 	{
 		//Getting the new updated HitTarget with the Scatter applied
 		HitTarget = EquippedWeapon->bUseScatter ? EquippedWeapon->GetTraceEndWithScatter(HitTarget) : HitTarget;
-		LocalFire(HitTarget); //Local Fire to directly apply cosmetic effect locally
+		if(!Character->HasAuthority())	//It doesn't make sense to call LocalFire if the player is the server
+		{
+			LocalFire(HitTarget); //Local Fire to directly apply cosmetic effect locally
+		}
 		ServerFire(HitTarget); //Server Fire to authoritatively to apply damages
 	}
 }
 
 void UCombatComponent::FireHitScanWeapon()
 {
-	if(IsValid(EquippedWeapon))
+	if(IsValid(EquippedWeapon) && Character)
 	{
 		//Getting the new updated HitTarget with the Scatter applied
 		HitTarget = EquippedWeapon->bUseScatter ? EquippedWeapon->GetTraceEndWithScatter(HitTarget) : HitTarget;
-		LocalFire(HitTarget); //Local Fire to directly apply cosmetic effect locally
+		if(!Character->HasAuthority())	//It doesn't make sense to call LocalFire if the player is the server
+		{
+			LocalFire(HitTarget); //Local Fire to directly apply cosmetic effect locally
+		}
 		ServerFire(HitTarget); //Server Fire to authoritatively to apply damages
 	}
 }
@@ -392,10 +423,14 @@ void UCombatComponent::FireShotgun()
 		AShotgun* Shotgun = Cast<AShotgun>(EquippedWeapon);
 		if(!IsValid(Shotgun)) return;
 		
-		TArray<FVector> HitTargets;
+		TArray<FVector_NetQuantize> HitTargets;
 		Shotgun->ShotgunTraceEndWithScatter(HitTarget, HitTargets);
 
-		//TODO : Add Shotgun RPCs here
+		if(!Character->HasAuthority())
+		{
+			LocalShotgunFire(HitTargets);
+		}
+		ServerShotgunFire(HitTargets);
 	}
 }
 
