@@ -13,6 +13,7 @@
 #include "Camera/CameraComponent.h"
 #include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
 #include "EndlessBetrayal/Weapon/Projectile.h"
+#include "EndlessBetrayal/Weapon/Shotgun.h"
 #include "Sound/SoundCue.h"
 
 UCombatComponent::UCombatComponent()
@@ -364,14 +365,20 @@ void UCombatComponent::LocalFire(const FVector_NetQuantize& TraceHitTarget)
 
 void UCombatComponent::FireProjectileWeapon()
 {
-	LocalFire(HitTarget); //Local Fire to directly apply cosmetic effect locally
-	ServerFire(HitTarget); //Server Fire to authoritatively to apply damages
+	if(IsValid(EquippedWeapon))
+	{
+		//Getting the new updated HitTarget with the Scatter applied
+		HitTarget = EquippedWeapon->bUseScatter ? EquippedWeapon->GetTraceEndWithScatter(HitTarget) : HitTarget;
+		LocalFire(HitTarget); //Local Fire to directly apply cosmetic effect locally
+		ServerFire(HitTarget); //Server Fire to authoritatively to apply damages
+	}
 }
 
 void UCombatComponent::FireHitScanWeapon()
 {
 	if(IsValid(EquippedWeapon))
 	{
+		//Getting the new updated HitTarget with the Scatter applied
 		HitTarget = EquippedWeapon->bUseScatter ? EquippedWeapon->GetTraceEndWithScatter(HitTarget) : HitTarget;
 		LocalFire(HitTarget); //Local Fire to directly apply cosmetic effect locally
 		ServerFire(HitTarget); //Server Fire to authoritatively to apply damages
@@ -380,7 +387,16 @@ void UCombatComponent::FireHitScanWeapon()
 
 void UCombatComponent::FireShotgun()
 {
-	
+	if(IsValid(EquippedWeapon))
+	{
+		AShotgun* Shotgun = Cast<AShotgun>(EquippedWeapon);
+		if(!IsValid(Shotgun)) return;
+		
+		TArray<FVector> HitTargets;
+		Shotgun->ShotgunTraceEndWithScatter(HitTarget, HitTargets);
+
+		//TODO : Add Shotgun RPCs here
+	}
 }
 
 void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)

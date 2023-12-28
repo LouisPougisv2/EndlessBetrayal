@@ -90,6 +90,16 @@ protected:
 
 	FORCEINLINE class AEndlessBetrayalCharacter* GetWeaponOwnerCharacter() const { return WeaponOwnerCharacter; }
 	
+	/*
+	* Trace End With Scatter
+	*/
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
+	float DistanceToSphere = 800.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
+	float SphereRadius = 75.0f;
+	
 private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon Properties")
@@ -158,16 +168,6 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	float CrosshairShootingFactor = 0.75f;
-
-	/*
-	* Trace End With Scatter
-	*/
-
-	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
-	float DistanceToSphere = 800.0f;
-
-	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
-	float SphereRadius = 75.0f;
 	
 	
 public:	
