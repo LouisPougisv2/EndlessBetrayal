@@ -71,7 +71,6 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AWeapon, WeaponState);
-	DOREPLIFETIME(AWeapon, AmmoAmount);
 }
 
 void AWeapon::OnRep_Owner()
@@ -212,18 +211,45 @@ void AWeapon::UpdateHUDAmmo()
 	}
 }
 
+void AWeapon::ClientUpdateAmmo_Implementation(int32 ServerAmmo)
+{
+	if(HasAuthority()) return;
+	
+	AmmoAmount = ServerAmmo;
+	--SequenceNumber;
+
+	//Correction (SequenceNumber represents the number of round spent but not replicated back to us yet
+	AmmoAmount -= SequenceNumber;
+	UpdateHUDAmmo();
+}
+
+void AWeapon::ClientAddAmmo_Implementation(int32 ServerAmmoToAdd)
+{
+	if(HasAuthority()) return;
+	
+	AmmoAmount = FMath::Clamp(AmmoAmount + ServerAmmoToAdd, 0, MagCapacity);
+	UpdateHUDAmmo();
+}
+
 void AWeapon::SpendRound()
 {
 	AmmoAmount = FMath::Clamp(--AmmoAmount, 0, MagCapacity);
 	UpdateHUDAmmo();
+	if(HasAuthority())
+	{
+		ClientUpdateAmmo(AmmoAmount);
+	}
+	else if (WeaponOwnerCharacter && WeaponOwnerCharacter->IsLocallyControlled())
+	{
+		++SequenceNumber;
+	}
 }
 
-
-
-void AWeapon::OnRep_Ammo()
+void AWeapon::UpdateAmmo(int32 AmmoAmountToAdd)
 {
-	WeaponOwnerCharacter = WeaponOwnerCharacter == nullptr ? Cast<AEndlessBetrayalCharacter>(GetOwner()) : WeaponOwnerCharacter;
+	AmmoAmount = FMath::Clamp(AmmoAmount + AmmoAmountToAdd, 0, MagCapacity);
 	UpdateHUDAmmo();
+	ClientAddAmmo(AmmoAmount);
 }
 
 void AWeapon::ShowPickupWidget(bool bShowWidget)
@@ -256,10 +282,7 @@ void AWeapon::Fire(const FVector& HitTarget)
 		}
 	}
 	//Updating Ammo
-	if(HasAuthority())
-	{
-		SpendRound();
-	}
+	SpendRound();
 }
 
 bool AWeapon::IsFullyLoaded()
@@ -276,12 +299,6 @@ void AWeapon::OnWeaponDropped()
 	SetOwner(nullptr);
 	WeaponOwnerCharacter = nullptr;
 	WeaponOwnerController = nullptr;
-}
-
-void AWeapon::UpdateAmmo(int32 AmmoAmountToAdd)
-{
-	AmmoAmount = FMath::Clamp(AmmoAmount + AmmoAmountToAdd, 0, MagCapacity);
-	UpdateHUDAmmo();
 }
 
 FVector AWeapon::GetTraceEndWithScatter(const FVector& HitTarget)

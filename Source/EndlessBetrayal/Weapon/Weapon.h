@@ -86,9 +86,18 @@ protected:
 	UFUNCTION()
 	virtual void OnSphereOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
+	UFUNCTION(Client, Reliable)
+	void ClientUpdateAmmo(int32 ServerAmmo);
+	
+	UFUNCTION(Client, Reliable)
+	void ClientAddAmmo(int32 ServerAmmoToAdd);
+	
 	void SpendRound();
 
 	FORCEINLINE class AEndlessBetrayalCharacter* GetWeaponOwnerCharacter() const { return WeaponOwnerCharacter; }
+
+	//The number of unprocessed server request for Ammo, incremented in spend round, decremented in Client Update Ammo
+	int32 SequenceNumber = 0;
 	
 	/*
 	* Trace End With Scatter
@@ -111,7 +120,7 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_WeaponState, VisibleAnywhere, Category = "Weapon Properties")
 	EWeaponState WeaponState;
 
-	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_Ammo, Category = "Combat")
+	UPROPERTY(EditAnywhere, Category = "Combat")
 	int32 AmmoAmount;
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
@@ -128,9 +137,6 @@ private:
 
 	UFUNCTION()
 	void OnRep_WeaponState();
-	
-	UFUNCTION()
-	void OnRep_Ammo();
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	class UWidgetComponent* PickupWidget;
