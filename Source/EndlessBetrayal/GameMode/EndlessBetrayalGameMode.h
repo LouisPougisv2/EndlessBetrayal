@@ -30,17 +30,17 @@ public:
 	FORCEINLINE float GetCountdownTime() const { return CountDownTime; }
 
 	UPROPERTY(EditDefaultsOnly)
-	float WarmUpTime = 20.0f;
+	float WarmUpTime = 10.0f;
 
 	UPROPERTY(EditDefaultsOnly)
-	float MatchTime = 180.0f;
+	float MatchTime = 190.0f;
 
 	//Time that it takes from launching the game to entering EndlessBetrayal map
-	UPROPERTY(EditDefaultsOnly)
+	UPROPERTY()
 	float LevelStartingTime = 0.0f;
 
 	UPROPERTY(EditDefaultsOnly)
-	float CooldownTime = 10.0f;
+	float CooldownTime = 30.0f;
 
 protected:
 

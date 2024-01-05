@@ -176,8 +176,8 @@ void AEndlessBetrayalPlayerController::UpdateHUDMatchCountdown(float InCountdown
 			return;
 		}
 
-		const int32 Minutes = FMath::FloorToInt(InCountdownTime / 60);
-		const int32 Seconds = InCountdownTime - Minutes * 60;
+		const int32 Minutes = FMath::FloorToInt(InCountdownTime / 60.0f);
+		const int32 Seconds = InCountdownTime - Minutes * 60.0f;
 		const FString CountDownText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
 		EndlessBetrayalHUD->CharacterOverlay->MatchCountdownText->SetText(FText::FromString(CountDownText));
 
@@ -414,6 +414,7 @@ void AEndlessBetrayalPlayerController::ClientJoinMidGame_Implementation(const fl
 {
 	WarmUpTime = InWarmUpTime;
 	MatchTime = InMatchTime;
+	CooldownTime = InCooldownTime;
 	LevelStartingTime = InLevelStartingTime;
 	MatchState = InMatchState;
 
@@ -470,7 +471,7 @@ void AEndlessBetrayalPlayerController::SetHUDTime()
 	//Reminder, GetServerTime() return the time since the game STARTED (including the time passed on menu)
 	if(MatchState == MatchState::WaitingToStart) TimeLeft = WarmUpTime - GetServerTime() + LevelStartingTime;
 	else if(MatchState == MatchState::InProgress) TimeLeft = WarmUpTime  + MatchTime - GetServerTime() + LevelStartingTime;
-	else if(MatchState == MatchState::Cooldown) TimeLeft =  WarmUpTime  + MatchTime - GetServerTime() + LevelStartingTime + CooldownTime;
+	else if(MatchState == MatchState::Cooldown) TimeLeft =  CooldownTime + WarmUpTime  + MatchTime - GetServerTime() + LevelStartingTime;
 
 	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft);
 	
@@ -497,8 +498,6 @@ void AEndlessBetrayalPlayerController::SetHUDTime()
 		{
 			UpdateHUDMatchCountdown(TimeLeft);
 		}
-		
-		UpdateHUDMatchCountdown(MatchTime - GetServerTime());
 	}
 	CountDownInt = SecondsLeft;
 }
