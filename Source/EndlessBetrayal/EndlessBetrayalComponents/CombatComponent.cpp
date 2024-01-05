@@ -49,7 +49,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	DOREPLIFETIME(UCombatComponent, EquippedWeapon);
 	DOREPLIFETIME(UCombatComponent, SecondaryWeapon);
-	DOREPLIFETIME(UCombatComponent, bIsAiming);
+	DOREPLIFETIME_CONDITION(UCombatComponent, bIsAiming, COND_SkipOwner);
 	//CarriedAmmo will only replicate to the Owning client
 	DOREPLIFETIME_CONDITION(UCombatComponent, CarriedAmmo, COND_OwnerOnly);
 	DOREPLIFETIME(UCombatComponent, CombatState);
@@ -86,11 +86,6 @@ void UCombatComponent::SetAiming(bool bAiming)
 	if(Character->IsLocallyControlled() && EquippedWeapon->GetWeaponType() == EWeaponType::EWT_SniperRifle)
 	{
 		Character->ShowSniperScopeWidget(bIsAiming);
-	}
-
-	if(Character->IsLocallyControlled())
-	{
-		bAimButtonPressed = bIsAiming;
 	}
 }
 
@@ -222,14 +217,6 @@ int32 UCombatComponent::CalculateAmountToReload()
 	
 	return 0;
 	
-}
-
-void UCombatComponent::OnRep_Aiming()
-{
-	if(IsValid(Character) && Character->IsLocallyControlled())
-	{
-		bIsAiming = bAimButtonPressed;
-	}
 }
 
 void UCombatComponent::ZoomInterpFOV(float DeltaTime)
