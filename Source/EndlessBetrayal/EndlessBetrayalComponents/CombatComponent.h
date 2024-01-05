@@ -133,9 +133,16 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_SecondaryWeapon)
 	AWeapon* SecondaryWeapon;
 
-	UPROPERTY(Replicated)
-	bool bIsAiming;
+	//Used to zoom in and out
+	UPROPERTY(ReplicatedUsing = OnRep_Aiming)
+	bool bIsAiming = false;
 
+	//Used to check if the client is truly holding the aiming button (Locally controlled only variable)
+	bool bAimButtonPressed = false;
+	
+	UFUNCTION()
+	void OnRep_Aiming();
+	
 	UPROPERTY(EditAnywhere)
 	float BaseWalkSpeed;
 

@@ -87,6 +87,11 @@ void UCombatComponent::SetAiming(bool bAiming)
 	{
 		Character->ShowSniperScopeWidget(bIsAiming);
 	}
+
+	if(Character->IsLocallyControlled())
+	{
+		bAimButtonPressed = bIsAiming;
+	}
 }
 
 void UCombatComponent::ServerSetAiming_Implementation(bool bAiming)
@@ -217,6 +222,14 @@ int32 UCombatComponent::CalculateAmountToReload()
 	
 	return 0;
 	
+}
+
+void UCombatComponent::OnRep_Aiming()
+{
+	if(IsValid(Character) && Character->IsLocallyControlled())
+	{
+		bIsAiming = bAimButtonPressed;
+	}
 }
 
 void UCombatComponent::ZoomInterpFOV(float DeltaTime)
