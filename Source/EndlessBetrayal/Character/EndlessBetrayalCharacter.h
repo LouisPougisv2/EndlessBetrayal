@@ -41,6 +41,66 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowSniperScopeWidget(bool bShouldShowScope);
 
+	/*
+	 * Hit boxes used for Server-side rewinds
+	 * Note : Head Box's name correspond to the Bone name, hence the 2, 3 for some
+	 */
+
+	UPROPERTY(EditAnywhere)
+	class UBoxComponent* HeadBox;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* PelvisBox;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* SpineBox2;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* SpineBox3;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* UpperArmLeftBox;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* LowerArmLeftBox;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* HandLeftBox;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* UpperArmRightBox;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* LowerArmRightBox;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* HandRightBox;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* BackpackBox;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* BlanketBox;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* ThighLeftBox;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* CalfLeftBox;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* FootLeftBox;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* ThighRightBox;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* CalfRightBox;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* FootRightBox;
+
+
 protected:
 	virtual void BeginPlay() override;
 

@@ -4,6 +4,7 @@
 #include "EndlessBetrayalCharacter.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Components/BoxComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -64,6 +65,83 @@ AEndlessBetrayalCharacter::AEndlessBetrayalCharacter()
 
 	NetUpdateFrequency = 66.0f;
 	MinNetUpdateFrequency = 33.0f;
+
+	/*
+	 * Hit boxes for server-side rewind
+	 */
+
+	HeadBox = CreateDefaultSubobject<UBoxComponent>(TEXT("HeadBox"));
+	HeadBox->SetupAttachment(GetMesh(), FName("head"));
+	HeadBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	PelvisBox = CreateDefaultSubobject<UBoxComponent>(TEXT("PelvisBox"));
+	PelvisBox->SetupAttachment(GetMesh(), FName("Pelvis"));
+	PelvisBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
+	SpineBox2 = CreateDefaultSubobject<UBoxComponent>(TEXT("SpineBox2"));
+	SpineBox2->SetupAttachment(GetMesh(), FName("spine_02"));
+	SpineBox2->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	SpineBox3 = CreateDefaultSubobject<UBoxComponent>(TEXT("SpineBox3"));
+	SpineBox3->SetupAttachment(GetMesh(), FName("spine_03"));
+	SpineBox3->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
+	UpperArmLeftBox = CreateDefaultSubobject<UBoxComponent>(TEXT("UpperArmLeftBox"));
+	UpperArmLeftBox->SetupAttachment(GetMesh(), FName("UpperArm_L"));
+	UpperArmLeftBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
+	LowerArmLeftBox = CreateDefaultSubobject<UBoxComponent>(TEXT("LowerArmLeftBox"));
+	LowerArmLeftBox->SetupAttachment(GetMesh(), FName("lowerarm_l"));
+	LowerArmLeftBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	HandLeftBox = CreateDefaultSubobject<UBoxComponent>(TEXT("HandLeftBox"));
+	HandLeftBox->SetupAttachment(GetMesh(), FName("Hand_L"));
+	HandLeftBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	UpperArmRightBox = CreateDefaultSubobject<UBoxComponent>(TEXT("UpperArmRightbox"));
+	UpperArmRightBox->SetupAttachment(GetMesh(), FName("UpperArm_R"));
+	UpperArmRightBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
+	LowerArmRightBox = CreateDefaultSubobject<UBoxComponent>(TEXT("LowerArmRightBox"));
+	LowerArmRightBox->SetupAttachment(GetMesh(), FName("lowerarm_r"));
+	LowerArmRightBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	HandRightBox = CreateDefaultSubobject<UBoxComponent>(TEXT("HandRightBox"));
+	HandRightBox->SetupAttachment(GetMesh(), FName("Hand_R"));
+	HandRightBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	BackpackBox = CreateDefaultSubobject<UBoxComponent>(TEXT("BackpackBox"));
+	BackpackBox->SetupAttachment(GetMesh(), FName("backpack"));
+	BackpackBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	BlanketBox = CreateDefaultSubobject<UBoxComponent>(TEXT("BlanketBox"));
+	BlanketBox->SetupAttachment(GetMesh(), FName("blanket_r"));
+	BlanketBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	ThighLeftBox = CreateDefaultSubobject<UBoxComponent>(TEXT("ThighLeftBox"));
+	ThighLeftBox->SetupAttachment(GetMesh(), FName("Thigh_L"));
+	ThighLeftBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
+	CalfLeftBox = CreateDefaultSubobject<UBoxComponent>(TEXT("CalfLeftBox"));
+	CalfLeftBox->SetupAttachment(GetMesh(), FName("calf_l"));
+	CalfLeftBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	FootLeftBox = CreateDefaultSubobject<UBoxComponent>(TEXT("FootLeftBox"));
+	FootLeftBox->SetupAttachment(GetMesh(), FName("Foot_L"));
+	FootLeftBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	ThighRightBox = CreateDefaultSubobject<UBoxComponent>(TEXT("ThighRightBox"));
+	ThighRightBox->SetupAttachment(GetMesh(), FName("Thigh_R"));
+	ThighRightBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
+	CalfRightBox = CreateDefaultSubobject<UBoxComponent>(TEXT("CalfRightBox"));
+	CalfRightBox->SetupAttachment(GetMesh(), FName("calf_r"));
+	CalfRightBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	FootRightBox = CreateDefaultSubobject<UBoxComponent>(TEXT("FootRightBox"));
+	FootRightBox->SetupAttachment(GetMesh(), FName("Foot_R"));
+	FootRightBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
 }
 
 void AEndlessBetrayalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
