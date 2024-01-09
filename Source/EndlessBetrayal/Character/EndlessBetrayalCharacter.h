@@ -149,11 +149,17 @@ private:
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);	//Function called automatically when the variable is replicated
 
+	/**
+	* EndlessBetrayal Components
+	*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UCombatComponent* CombatComponent;
 
 	UPROPERTY(VisibleAnywhere)
 	class UBuffComponent* BuffComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	class ULagCompensationComponent* LagCompensationComponent;
 
 	/**
 	* Default Weapon

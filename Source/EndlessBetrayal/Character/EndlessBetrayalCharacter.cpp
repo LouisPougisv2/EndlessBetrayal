@@ -14,6 +14,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "EndlessBetrayal/EndlessBetrayal.h"
 #include "EndlessBetrayal/EndlessBetrayalComponents/BuffComponent.h"
+#include "EndlessBetrayal/EndlessBetrayalComponents/LagCompensationComponent.h"
 #include "EndlessBetrayal/GameMode/EndlessBetrayalGameMode.h"
 #include "EndlessBetrayal/GameState/EndlessBetrayalPlayerState.h"
 #include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
@@ -48,6 +49,9 @@ AEndlessBetrayalCharacter::AEndlessBetrayalCharacter()
 	BuffComponent = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
 	BuffComponent->SetIsReplicated(true);
 
+	//Will only be used on the server so no need to replicate it
+	LagCompensationComponent = CreateDefaultSubobject<ULagCompensationComponent>(TEXT("LagCompensationComponent"));
+	
 	AttachedGrenade = CreateDefaultSubobject<UStaticMeshComponent>("AttachedGrenade");
 	AttachedGrenade->SetupAttachment(GetMesh(), FName("GrenadeSocket"));
 	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -282,6 +286,14 @@ void AEndlessBetrayalCharacter::PostInitializeComponents()
 
 		ensureAlways(IsValid(GetCharacterMovement()));
 		BuffComponent->SetInitialJumpVelocity(GetCharacterMovement()->JumpZVelocity);
+	}
+
+	if(LagCompensationComponent)
+	{
+		LagCompensationComponent->Character = this;
+
+		EndlessBetrayalPlayerController = !IsValid(EndlessBetrayalPlayerController) ? Cast<AEndlessBetrayalPlayerController>(Controller) : EndlessBetrayalPlayerController;
+		LagCompensationComponent->PlayerController = EndlessBetrayalPlayerController;
 	}
 }
 
