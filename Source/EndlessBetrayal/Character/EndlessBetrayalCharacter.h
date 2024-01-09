@@ -100,6 +100,8 @@ public:
 	UPROPERTY(EditAnywhere)
 	UBoxComponent* FootRightBox;
 
+	UPROPERTY()
+	TMap<FName, UBoxComponent*> HitCollisionBoxes;
 
 protected:
 	virtual void BeginPlay() override;

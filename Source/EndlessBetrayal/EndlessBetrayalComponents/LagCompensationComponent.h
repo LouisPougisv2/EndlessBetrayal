@@ -55,6 +55,10 @@ protected:
 
 	virtual void BeginPlay() override;
 
+	void SaveFramePackage(FFramePackage& InFramePackage);
+
+	void ShowFramePackage(const FFramePackage& PackageToShow, const FColor& Color);
+
 private:
 
 	UPROPERTY()
