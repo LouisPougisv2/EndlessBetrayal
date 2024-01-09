@@ -66,5 +66,12 @@ private:
 
 	UPROPERTY()
 	class AEndlessBetrayalPlayerController* PlayerController;
-	
+
+	//Frame History for the last 400ms 
+	//Note : Not designed for exposure to BP so cannot have UPROPERTY()
+	TDoubleLinkedList<FFramePackage> FramesHistory;
+
+	//Max time after which a FramePackage is discarded from the FrameHistory
+	UPROPERTY(EditAnywhere)
+	float MaxRecordTime = 0.4f;
 };
