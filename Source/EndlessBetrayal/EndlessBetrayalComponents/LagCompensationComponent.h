@@ -61,6 +61,8 @@ protected:
 
 	void ShowFramePackage(const FFramePackage& PackageToShow, const FColor& Color);
 
+	FFramePackage InterpBetweenFrames(const FFramePackage& OlderFrame, const FFramePackage& YoungerFrame, const float HitTime);
+
 private:
 
 	UPROPERTY()

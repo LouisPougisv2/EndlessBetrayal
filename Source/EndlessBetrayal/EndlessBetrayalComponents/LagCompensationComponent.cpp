@@ -44,6 +44,31 @@ void ULagCompensationComponent::ShowFramePackage(const FFramePackage& PackageToS
 	}
 }
 
+FFramePackage ULagCompensationComponent::InterpBetweenFrames(const FFramePackage& OlderFrame, const FFramePackage& YoungerFrame, const float HitTime)
+{
+	const float Distance = YoungerFrame.Time - OlderFrame.Time;
+	const float InterpFraction = FMath::Clamp((HitTime - OlderFrame.Time) / Distance , 0.0f, 1.0f);
+
+	FFramePackage FrameToReturn;
+	FrameToReturn.Time = HitTime;
+
+	for(auto& YoungerPair : YoungerFrame.HitBoxInformationMap)
+	{
+		const FName& BoxInfoName = YoungerPair.Key;
+		const FBoxInformation& OlderBox = OlderFrame.HitBoxInformationMap[BoxInfoName];
+		const FBoxInformation& YoungerBox = YoungerFrame.HitBoxInformationMap[BoxInfoName];
+
+		FBoxInformation InterpBoxInfo;
+		InterpBoxInfo.Location = FMath::VInterpTo(OlderBox.Location, YoungerBox.Location, 1.0f, InterpFraction);
+		InterpBoxInfo.Rotation = FMath::RInterpTo(OlderBox.Rotation, YoungerBox.Rotation, 1.0f, InterpFraction);
+		InterpBoxInfo.BoxExtent = YoungerBox.BoxExtent; //Same as if we were using OlderBox (box extent are not changing during the game)
+
+		FrameToReturn.HitBoxInformationMap.Add(BoxInfoName, InterpBoxInfo);
+	}
+	
+	return FrameToReturn;
+}
+
 void ULagCompensationComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
@@ -103,6 +128,8 @@ void ULagCompensationComponent::ServerSideRewind(AEndlessBetrayalCharacter* HitC
 		bShouldInterpolate = false;
 	}
 
+	//TODO : To avoid loop if we've found the last FrameToCheck above
+	
 	TDoubleLinkedList<FFramePackage>::TDoubleLinkedListNode* YoungerNode = HitCharacterFramesHistory.GetHead();
 	TDoubleLinkedList<FFramePackage>::TDoubleLinkedListNode* OlderNode = YoungerNode;
 
