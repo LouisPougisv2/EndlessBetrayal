@@ -319,6 +319,7 @@ public:
 	FORCEINLINE bool IsGameplayDisabled() const { return bShouldDisableGameplayInput; }
 	AWeapon* GetEquippedWeapon();
 	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() { return AttachedGrenade; }
+	FORCEINLINE ULagCompensationComponent* GetLagCompensationComponent() const { return LagCompensationComponent; }
 
 	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; }
 	FORCEINLINE bool IsEliminated() const { return bIsEliminated; }
