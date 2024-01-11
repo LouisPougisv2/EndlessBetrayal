@@ -69,6 +69,121 @@ FFramePackage ULagCompensationComponent::InterpBetweenFrames(const FFramePackage
 	return FrameToReturn;
 }
 
+FServerSideRewindResults ULagCompensationComponent::ConfirmHit(const FFramePackage& FrameToCheck, AEndlessBetrayalCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation)
+{
+	if(!ensureAlways(IsValid(HitCharacter))) FServerSideRewindResults();
+	
+	//We're caching the location of all the boxes so we can move them back later
+	FFramePackage CurrentFrame;
+	
+	CacheBoxPositions(HitCharacter, CurrentFrame);
+	MoveBoxes(HitCharacter, FrameToCheck);
+
+	ToggleCharacterMeshCollision(HitCharacter, ECollisionEnabled::NoCollision);
+	
+	//Enable collision for the head first
+	UBoxComponent* HeadBox = HitCharacter->HitCollisionBoxes[FName("head")];
+	HeadBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics); //So we can line trace to verify a HeadShot
+	HeadBox->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+
+	FHitResult ConfirmHitResult;
+	const FVector TraceEnd = TraceStart + (HitLocation - TraceStart) * 1.25f;
+	UWorld* World = GetWorld();
+
+	if(IsValid(World))
+	{
+		World->LineTraceSingleByChannel(ConfirmHitResult, TraceStart, TraceEnd, ECC_Visibility);
+		if(ConfirmHitResult.bBlockingHit)
+		{
+			ResetHitBoxes(HitCharacter, CurrentFrame);
+			ToggleCharacterMeshCollision(HitCharacter, ECollisionEnabled::QueryAndPhysics);
+
+			return FServerSideRewindResults{true, true};
+		}
+		else //Didn't hit the head, check the rest of the boxes
+		{
+			for (TTuple<FName, UBoxComponent*>& HitBoxPair : HitCharacter->HitCollisionBoxes)
+			{
+				if(IsValid(HitBoxPair.Value))
+				{
+					HitBoxPair.Value->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+					HitBoxPair.Value->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+				}
+			}
+			World->LineTraceSingleByChannel(ConfirmHitResult, TraceStart, TraceEnd, ECC_Visibility);
+
+			if(ConfirmHitResult.bBlockingHit) //We've hit the character
+			{
+				ResetHitBoxes(HitCharacter, CurrentFrame);
+				ToggleCharacterMeshCollision(HitCharacter, ECollisionEnabled::QueryAndPhysics);
+				return FServerSideRewindResults{true, false};
+			}
+		}
+	}
+
+	//No confirmed hit
+	ResetHitBoxes(HitCharacter, CurrentFrame);
+	ToggleCharacterMeshCollision(HitCharacter, ECollisionEnabled::QueryAndPhysics);
+	return FServerSideRewindResults{false, false};
+}
+
+void ULagCompensationComponent::ToggleCharacterMeshCollision(AEndlessBetrayalCharacter* HitCharacter, ECollisionEnabled::Type NewType)
+{
+	if(IsValid(HitCharacter) && IsValid(HitCharacter->GetMesh()))
+	{
+		HitCharacter->GetMesh()->SetCollisionEnabled(NewType);
+	}
+}
+
+void ULagCompensationComponent::CacheBoxPositions(AEndlessBetrayalCharacter* HitCharacter, FFramePackage& OutFramePackage)
+{
+	if(!IsValid(HitCharacter)) return;
+
+	for (const TTuple<FName, UBoxComponent*>& HitBoxPair : HitCharacter->HitCollisionBoxes)
+	{
+		if(IsValid(HitBoxPair.Value))
+		{
+			FBoxInformation BoxInformation;
+			BoxInformation.Location = HitBoxPair.Value->GetComponentLocation();
+			BoxInformation.Rotation = HitBoxPair.Value->GetComponentRotation();
+			BoxInformation.BoxExtent = HitBoxPair.Value->GetScaledBoxExtent();
+			
+			OutFramePackage.HitBoxInformationMap.Add(HitBoxPair.Key, BoxInformation);
+		}
+	}
+}
+
+void ULagCompensationComponent::MoveBoxes(AEndlessBetrayalCharacter* HitCharacter, const FFramePackage& FrameToMoveAt)
+{
+	if(!IsValid(HitCharacter)) return;
+
+	for (TTuple<FName, UBoxComponent*>& HitBoxPair : HitCharacter->HitCollisionBoxes)
+	{
+		if(IsValid(HitBoxPair.Value))
+		{
+			HitBoxPair.Value->SetWorldLocation(FrameToMoveAt.HitBoxInformationMap[HitBoxPair.Key].Location);
+			HitBoxPair.Value->SetWorldRotation(FrameToMoveAt.HitBoxInformationMap[HitBoxPair.Key].Rotation);
+			HitBoxPair.Value->SetBoxExtent(FrameToMoveAt.HitBoxInformationMap[HitBoxPair.Key].BoxExtent);
+		}
+	}
+}
+
+void ULagCompensationComponent::ResetHitBoxes(AEndlessBetrayalCharacter* HitCharacter, const FFramePackage& FrameToMoveAt)
+{
+	if(!IsValid(HitCharacter)) return;
+
+	for (auto& HitBoxPair : HitCharacter->HitCollisionBoxes)
+	{
+		if(IsValid(HitBoxPair.Value))
+		{
+			HitBoxPair.Value->SetWorldLocation(FrameToMoveAt.HitBoxInformationMap[HitBoxPair.Key].Location);
+			HitBoxPair.Value->SetWorldRotation(FrameToMoveAt.HitBoxInformationMap[HitBoxPair.Key].Rotation);
+			HitBoxPair.Value->SetBoxExtent(FrameToMoveAt.HitBoxInformationMap[HitBoxPair.Key].BoxExtent);
+			HitBoxPair.Value->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+	}
+}
+
 void ULagCompensationComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
@@ -97,12 +212,12 @@ void ULagCompensationComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	}
 }
 
-void ULagCompensationComponent::ServerSideRewind(AEndlessBetrayalCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime)
+FServerSideRewindResults ULagCompensationComponent::ServerSideRewind(AEndlessBetrayalCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime)
 {
 	if(!IsValid(HitCharacter) || !HitCharacter->GetLagCompensationComponent()
 		|| HitCharacter->GetLagCompensationComponent()->FramesHistory.IsEmpty()
 		|| !HitCharacter->GetLagCompensationComponent()->FramesHistory.GetHead()
-		|| !HitCharacter->GetLagCompensationComponent()->FramesHistory.GetTail()) return;
+		|| !HitCharacter->GetLagCompensationComponent()->FramesHistory.GetTail()) FServerSideRewindResults();
 
 	//Frame history that belongs to the Character being hit
 	const TDoubleLinkedList<FFramePackage>& HitCharacterFramesHistory = HitCharacter->GetLagCompensationComponent()->FramesHistory;
@@ -114,7 +229,7 @@ void ULagCompensationComponent::ServerSideRewind(AEndlessBetrayalCharacter* HitC
 	bool bShouldInterpolate = true;
 	
 	//(HitTime < OldestHistoryTime) -> HitTime si too far back  to do ServerSide Rewind
-	if( HitTime < OldestHistoryTime) return;
+	if( HitTime < OldestHistoryTime) FServerSideRewindResults();
 
 	if(HitTime == OldestHistoryTime)
 	{
@@ -155,7 +270,9 @@ void ULagCompensationComponent::ServerSideRewind(AEndlessBetrayalCharacter* HitC
 	if(bShouldInterpolate)
 	{
 		//Interpolate Between Younger & Older
+		FrameToCheck = InterpBetweenFrames(OlderNode->GetValue(), YoungerNode->GetValue(), HitTime);
 	}
-
+	
+	return ConfirmHit(FrameToCheck, HitCharacter, TraceStart, HitLocation);
 }
 

@@ -38,6 +38,17 @@ struct FFramePackage
 	
 };
 
+USTRUCT(BlueprintType)
+struct FServerSideRewindResults
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	bool bHitConfirmed = false;
+
+	UPROPERTY()
+	bool bIsAHeadshot = false;
+};
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ENDLESSBETRAYAL_API ULagCompensationComponent : public UActorComponent
@@ -51,7 +62,7 @@ public:
 	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	void ServerSideRewind(class AEndlessBetrayalCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime);
+	FServerSideRewindResults ServerSideRewind(class AEndlessBetrayalCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime);
 
 protected:
 
@@ -63,6 +74,17 @@ protected:
 
 	FFramePackage InterpBetweenFrames(const FFramePackage& OlderFrame, const FFramePackage& YoungerFrame, const float HitTime);
 
+	FServerSideRewindResults ConfirmHit(const FFramePackage& FrameToCheck, AEndlessBetrayalCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation);
+
+	void ToggleCharacterMeshCollision(AEndlessBetrayalCharacter* HitCharacter, ECollisionEnabled::Type NewType);
+
+	void CacheBoxPositions(AEndlessBetrayalCharacter* HitCharacter, FFramePackage& OutFramePackage);
+
+	void MoveBoxes(AEndlessBetrayalCharacter* HitCharacter, const FFramePackage& FrameToMoveAt);
+	
+	void ResetHitBoxes(AEndlessBetrayalCharacter* HitCharacter, const FFramePackage& FrameToMoveAt);
+
+	
 private:
 
 	UPROPERTY()
