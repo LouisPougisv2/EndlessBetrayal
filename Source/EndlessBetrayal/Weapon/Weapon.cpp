@@ -95,19 +95,19 @@ void AWeapon::OnRep_Owner()
 
 void AWeapon::OnSphereOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	AEndlessBetrayalCharacter* EndlessBetrayalCharacter = Cast<AEndlessBetrayalCharacter>(OtherActor);
-	if (EndlessBetrayalCharacter)
+	AEndlessBetrayalCharacter* Character = Cast<AEndlessBetrayalCharacter>(OtherActor);
+	if (Character)
 	{
-		EndlessBetrayalCharacter->SetOverlappingWeapon(this);
+		Character->SetOverlappingWeapon(this);
 	}
 }
 
 void AWeapon::OnSphereOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	AEndlessBetrayalCharacter* EndlessBetrayalCharacter = Cast<AEndlessBetrayalCharacter>(OtherActor);
-	if (EndlessBetrayalCharacter)
+	AEndlessBetrayalCharacter* Character = Cast<AEndlessBetrayalCharacter>(OtherActor);
+	if (Character)
 	{
-		EndlessBetrayalCharacter->SetOverlappingWeapon(nullptr);
+		Character->SetOverlappingWeapon(nullptr);
 	}
 }
 

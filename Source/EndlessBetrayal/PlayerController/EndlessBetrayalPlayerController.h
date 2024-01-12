@@ -39,6 +39,8 @@ public:
 	//synced with Server world clock 
 	virtual float GetServerTime();
 	void PollInit();
+
+	float SingleTripTime = 0.0f;
 protected:
 
 	virtual void BeginPlay() override;

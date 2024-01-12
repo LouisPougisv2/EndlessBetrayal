@@ -12,6 +12,7 @@
 #include "DrawDebugHelpers.h"
 #include "WeaponTypes.h"
 #include "EndlessBetrayal/EndlessBetrayalComponents/CombatComponent.h"
+#include "EndlessBetrayal/EndlessBetrayalComponents/LagCompensationComponent.h"
 
 void AHitScanWeapon::Fire(const FVector& HitTarget)
 {
@@ -19,7 +20,7 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 
 	APawn* OwnerPawn = Cast<APawn>(GetOwner());
 	if(!IsValid(OwnerPawn)) return;
-	AEndlessBetrayalPlayerController* DamageInstigator = Cast<AEndlessBetrayalPlayerController>(OwnerPawn->GetController());
+	AController* DamageInstigator = OwnerPawn->GetController();
 	
 	const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName(FName("MuzzleFlash"));
 	if(IsValid(MuzzleFlashSocket))
@@ -32,9 +33,25 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 			
 		AEndlessBetrayalCharacter* HitCharacter = Cast<AEndlessBetrayalCharacter>(FireHit.GetActor());
 		//We only apply damage if we're on the Server
-		if(IsValid(HitCharacter) && HasAuthority() && IsValid(DamageInstigator))
+		if(IsValid(HitCharacter) && IsValid(DamageInstigator))
 		{
-			UGameplayStatics::ApplyDamage(HitCharacter, Damage, DamageInstigator, this, UDamageType::StaticClass());
+			if(HasAuthority() &&!bUseServerSideRewind)
+			{
+				UGameplayStatics::ApplyDamage(HitCharacter, Damage, DamageInstigator, this, UDamageType::StaticClass());
+			}
+			
+			if(!HasAuthority() &&bUseServerSideRewind)
+			{
+				WeaponOwnerCharacter = !IsValid(WeaponOwnerCharacter) ? Cast<AEndlessBetrayalCharacter>(OwnerPawn) : WeaponOwnerCharacter;
+				WeaponOwnerController = !IsValid(WeaponOwnerController) ? Cast<AEndlessBetrayalPlayerController>(DamageInstigator) : WeaponOwnerController;
+
+				if(IsValid(WeaponOwnerCharacter) && IsValid(WeaponOwnerController) && WeaponOwnerCharacter->GetLagCompensationComponent())
+				{
+					//Make sure the server rewind time enough to position that opponent's character to the location that it was in corresponding to when we hit
+					float HitTime = WeaponOwnerController->GetServerTime() - WeaponOwnerController->SingleTripTime;
+					WeaponOwnerCharacter->GetLagCompensationComponent()->ServerScoreRequest(HitCharacter, Start, FireHit.ImpactPoint, HitTime,this);
+				}
+			}
 		}
 
 		if(IsValid(ImpactParticle))

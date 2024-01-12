@@ -48,6 +48,7 @@ public:
 	void UpdateAmmo(int32 AmmoAmount);
 	virtual FVector GetTraceEndWithScatter(const FVector& HitTarget);
 
+	FORCEINLINE float GetDamage() const { return Damage; }
 
 	//Enable / Disable Custom Depth
 	void ToggleCustomDepth(bool bEnable);
@@ -96,6 +97,9 @@ protected:
 
 	FORCEINLINE class AEndlessBetrayalCharacter* GetWeaponOwnerCharacter() const { return WeaponOwnerCharacter; }
 
+	UPROPERTY(EditAnywhere)
+	float Damage = 20.0f;
+	
 	//The number of unprocessed server request for Ammo, incremented in spend round, decremented in Client Update Ammo
 	int32 SequenceNumber = 0;
 	
@@ -108,6 +112,15 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
 	float SphereRadius = 75.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	bool bUseServerSideRewind = false;
+
+	UPROPERTY()
+	AEndlessBetrayalCharacter* WeaponOwnerCharacter;
+
+	UPROPERTY()
+	class AEndlessBetrayalPlayerController* WeaponOwnerController;
 	
 private:
 
@@ -125,12 +138,6 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	int32 MagCapacity;
-
-	UPROPERTY()
-	AEndlessBetrayalCharacter* WeaponOwnerCharacter;
-
-	UPROPERTY()
-	class AEndlessBetrayalPlayerController* WeaponOwnerController;
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	EWeaponType WeaponType;

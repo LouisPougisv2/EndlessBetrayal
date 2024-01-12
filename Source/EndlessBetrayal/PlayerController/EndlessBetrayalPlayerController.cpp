@@ -549,9 +549,10 @@ void AEndlessBetrayalPlayerController::ServerRequestServerTime_Implementation(fl
 void AEndlessBetrayalPlayerController::ClientReportServerTime_Implementation(float TimeOfClientRequest, float TimeServerReceivedClientRequest)
 {
 	const float RoundTripTime = GetWorld()->GetTimeSeconds() - TimeOfClientRequest;
+	SingleTripTime = RoundTripTime / 2;
 
 	//Approximation of Current Time on Server
-	const float CurrentServerTime = TimeServerReceivedClientRequest + ( RoundTripTime / 2);
+	const float CurrentServerTime = TimeServerReceivedClientRequest + SingleTripTime;
 	ClientServerDelta = CurrentServerTime - GetWorld()->GetTimeSeconds();
 }
 

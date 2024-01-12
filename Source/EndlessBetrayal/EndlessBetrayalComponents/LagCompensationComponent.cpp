@@ -5,6 +5,8 @@
 
 #include "Components/BoxComponent.h"
 #include "EndlessBetrayal/Character/EndlessBetrayalCharacter.h"
+#include "EndlessBetrayal/Weapon/Weapon.h"
+#include "Kismet/GameplayStatics.h"
 
 ULagCompensationComponent::ULagCompensationComponent()
 {
@@ -14,6 +16,35 @@ ULagCompensationComponent::ULagCompensationComponent()
 void ULagCompensationComponent::BeginPlay()
 {
 	Super::BeginPlay();
+}
+
+void ULagCompensationComponent::TickSaveFramePackage()
+{
+	//It is not necessary for the client to to save packages
+	if(!IsValid(Character) || !Character->HasAuthority()) return;
+	
+	if(FramesHistory.Num() <= 1)	//The first 2 FramePackages
+	{
+		FFramePackage ThisFramePackage;
+		SaveFramePackage(ThisFramePackage);
+		FramesHistory.AddHead(ThisFramePackage);
+	}
+	else
+	{
+		float HistoryLength = FramesHistory.GetHead()->GetValue().Time - FramesHistory.GetTail()->GetValue().Time;
+		while(HistoryLength > MaxRecordTime)
+		{
+			FramesHistory.RemoveNode(FramesHistory.GetTail());
+			HistoryLength = FramesHistory.GetHead()->GetValue().Time - FramesHistory.GetTail()->GetValue().Time;
+		}
+		
+		FFramePackage ThisFramePackage;
+		SaveFramePackage(ThisFramePackage);
+		FramesHistory.AddHead(ThisFramePackage);
+
+		//To use for debug only
+		//ShowFramePackage(ThisFramePackage, FColor::Red);
+	}
 }
 
 void ULagCompensationComponent::SaveFramePackage(FFramePackage& InFramePackage)
@@ -187,29 +218,8 @@ void ULagCompensationComponent::ResetHitBoxes(AEndlessBetrayalCharacter* HitChar
 void ULagCompensationComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	
-	if(FramesHistory.Num() <= 1)	//The first 2 FramePackages
-	{
-		FFramePackage ThisFramePackage;
-		SaveFramePackage(ThisFramePackage);
-		FramesHistory.AddHead(ThisFramePackage);
-	}
-	else
-	{
-		float HistoryLength = FramesHistory.GetHead()->GetValue().Time - FramesHistory.GetTail()->GetValue().Time;
-		while(HistoryLength > MaxRecordTime)
-		{
-			FramesHistory.RemoveNode(FramesHistory.GetTail());
-			HistoryLength = FramesHistory.GetHead()->GetValue().Time - FramesHistory.GetTail()->GetValue().Time;
-		}
-		
-		FFramePackage ThisFramePackage;
-		SaveFramePackage(ThisFramePackage);
-		FramesHistory.AddHead(ThisFramePackage);
 
-		//TODO : Temporary displaying the Frame Package, to remove soon
-		ShowFramePackage(ThisFramePackage, FColor::Red);
-	}
+	TickSaveFramePackage();
 }
 
 FServerSideRewindResults ULagCompensationComponent::ServerSideRewind(AEndlessBetrayalCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime)
@@ -274,5 +284,16 @@ FServerSideRewindResults ULagCompensationComponent::ServerSideRewind(AEndlessBet
 	}
 	
 	return ConfirmHit(FrameToCheck, HitCharacter, TraceStart, HitLocation);
+}
+
+void ULagCompensationComponent::ServerScoreRequest_Implementation(AEndlessBetrayalCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime, AWeapon* DamageCauser)
+{
+	FServerSideRewindResults Confirm = ServerSideRewind(HitCharacter, TraceStart, HitLocation, HitTime);
+
+	if(IsValid(Character) && IsValid(HitCharacter) && Confirm.bHitConfirmed)
+	{
+		UGameplayStatics::ApplyDamage(HitCharacter, DamageCauser->GetDamage(), Character->Controller, DamageCauser, UDamageType::StaticClass());
+	}
+
 }
 

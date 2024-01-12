@@ -64,10 +64,14 @@ public:
 
 	FServerSideRewindResults ServerSideRewind(class AEndlessBetrayalCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime);
 
+	UFUNCTION(Server, Reliable)
+	void ServerScoreRequest(AEndlessBetrayalCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime, class AWeapon* DamageCauser);
+	
 protected:
 
 	virtual void BeginPlay() override;
 
+	void TickSaveFramePackage();
 	void SaveFramePackage(FFramePackage& InFramePackage);
 
 	void ShowFramePackage(const FFramePackage& PackageToShow, const FColor& Color);
