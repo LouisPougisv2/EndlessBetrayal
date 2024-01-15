@@ -98,6 +98,8 @@ protected:
 	FServerSideRewindResults ConfirmHit(const FFramePackage& FrameToCheck, AEndlessBetrayalCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation);
 
 	FShotgunServerSideRewindResults ShotgunConfirmHit(const TArray<FFramePackage>& FramePackages, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations);
+
+	void CheckShotgunShots(TMap<AEndlessBetrayalCharacter*, uint32>& MapShots, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations);
 	
 	void ToggleCharacterMeshCollision(AEndlessBetrayalCharacter* HitCharacter, ECollisionEnabled::Type NewType);
 

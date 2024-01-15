@@ -159,6 +159,35 @@ FServerSideRewindResults ULagCompensationComponent::ConfirmHit(const FFramePacka
 	return FServerSideRewindResults{false, false};
 }
 
+void ULagCompensationComponent::CheckShotgunShots(TMap<AEndlessBetrayalCharacter*, uint32>& MapShots, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations)
+{
+	const UWorld* World = GetWorld();
+	for (const FVector_NetQuantize& HitLocation : HitLocations)
+	{
+		FHitResult ConfirmHitResult;
+		const FVector TraceEnd = TraceStart + (HitLocation - TraceStart) * 1.25f;
+
+		if(IsValid(World))
+		{
+			World->LineTraceSingleByChannel(ConfirmHitResult, TraceStart, TraceEnd, ECC_Visibility);
+			
+			AEndlessBetrayalCharacter* HitCharacter = Cast<AEndlessBetrayalCharacter>(ConfirmHitResult.GetActor());
+			if(IsValid(HitCharacter)) //It is a valid shot!
+			{
+				if(MapShots.Contains(HitCharacter))
+				{
+					++MapShots[HitCharacter];
+				}
+				else
+				{
+					MapShots.Emplace(HitCharacter, 1);
+				}
+			}
+			
+		}
+	}
+}
+
 FShotgunServerSideRewindResults ULagCompensationComponent::ShotgunConfirmHit(const TArray<FFramePackage>& FramePackages, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations)
 {
 	FShotgunServerSideRewindResults ShotgunServerSideRewindResults;
@@ -184,33 +213,8 @@ FShotgunServerSideRewindResults ULagCompensationComponent::ShotgunConfirmHit(con
 		CurrentFrames.Add(CurrentFrame);
 	}
 
-	UWorld* World = GetWorld();
-	
 	//Next loop Checks for headshots!
-	for (const FVector_NetQuantize& HitLocation : HitLocations)
-	{
-		FHitResult ConfirmHitResult;
-		const FVector TraceEnd = TraceStart + (HitLocation - TraceStart) * 1.25f;
-
-		if(IsValid(World))
-		{
-			World->LineTraceSingleByChannel(ConfirmHitResult, TraceStart, TraceEnd, ECC_Visibility);
-			
-			AEndlessBetrayalCharacter* HitCharacter = Cast<AEndlessBetrayalCharacter>(ConfirmHitResult.GetActor());
-			if(IsValid(HitCharacter)) //It is a headshot!
-			{
-				if(ShotgunServerSideRewindResults.HeadShotsMap.Contains(HitCharacter))
-				{
-					++ShotgunServerSideRewindResults.HeadShotsMap[HitCharacter];
-				}
-				else
-				{
-					ShotgunServerSideRewindResults.HeadShotsMap.Emplace(HitCharacter, 1);
-				}
-			}
-			
-		}
-	}
+	CheckShotgunShots(ShotgunServerSideRewindResults.HeadShotsMap, TraceStart, HitLocations);
 
 	//Enabling all box collisions and disabling head boxes collisions
 	for (const FFramePackage& FrameToCheck : FramePackages)
@@ -234,30 +238,7 @@ FShotgunServerSideRewindResults ULagCompensationComponent::ShotgunConfirmHit(con
 	}
 
 	//Check for body shots
-	for (const FVector_NetQuantize& HitLocation : HitLocations)
-	{
-		FHitResult ConfirmHitResult;
-		const FVector TraceEnd = TraceStart + (HitLocation - TraceStart) * 1.25f;
-
-		if(IsValid(World))
-		{
-			World->LineTraceSingleByChannel(ConfirmHitResult, TraceStart, TraceEnd, ECC_Visibility);
-			
-			AEndlessBetrayalCharacter* HitCharacter = Cast<AEndlessBetrayalCharacter>(ConfirmHitResult.GetActor());
-			if(IsValid(HitCharacter)) //It is a body shot!
-			{
-				if(ShotgunServerSideRewindResults.BodyShots.Contains(HitCharacter))
-				{
-					++ShotgunServerSideRewindResults.BodyShots[HitCharacter];
-				}
-				else
-				{
-					ShotgunServerSideRewindResults.BodyShots.Emplace(HitCharacter, 1);
-				}
-			}
-			
-		}
-	}
+	CheckShotgunShots(ShotgunServerSideRewindResults.BodyShots, TraceStart, HitLocations);
 
 	for (const FFramePackage& CurrentFrame : CurrentFrames)
 	{
