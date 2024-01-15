@@ -31,10 +31,13 @@ struct FFramePackage
 	GENERATED_BODY()
 
 	UPROPERTY()
-	float Time;
+	float Time = 0.0f;
 	
 	UPROPERTY()
 	TMap<FName, FBoxInformation> HitBoxInformationMap;
+
+	UPROPERTY()
+	class AEndlessBetrayalCharacter* Character = nullptr;
 	
 };
 
@@ -50,6 +53,18 @@ struct FServerSideRewindResults
 	bool bIsAHeadshot = false;
 };
 
+USTRUCT(BlueprintType)
+struct FShotgunServerSideRewindResults
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TMap<AEndlessBetrayalCharacter*, uint32> HeadShotsMap;
+
+	UPROPERTY()
+	TMap<AEndlessBetrayalCharacter*, uint32> BodyShots;
+};
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ENDLESSBETRAYAL_API ULagCompensationComponent : public UActorComponent
 {
@@ -62,7 +77,7 @@ public:
 	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	FServerSideRewindResults ServerSideRewind(class AEndlessBetrayalCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime);
+	FServerSideRewindResults ServerSideRewind(AEndlessBetrayalCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime);
 
 	UFUNCTION(Server, Reliable)
 	void ServerScoreRequest(AEndlessBetrayalCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime, class AWeapon* DamageCauser);
@@ -76,10 +91,14 @@ protected:
 
 	void ShowFramePackage(const FFramePackage& PackageToShow, const FColor& Color);
 
+	FFramePackage GetFrameToCheck(AEndlessBetrayalCharacter* HitCharacter, float HitTime);
+	
 	FFramePackage InterpBetweenFrames(const FFramePackage& OlderFrame, const FFramePackage& YoungerFrame, const float HitTime);
 
 	FServerSideRewindResults ConfirmHit(const FFramePackage& FrameToCheck, AEndlessBetrayalCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation);
 
+	FShotgunServerSideRewindResults ShotgunConfirmHit(const TArray<FFramePackage>& FramePackages, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations);
+	
 	void ToggleCharacterMeshCollision(AEndlessBetrayalCharacter* HitCharacter, ECollisionEnabled::Type NewType);
 
 	void CacheBoxPositions(AEndlessBetrayalCharacter* HitCharacter, FFramePackage& OutFramePackage);
@@ -87,6 +106,12 @@ protected:
 	void MoveBoxes(AEndlessBetrayalCharacter* HitCharacter, const FFramePackage& FrameToMoveAt);
 	
 	void ResetHitBoxes(AEndlessBetrayalCharacter* HitCharacter, const FFramePackage& FrameToMoveAt);
+
+	/**
+	* Shotgun 
+	*/
+
+	FShotgunServerSideRewindResults ShotgunServerSideRewind(const TArray<AEndlessBetrayalCharacter*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime);
 
 	
 private:
