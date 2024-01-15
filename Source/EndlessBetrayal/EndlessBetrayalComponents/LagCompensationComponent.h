@@ -81,6 +81,15 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void ServerScoreRequest(AEndlessBetrayalCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize& HitLocation, float HitTime, class AWeapon* DamageCauser);
+
+	/**
+	* Shotgun 
+	*/
+
+	FShotgunServerSideRewindResults ShotgunServerSideRewind(const TArray<AEndlessBetrayalCharacter*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime);
+
+	UFUNCTION(Server, Reliable)
+	void ShotgunServerScoreRequest(const TArray<AEndlessBetrayalCharacter*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime);
 	
 protected:
 
@@ -108,12 +117,6 @@ protected:
 	void MoveBoxes(AEndlessBetrayalCharacter* HitCharacter, const FFramePackage& FrameToMoveAt);
 	
 	void ResetHitBoxes(AEndlessBetrayalCharacter* HitCharacter, const FFramePackage& FrameToMoveAt);
-
-	/**
-	* Shotgun 
-	*/
-
-	FShotgunServerSideRewindResults ShotgunServerSideRewind(const TArray<AEndlessBetrayalCharacter*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime);
 
 	
 private:

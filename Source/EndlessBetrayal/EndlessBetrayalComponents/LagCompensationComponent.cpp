@@ -405,3 +405,26 @@ void ULagCompensationComponent::ServerScoreRequest_Implementation(AEndlessBetray
 
 }
 
+void ULagCompensationComponent::ShotgunServerScoreRequest_Implementation(const TArray<AEndlessBetrayalCharacter*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime)
+{
+	FShotgunServerSideRewindResults ConfirmHits = ShotgunServerSideRewind(HitCharacters, TraceStart, HitLocations, HitTime);
+	
+	
+	for (AEndlessBetrayalCharacter* HitCharacter : HitCharacters)
+	{
+		if(!IsValid(Character) || !IsValid(Character->GetEquippedWeapon()) || !IsValid(Character)) continue;
+		float TotalShotDamage = 0.0f;
+		
+		if(ConfirmHits.HeadShotsMap.Contains(HitCharacter))
+		{
+			//TODO : Replace GetDamage() call by a future GetHeadShotDamage()
+			TotalShotDamage += ConfirmHits.HeadShotsMap[HitCharacter] * Character->GetEquippedWeapon()->GetDamage();
+		}
+		if(ConfirmHits.BodyShots.Contains(HitCharacter))
+		{
+			TotalShotDamage += ConfirmHits.BodyShots[HitCharacter] * Character->GetEquippedWeapon()->GetDamage();
+		}
+
+		UGameplayStatics::ApplyDamage(HitCharacter, TotalShotDamage, Character->Controller, Character->GetEquippedWeapon(), UDamageType::StaticClass());
+	}
+}
