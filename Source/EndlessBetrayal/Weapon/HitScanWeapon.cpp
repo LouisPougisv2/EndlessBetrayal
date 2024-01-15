@@ -45,7 +45,8 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 				WeaponOwnerCharacter = !IsValid(WeaponOwnerCharacter) ? Cast<AEndlessBetrayalCharacter>(OwnerPawn) : WeaponOwnerCharacter;
 				WeaponOwnerController = !IsValid(WeaponOwnerController) ? Cast<AEndlessBetrayalPlayerController>(DamageInstigator) : WeaponOwnerController;
 
-				if(IsValid(WeaponOwnerCharacter) && IsValid(WeaponOwnerController) && WeaponOwnerCharacter->GetLagCompensationComponent())
+				//We only want to send the Client RPC if the client is locally controlled
+				if(IsValid(WeaponOwnerCharacter) && IsValid(WeaponOwnerController) && WeaponOwnerCharacter->GetLagCompensationComponent() && WeaponOwnerCharacter->IsLocallyControlled())
 				{
 					//Make sure the server rewind time enough to position that opponent's character to the location that it was in corresponding to when we hit
 					float HitTime = WeaponOwnerController->GetServerTime() - WeaponOwnerController->SingleTripTime;

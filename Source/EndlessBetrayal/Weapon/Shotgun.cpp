@@ -4,6 +4,7 @@
 #include "Shotgun.h"
 
 #include "EndlessBetrayal/Character/EndlessBetrayalCharacter.h"
+#include "EndlessBetrayal/EndlessBetrayalComponents/LagCompensationComponent.h"
 #include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/GameplayStatics.h"
@@ -58,12 +59,31 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& TraceHitTargets)
 			}
 		}
 
+		TArray<AEndlessBetrayalCharacter*> HitCharacters;
+		TArray<FVector_NetQuantize> HitLocations;
+		
 		for (TPair<AEndlessBetrayalCharacter*, unsigned> PlayerHit : PlayersHitMap)
 		{
-			if(IsValid(PlayerHit.Key) && HasAuthority() && IsValid(DamageInstigator))
+			if(IsValid(PlayerHit.Key) && IsValid(DamageInstigator))
 			{
-				//BaseDamage in ApplyDamage -> Multiply Damage by number of time hit
-				UGameplayStatics::ApplyDamage(PlayerHit.Key, Damage * PlayerHit.Value, DamageInstigator, this, UDamageType::StaticClass());
+				if(HasAuthority() && bUseServerSideRewind)
+				{
+					UGameplayStatics::ApplyDamage(PlayerHit.Key, Damage * PlayerHit.Value, DamageInstigator, this, UDamageType::StaticClass());
+				}
+
+				HitCharacters.Add(PlayerHit.Key);
+			}
+		}
+		
+		if(!HasAuthority() && !bUseServerSideRewind)
+		{
+			WeaponOwnerCharacter = !IsValid(WeaponOwnerCharacter) ? Cast<AEndlessBetrayalCharacter>(OwnerPawn) : WeaponOwnerCharacter;
+			WeaponOwnerController = !IsValid(WeaponOwnerController) ? Cast<AEndlessBetrayalPlayerController>(DamageInstigator) : WeaponOwnerController;
+					
+			if(IsValid(WeaponOwnerCharacter) && IsValid(WeaponOwnerController) && WeaponOwnerCharacter->GetLagCompensationComponent() && WeaponOwnerCharacter->IsLocallyControlled())
+			{
+				float HitTime = WeaponOwnerController->GetServerTime() - WeaponOwnerController->SingleTripTime;
+				WeaponOwnerCharacter->GetLagCompensationComponent()->ShotgunServerScoreRequest(HitCharacters, Start, TraceHitTargets, HitTime);
 			}
 		}
 	}

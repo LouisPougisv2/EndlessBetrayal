@@ -316,9 +316,9 @@ void ULagCompensationComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 FShotgunServerSideRewindResults ULagCompensationComponent::ShotgunServerSideRewind(const TArray<AEndlessBetrayalCharacter*>& HitCharacters, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations, float HitTime)
 {
 	TArray<FFramePackage> FramesToCheck;
-	for (AEndlessBetrayalCharacter* Character : HitCharacters)
+	for (AEndlessBetrayalCharacter* HitCharacter : HitCharacters)
 	{
-		FramesToCheck.Add(GetFrameToCheck(Character, HitTime));
+		FramesToCheck.Add(GetFrameToCheck(HitCharacter, HitTime));
 	}
 	return ShotgunConfirmHit(FramesToCheck, TraceStart, HitLocations);
 }
@@ -390,7 +390,8 @@ FFramePackage ULagCompensationComponent::GetFrameToCheck(AEndlessBetrayalCharact
 		//Interpolate Between Younger & Older
 		FrameToCheck = InterpBetweenFrames(OlderNode->GetValue(), YoungerNode->GetValue(), HitTime);
 	}
-	
+
+	FrameToCheck.Character = HitCharacter;
 	return FrameToCheck;
 }
 
