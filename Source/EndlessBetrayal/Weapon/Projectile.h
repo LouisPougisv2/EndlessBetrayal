@@ -17,6 +17,8 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void Destroyed() override;
 
+	void SetDamage(const float InDamage) { Damage = InDamage; }
+
 	/**
 	* Used with Server Side Rewind
 	*/
