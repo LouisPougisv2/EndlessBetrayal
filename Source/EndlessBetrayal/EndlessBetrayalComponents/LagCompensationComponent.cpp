@@ -4,6 +4,7 @@
 #include "LagCompensationComponent.h"
 
 #include "Components/BoxComponent.h"
+#include "EndlessBetrayal/EndlessBetrayal.h"
 #include "EndlessBetrayal/Character/EndlessBetrayalCharacter.h"
 #include "EndlessBetrayal/Weapon/Weapon.h"
 #include "Kismet/GameplayStatics.h"
@@ -116,7 +117,7 @@ FServerSideRewindResults ULagCompensationComponent::ConfirmHit(const FFramePacka
 	//Enable collision for the head first
 	UBoxComponent* HeadBox = HitCharacter->HitCollisionBoxes[FName("head")];
 	HeadBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics); //So we can line trace to verify a HeadShot
-	HeadBox->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+	HeadBox->SetCollisionResponseToChannel(ECC_HitBox, ECR_Block);
 
 	FHitResult ConfirmHitResult;
 	const FVector TraceEnd = TraceStart + (HitLocation - TraceStart) * 1.25f;
@@ -124,9 +125,19 @@ FServerSideRewindResults ULagCompensationComponent::ConfirmHit(const FFramePacka
 
 	if(IsValid(World))
 	{
-		World->LineTraceSingleByChannel(ConfirmHitResult, TraceStart, TraceEnd, ECC_Visibility);
+		World->LineTraceSingleByChannel(ConfirmHitResult, TraceStart, TraceEnd, ECC_HitBox);
 		if(ConfirmHitResult.bBlockingHit)
 		{
+			//For debug purposes
+			//if(ConfirmHitResult.Component.IsValid())
+			//{
+			//	UBoxComponent* Box = Cast<UBoxComponent>(ConfirmHitResult.Component);
+			//	if(IsValid(Box))
+			//	{
+			//		DrawDebugBox(GetWorld(), Box->GetComponentLocation(), Box->GetScaledBoxExtent(), FQuat(Box->GetComponentRotation()), FColor::Black, false, 8.0f);
+			//	}
+			//}
+			
 			ResetHitBoxes(HitCharacter, CurrentFrame);
 			ToggleCharacterMeshCollision(HitCharacter, ECollisionEnabled::QueryAndPhysics);
 
@@ -139,13 +150,23 @@ FServerSideRewindResults ULagCompensationComponent::ConfirmHit(const FFramePacka
 				if(IsValid(HitBoxPair.Value))
 				{
 					HitBoxPair.Value->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-					HitBoxPair.Value->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+					HitBoxPair.Value->SetCollisionResponseToChannel(ECC_HitBox, ECR_Block);
 				}
 			}
-			World->LineTraceSingleByChannel(ConfirmHitResult, TraceStart, TraceEnd, ECC_Visibility);
+			World->LineTraceSingleByChannel(ConfirmHitResult, TraceStart, TraceEnd, ECC_HitBox);
 
 			if(ConfirmHitResult.bBlockingHit) //We've hit the character
 			{
+				//For debug purposes
+				//if(ConfirmHitResult.Component.IsValid())
+				//{
+				//	UBoxComponent* Box = Cast<UBoxComponent>(ConfirmHitResult.Component);
+				//	if(IsValid(Box))
+				//	{
+				//		DrawDebugBox(GetWorld(), Box->GetComponentLocation(), Box->GetScaledBoxExtent(), FQuat(Box->GetComponentRotation()), FColor::Blue, false, 8.0f);
+				//	}
+				//}
+				
 				ResetHitBoxes(HitCharacter, CurrentFrame);
 				ToggleCharacterMeshCollision(HitCharacter, ECollisionEnabled::QueryAndPhysics);
 				return FServerSideRewindResults{true, false};
@@ -169,11 +190,21 @@ void ULagCompensationComponent::CheckShotgunShots(TMap<AEndlessBetrayalCharacter
 
 		if(IsValid(World))
 		{
-			World->LineTraceSingleByChannel(ConfirmHitResult, TraceStart, TraceEnd, ECC_Visibility);
+			World->LineTraceSingleByChannel(ConfirmHitResult, TraceStart, TraceEnd, ECC_HitBox);
 			
 			AEndlessBetrayalCharacter* HitCharacter = Cast<AEndlessBetrayalCharacter>(ConfirmHitResult.GetActor());
 			if(IsValid(HitCharacter)) //It is a valid shot!
 			{
+				//For debug purposes
+				//if(ConfirmHitResult.Component.IsValid())
+				//{
+				//	UBoxComponent* Box = Cast<UBoxComponent>(ConfirmHitResult.Component);
+				//	if(IsValid(Box))
+				//	{
+				//		DrawDebugBox(GetWorld(), Box->GetComponentLocation(), Box->GetScaledBoxExtent(), FQuat(Box->GetComponentRotation()), FColor::Red, false, 8.0f);
+				//	}
+				//}
+				
 				if(MapShots.Contains(HitCharacter))
 				{
 					++MapShots[HitCharacter];
@@ -208,7 +239,7 @@ FShotgunServerSideRewindResults ULagCompensationComponent::ShotgunConfirmHit(con
 		//Enable collision for the head first
 		UBoxComponent* HeadBox = FrameToCheck.Character->HitCollisionBoxes[FName("head")];
 		HeadBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics); //So we can line trace to verify a HeadShot
-		HeadBox->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+		HeadBox->SetCollisionResponseToChannel(ECC_HitBox, ECR_Block);
 
 		CurrentFrames.Add(CurrentFrame);
 	}
@@ -227,7 +258,7 @@ FShotgunServerSideRewindResults ULagCompensationComponent::ShotgunConfirmHit(con
 			{
 				//Enabling all boxes collision
 				HitCollisionBox.Value->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-				HitCollisionBox.Value->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
+				HitCollisionBox.Value->SetCollisionResponseToChannel(ECC_HitBox, ECR_Block);
 			}
 			if(FrameToCheck.Character)
 			{
