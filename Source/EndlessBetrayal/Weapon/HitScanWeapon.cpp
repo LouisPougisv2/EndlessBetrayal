@@ -35,7 +35,9 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 		//We only apply damage if we're on the Server
 		if(IsValid(HitCharacter) && IsValid(DamageInstigator))
 		{
-			if(HasAuthority() &&!bUseServerSideRewind)
+			//If next bool is true, the server should cause damage
+			bool bCauseAuthDamage =	!bUseServerSideRewind || OwnerPawn->IsLocallyControlled();
+			if(HasAuthority() && bCauseAuthDamage)
 			{
 				UGameplayStatics::ApplyDamage(HitCharacter, Damage, DamageInstigator, this, UDamageType::StaticClass());
 			}

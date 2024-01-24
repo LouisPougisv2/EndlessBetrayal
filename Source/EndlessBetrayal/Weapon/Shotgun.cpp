@@ -61,12 +61,14 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& TraceHitTargets)
 
 		TArray<AEndlessBetrayalCharacter*> HitCharacters;
 		TArray<FVector_NetQuantize> HitLocations;
-		
+
+		//If next bool is true, the server should cause damage
+		bool bCauseAuthDamage =	!bUseServerSideRewind || OwnerPawn->IsLocallyControlled();
 		for (TPair<AEndlessBetrayalCharacter*, unsigned> PlayerHit : PlayersHitMap)
 		{
 			if(IsValid(PlayerHit.Key) && IsValid(DamageInstigator))
 			{
-				if(HasAuthority() && bUseServerSideRewind)
+				if(HasAuthority() && bCauseAuthDamage)
 				{
 					UGameplayStatics::ApplyDamage(PlayerHit.Key, Damage * PlayerHit.Value, DamageInstigator, this, UDamageType::StaticClass());
 				}

@@ -3,6 +3,8 @@
 
 #include "ProjectileBullet.h"
 
+#include "EndlessBetrayal/Character/EndlessBetrayalCharacter.h"
+#include "EndlessBetrayal/EndlessBetrayalComponents/LagCompensationComponent.h"
 #include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/ProjectileMovementComponent.h"
@@ -38,7 +40,7 @@ void AProjectileBullet::BeginPlay()
 {
 	Super::BeginPlay();
 
-	FPredictProjectilePathParams PathParams;
+	/*FPredictProjectilePathParams PathParams;
 	//PredictProjectilePathParams.bTraceComplex -> if true, traces against the mesh itself instead of collisions or assets
 	PathParams.bTraceWithChannel = true;
 	PathParams.bTraceWithCollision = true;	//Allows us to predict a projectile path and generate hit events as we're tracing against the collision object in our world
@@ -54,21 +56,31 @@ void AProjectileBullet::BeginPlay()
 	
 	FPredictProjectilePathResult PredictProjectilePathResult;
 	
-	UGameplayStatics::PredictProjectilePath(this, PathParams, PredictProjectilePathResult);
+	UGameplayStatics::PredictProjectilePath(this, PathParams, PredictProjectilePathResult);*/
 }
 
 void AProjectileBullet::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
 	//Apply Damage here
-	ACharacter* OwnerCharacter = Cast<ACharacter>(GetOwner());
+	AEndlessBetrayalCharacter* OwnerCharacter = Cast<AEndlessBetrayalCharacter>(GetOwner());
 	if(IsValid(OwnerCharacter))
 	{
-		AEndlessBetrayalPlayerController* EventInstigator = Cast<AEndlessBetrayalPlayerController>(
-			OwnerCharacter->GetController());
+		AEndlessBetrayalPlayerController* EventInstigator = Cast<AEndlessBetrayalPlayerController>(OwnerCharacter->GetController());
 		if(IsValid(EventInstigator))
 		{
-			//Using UDamageType::StaticClass() as we don't have any damage type defined for now
-			UGameplayStatics::ApplyDamage(OtherActor, GetDamage(), EventInstigator, this, UDamageType::StaticClass());
+			if(OwnerCharacter->HasAuthority() && !bUseServerSideRewind)
+			{
+				//Using UDamageType::StaticClass() as we don't have any damage type defined for now
+				UGameplayStatics::ApplyDamage(OtherActor, GetDamage(), EventInstigator, this, UDamageType::StaticClass());
+				Super::OnHit(HitComp, OtherActor, OtherComp, NormalImpulse, Hit);
+				return;
+			}
+
+			AEndlessBetrayalCharacter* HitCharacter = Cast<AEndlessBetrayalCharacter>(OtherActor);
+			if(IsValid(HitCharacter) && OwnerCharacter->IsLocallyControlled() && bUseServerSideRewind && OwnerCharacter->GetLagCompensationComponent())
+			{
+				OwnerCharacter->GetLagCompensationComponent()->ProjectileServerScoreRequest(HitCharacter, TraceStart, InitialVelocity, EventInstigator->GetServerTime() - EventInstigator->SingleTripTime);
+			}			
 		}
 	}
 	

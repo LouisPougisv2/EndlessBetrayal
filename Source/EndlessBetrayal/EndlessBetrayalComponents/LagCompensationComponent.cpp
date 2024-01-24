@@ -180,6 +180,89 @@ FServerSideRewindResults ULagCompensationComponent::ConfirmHit(const FFramePacka
 	return FServerSideRewindResults{false, false};
 }
 
+FServerSideRewindResults ULagCompensationComponent::ProjectileConfirmHit(const FFramePackage& FrameToCheck, AEndlessBetrayalCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime)
+{
+	if(!ensureAlways(IsValid(HitCharacter))) FServerSideRewindResults();
+	
+	//We're caching the location of all the boxes so we can move them back later
+	FFramePackage CurrentFrame;
+	CacheBoxPositions(HitCharacter, CurrentFrame);
+	MoveBoxes(HitCharacter, FrameToCheck);
+
+	ToggleCharacterMeshCollision(HitCharacter, ECollisionEnabled::NoCollision);
+	
+	//Enable collision for the head first
+	UBoxComponent* HeadBox = HitCharacter->HitCollisionBoxes[FName("head")];
+	HeadBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics); //So we can line trace to verify a HeadShot
+	HeadBox->SetCollisionResponseToChannel(ECC_HitBox, ECR_Block);
+
+	FPredictProjectilePathParams PathParams;
+	PathParams.bTraceWithCollision = true;
+	PathParams.MaxSimTime = MaxRecordTime;
+	PathParams.LaunchVelocity = InitialVelocity;
+	PathParams.StartLocation = TraceStart;
+	PathParams.SimFrequency = 15.0f;
+	PathParams.ProjectileRadius = 5.0f;
+	PathParams.TraceChannel = ECC_HitBox;
+	PathParams.ActorsToIgnore.Add(GetOwner());
+	PathParams.DrawDebugTime = 5.0f;
+	PathParams.DrawDebugType = EDrawDebugTrace::ForDuration;
+	
+	FPredictProjectilePathResult PathResult;
+	UGameplayStatics::PredictProjectilePath(this, PathParams, PathResult);
+
+	if(PathResult.HitResult.bBlockingHit) //We've hit a head, return early
+	{
+		////For debug purposes
+		//if(PathResult.HitResult.Component.IsValid())
+		//{
+		//	UBoxComponent* Box = Cast<UBoxComponent>(PathResult.HitResult.Component);
+		//	if(IsValid(Box))
+		//	{
+		//		DrawDebugBox(GetWorld(), Box->GetComponentLocation(), Box->GetScaledBoxExtent(), FQuat(Box->GetComponentRotation()), FColor::Black, false, 8.0f);
+		//	}
+		//}
+			
+		ResetHitBoxes(HitCharacter, CurrentFrame);
+		ToggleCharacterMeshCollision(HitCharacter, ECollisionEnabled::QueryAndPhysics);
+		return FServerSideRewindResults{true, true};
+	}
+	else //Didn't hit the head, check the rest of the boxes
+	{
+		for (TTuple<FName, UBoxComponent*>& HitBoxPair : HitCharacter->HitCollisionBoxes)
+		{
+			if(IsValid(HitBoxPair.Value))
+			{
+				HitBoxPair.Value->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+				HitBoxPair.Value->SetCollisionResponseToChannel(ECC_HitBox, ECR_Block);
+			}
+		}
+		UGameplayStatics::PredictProjectilePath(this, PathParams, PathResult);
+
+		if(PathResult.HitResult.bBlockingHit) //We've hit the character
+		{
+			////For debug purposes
+			//if(PathResult.HitResult.Component.IsValid())
+			//{
+			//	UBoxComponent* Box = Cast<UBoxComponent>(PathResult.HitResult.Component);
+			//	if(IsValid(Box))
+			//	{
+			//		DrawDebugBox(GetWorld(), Box->GetComponentLocation(), Box->GetScaledBoxExtent(), FQuat(Box->GetComponentRotation()), FColor::Blue, false, 8.0f);
+			//	}
+			//}
+				
+			ResetHitBoxes(HitCharacter, CurrentFrame);
+			ToggleCharacterMeshCollision(HitCharacter, ECollisionEnabled::QueryAndPhysics);
+			return FServerSideRewindResults{true, false};
+		}
+	}
+
+	//No confirmed hit
+	ResetHitBoxes(HitCharacter, CurrentFrame);
+	ToggleCharacterMeshCollision(HitCharacter, ECollisionEnabled::QueryAndPhysics);
+	return FServerSideRewindResults{false, false};
+}
+
 void ULagCompensationComponent::CheckShotgunShots(TMap<AEndlessBetrayalCharacter*, uint32>& MapShots, const FVector_NetQuantize& TraceStart, const TArray<FVector_NetQuantize>& HitLocations)
 {
 	const UWorld* World = GetWorld();
@@ -358,6 +441,22 @@ FServerSideRewindResults ULagCompensationComponent::ServerSideRewind(AEndlessBet
 {
 	FFramePackage FrameToCheck = GetFrameToCheck(HitCharacter, HitTime);
 	return ConfirmHit(FrameToCheck, HitCharacter, TraceStart, HitLocation);
+}
+
+FServerSideRewindResults ULagCompensationComponent::ProjectileServerSideRewind(AEndlessBetrayalCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime)
+{
+	FFramePackage FrameToCheck = GetFrameToCheck(HitCharacter, HitTime);
+	return ProjectileConfirmHit(FrameToCheck, HitCharacter, TraceStart, InitialVelocity, HitTime);
+}
+
+void ULagCompensationComponent::ProjectileServerScoreRequest_Implementation(AEndlessBetrayalCharacter* HitCharacter, const FVector_NetQuantize& TraceStart, const FVector_NetQuantize100& InitialVelocity, float HitTime)
+{
+	FServerSideRewindResults Confirm = ProjectileServerSideRewind(HitCharacter, TraceStart, InitialVelocity, HitTime);
+
+	if(IsValid(Character) && IsValid(HitCharacter) && IsValid(HitCharacter->GetEquippedWeapon()) && Confirm.bHitConfirmed)
+	{
+		UGameplayStatics::ApplyDamage(HitCharacter, HitCharacter->GetEquippedWeapon()->GetDamage(), Character->Controller, HitCharacter->GetEquippedWeapon(), UDamageType::StaticClass());
+	}
 }
 
 
