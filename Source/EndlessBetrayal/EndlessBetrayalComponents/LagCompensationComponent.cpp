@@ -205,8 +205,8 @@ FServerSideRewindResults ULagCompensationComponent::ProjectileConfirmHit(const F
 	PathParams.ProjectileRadius = 5.0f;
 	PathParams.TraceChannel = ECC_HitBox;
 	PathParams.ActorsToIgnore.Add(GetOwner());
-	PathParams.DrawDebugTime = 5.0f;
-	PathParams.DrawDebugType = EDrawDebugTrace::ForDuration;
+	//PathParams.DrawDebugTime = 5.0f;
+	//PathParams.DrawDebugType = EDrawDebugTrace::ForDuration;
 	
 	FPredictProjectilePathResult PathResult;
 	UGameplayStatics::PredictProjectilePath(this, PathParams, PathResult);

@@ -95,6 +95,14 @@ protected:
 	
 	void SpendRound();
 
+	UFUNCTION()
+	void OnPingTooHigh(bool bPingTooHigh);
+
+	/** This function will bind or remove the Delegate of type FHighPingDelegate
+	* @params if bShouldBind == true -> Bind, else remove
+	*/
+	void BindOrRemovePingTooHighDelegate();
+
 	FORCEINLINE class AEndlessBetrayalCharacter* GetWeaponOwnerCharacter() const { return WeaponOwnerCharacter; }
 
 	UPROPERTY(EditAnywhere)
@@ -113,7 +121,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
 	float SphereRadius = 75.0f;
 
-	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	UPROPERTY(Replicated, EditAnywhere, Category = "Weapon Properties")
 	bool bUseServerSideRewind = false;
 
 	UPROPERTY()

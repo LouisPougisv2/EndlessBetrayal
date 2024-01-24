@@ -340,11 +340,14 @@ void AEndlessBetrayalPlayerController::CheckPing(float DeltaSeconds)
 		{
 			//Note : If we were to use PlayerState->GetPing, the ping is compressed by UE to fit in a uint32.
 			//The returned ping is 1/4 of the accurate one so we'd need to use GetPing * 4 to get the accurate one
-			if(PlayerState->GetPingInMilliseconds() > HighPingThreshold)
+			//UE_LOG(LogTemp, Warning, TEXT("PlayerState->GetPingInMilliseconds() : %f"), PlayerState->GetPingInMilliseconds())
+			const bool bIsHighPing = PlayerState->GetPingInMilliseconds() > HighPingThreshold;
+			if(bIsHighPing)
 			{
 				ShowHighPingWarning();
 				PingAnimationRunningTime = 0.0f;
 			}
+			ServerReportPingStatus(bIsHighPing);
 		}
 		HighPingRunningTime = 0.0f;
 	}
@@ -358,6 +361,12 @@ void AEndlessBetrayalPlayerController::CheckPing(float DeltaSeconds)
 			HideHighPingWarning();
 		}
 	}
+}
+
+//Is the Ping too high?
+void AEndlessBetrayalPlayerController::ServerReportPingStatus_Implementation(bool bHighPing)
+{
+	HighPingDelegate.Broadcast(bHighPing);
 }
 
 void AEndlessBetrayalPlayerController::ShowHighPingWarning()

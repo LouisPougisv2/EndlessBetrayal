@@ -71,6 +71,7 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AWeapon, WeaponState);
+	DOREPLIFETIME_CONDITION(AWeapon, bUseServerSideRewind, COND_OwnerOnly);
 }
 
 void AWeapon::OnRep_Owner()
@@ -159,6 +160,8 @@ void AWeapon::HandleWeaponEquipped()
 		WeaponMesh->SetCollisionResponseToChannels(ECollisionResponse::ECR_Ignore);
 		WeaponMesh->SetEnableGravity(true);
 	}
+
+	BindOrRemovePingTooHighDelegate();
 }
 
 void AWeapon::HandleWeaponDropped()
@@ -175,6 +178,8 @@ void AWeapon::HandleWeaponDropped()
 	WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
 	WeaponMesh->MarkRenderStateDirty();
 	ToggleCustomDepth(true);
+
+	BindOrRemovePingTooHighDelegate();
 }
 
 void AWeapon::HandleWeaponEquippedSecondary()
@@ -195,6 +200,8 @@ void AWeapon::HandleWeaponEquippedSecondary()
 		WeaponMesh->SetCollisionResponseToChannels(ECollisionResponse::ECR_Ignore);
 		WeaponMesh->SetEnableGravity(true);
 	}
+
+	BindOrRemovePingTooHighDelegate();
 	
 }
 
@@ -242,6 +249,31 @@ void AWeapon::SpendRound()
 	else if (WeaponOwnerCharacter && WeaponOwnerCharacter->IsLocallyControlled())
 	{
 		++SequenceNumber;
+	}
+}
+
+void AWeapon::OnPingTooHigh(bool bPingTooHigh)
+{
+	bUseServerSideRewind = !bPingTooHigh;
+}
+
+void AWeapon::BindOrRemovePingTooHighDelegate()
+{
+	WeaponOwnerCharacter = WeaponOwnerCharacter == nullptr ? Cast<AEndlessBetrayalCharacter>(GetOwner()) : WeaponOwnerCharacter;
+	if(IsValid(WeaponOwnerCharacter))
+	{
+		WeaponOwnerController = WeaponOwnerController == nullptr ? Cast<AEndlessBetrayalPlayerController>(WeaponOwnerCharacter->Controller) : WeaponOwnerController;
+		if(WeaponOwnerController && HasAuthority())
+		{
+			if(!WeaponOwnerController->HighPingDelegate.IsBound())
+			{
+				WeaponOwnerController->HighPingDelegate.AddUniqueDynamic(this, &AWeapon::OnPingTooHigh);
+			}
+			else if(WeaponOwnerController->HighPingDelegate.IsBound())
+			{
+				WeaponOwnerController->HighPingDelegate.RemoveDynamic(this, &AWeapon::OnPingTooHigh);
+			}
+		}
 	}
 }
 

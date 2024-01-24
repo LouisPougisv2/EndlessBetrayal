@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "EndlessBetrayalPlayerController.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHighPingDelegate, bool, bPingTooHigh);
 /**
  * 
  */
@@ -41,6 +42,8 @@ public:
 	void PollInit();
 
 	float SingleTripTime = 0.0f;
+
+	FHighPingDelegate HighPingDelegate;
 protected:
 
 	virtual void BeginPlay() override;
@@ -138,4 +141,7 @@ private:
 	
 	UPROPERTY(EditAnywhere)
 	float HighPingThreshold = 50.0f;
+
+	UFUNCTION(Server, Reliable)
+	void ServerReportPingStatus(bool bHighPing);
 };
