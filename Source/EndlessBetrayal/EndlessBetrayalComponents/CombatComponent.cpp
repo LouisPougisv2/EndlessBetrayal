@@ -454,20 +454,11 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 void UCombatComponent::SwapWeapons()
 {
-	if(!ShouldSwapWeapon() || CombatState == ECombatState::ECS_Reloading) return;
+	if(!ShouldSwapWeapon() || CombatState == ECombatState::ECS_Reloading || !IsValid(Character) || CombatState == ECombatState::ECS_SwappingWeapons) return;
 
-	AWeapon* TemporaryWeapon = EquippedWeapon;
-	EquippedWeapon = SecondaryWeapon;
-	SecondaryWeapon = TemporaryWeapon;
-
-	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
-	AttachActorToSocket(EquippedWeapon, FName("RightHandSocket"));
-	EquippedWeapon->UpdateHUDAmmo();
-	UpdateWeaponCarriedAmmo();
-	PlayEquipSound(EquippedWeapon);
-
-	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_EquippedSecondary);
-	AttachActorToSocket(SecondaryWeapon, FName("BackpackSocket"));
+	Character->PlaySwapWeaponMontage();
+	CombatState = ECombatState::ECS_SwappingWeapons;
+	if(IsValid(SecondaryWeapon)) SecondaryWeapon->ToggleCustomDepth(false);
 }
 
 void UCombatComponent::EquipPrimaryWeapon(AWeapon* WeaponToEquip)
@@ -705,6 +696,31 @@ void UCombatComponent::FinishReloading()
 	}
 }
 
+void UCombatComponent::FinishSwap()
+{
+	if(IsValid(Character) && Character->HasAuthority() && IsValid(Character->GetCombatComponent()))
+	{
+		CombatState = ECombatState::ECS_Unoccupied;
+	}
+	if(IsValid(SecondaryWeapon)) SecondaryWeapon->ToggleCustomDepth(true);
+}
+
+void UCombatComponent::FinishSwapAttachWeapon()
+{
+		AWeapon* TemporaryWeapon = EquippedWeapon;
+	EquippedWeapon = SecondaryWeapon;
+	SecondaryWeapon = TemporaryWeapon;
+	
+	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
+	AttachActorToSocket(EquippedWeapon, FName("RightHandSocket"));
+	EquippedWeapon->UpdateHUDAmmo();
+	UpdateWeaponCarriedAmmo();
+	PlayEquipSound(EquippedWeapon);
+
+	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_EquippedSecondary);
+	AttachActorToSocket(SecondaryWeapon, FName("BackpackSocket"));
+}
+
 
 void UCombatComponent::OnRep_CombatState()
 {
@@ -718,6 +734,13 @@ void UCombatComponent::OnRep_CombatState()
 			{
 				Fire();
 			}
+			break;
+		case ECombatState::ECS_SwappingWeapons:
+			if(IsValid(Character)/* && !Character->IsLocallyControlled()*/)
+			{
+				Character->PlaySwapWeaponMontage();
+			}
+			break;
 		default:
 			break;
 	}

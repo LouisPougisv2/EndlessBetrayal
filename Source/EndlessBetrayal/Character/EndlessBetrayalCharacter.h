@@ -27,10 +27,15 @@ public:
 	void UpdateHUDAmmo();
 	void UpdateHealthHUD();
 	void UpdateShieldHUD();
+
+	/**
+	 * Play Montages
+	 */
 	void PlayFireMontage(bool bIsAiming);
 	void PlayReloadMontage();
 	void PlayEliminatedMontage();
 	void PlayThrowGrenadeMontage();
+	void PlaySwapWeaponMontage();
 
 	//Reserved for functionalities that'll happen only on the server
 	void OnPlayerEliminated();
@@ -195,6 +200,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	UAnimMontage* ThrowingGrenadeMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	UAnimMontage* SwapWeaponMontage;
 
 	//End of Animation Montages
 	UPROPERTY(EditAnywhere, Category = "Camera")

@@ -439,6 +439,15 @@ void AEndlessBetrayalCharacter::PlayThrowGrenadeMontage()
 	}
 }
 
+void AEndlessBetrayalCharacter::PlaySwapWeaponMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if(IsValid(AnimInstance) && IsValid(SwapWeaponMontage))
+	{
+		AnimInstance->Montage_Play(SwapWeaponMontage);
+	}
+}
+
 void AEndlessBetrayalCharacter::OnPlayerEliminated()
 {
 	DropOrDestroyWeapons();

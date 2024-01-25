@@ -83,5 +83,5 @@ void UEndlessBetrayalAnimInstance::NativeUpdateAnimation(float DeltaTime)
 		}
 
 	}
-	bShouldUseFabrik = EndlessBetrayalCharacter->GetCombatState() == ECombatState::ECS_Unoccupied;
+	bShouldUseFabrik = EndlessBetrayalCharacter->GetCombatState() == ECombatState::ECS_Unoccupied && EndlessBetrayalCharacter->GetCombatState() != ECombatState::ECS_SwappingWeapons;
 }
