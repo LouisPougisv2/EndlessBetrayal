@@ -339,7 +339,17 @@ void UCombatComponent::UpdateAmmoValues()
 	EquippedWeapon->UpdateAmmo(ReloadAmount);
 }
 
-void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
+//Use WithValidation only in cases where you want to kick the player
+bool UCombatComponent::ServerFire_Validate(const FVector_NetQuantize& TraceHitTarget, float FireDelay)
+{
+	if(IsValid(EquippedWeapon))
+	{
+		return FMath::IsNearlyEqual(EquippedWeapon->FireDelay, FireDelay, 0.001f);
+	}
+	return true;
+}
+
+void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& TraceHitTarget, float FireDelay)
 {
 	//Runs on Server and all clients when call from the server
 	MulticastFire(TraceHitTarget);
@@ -363,7 +373,16 @@ void UCombatComponent::LocalFire(const FVector_NetQuantize& TraceHitTarget)
 	}
 }
 
-void UCombatComponent::ServerShotgunFire_Implementation(const TArray<FVector_NetQuantize>& TraceHitTargets)
+bool UCombatComponent::ServerShotgunFire_Validate(const TArray<FVector_NetQuantize>& TraceHitTargets, float FireDelay)
+{
+	if(IsValid(EquippedWeapon))
+	{
+		return FMath::IsNearlyEqual(EquippedWeapon->FireDelay, FireDelay, 0.001f);
+	}
+	return true;
+}
+
+void UCombatComponent::ServerShotgunFire_Implementation(const TArray<FVector_NetQuantize>& TraceHitTargets, float FireDelay)
 {
 	MulticastShotgunFire(TraceHitTargets);
 }
@@ -398,7 +417,7 @@ void UCombatComponent::FireProjectileWeapon()
 		{
 			LocalFire(HitTarget); //Local Fire to directly apply cosmetic effect locally
 		}
-		ServerFire(HitTarget); //Server Fire to authoritatively to apply damages
+		ServerFire(HitTarget, EquippedWeapon->FireDelay); //Server Fire to authoritatively to apply damages
 	}
 }
 
@@ -412,7 +431,7 @@ void UCombatComponent::FireHitScanWeapon()
 		{
 			LocalFire(HitTarget); //Local Fire to directly apply cosmetic effect locally
 		}
-		ServerFire(HitTarget); //Server Fire to authoritatively to apply damages
+		ServerFire(HitTarget, EquippedWeapon->FireDelay); //Server Fire to authoritatively to apply damages
 	}
 }
 
@@ -430,7 +449,7 @@ void UCombatComponent::FireShotgun()
 		{
 			LocalShotgunFire(HitTargets);
 		}
-		ServerShotgunFire(HitTargets);
+		ServerShotgunFire(HitTargets, EquippedWeapon->FireDelay);
 	}
 }
 
