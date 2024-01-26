@@ -18,6 +18,11 @@ public:
 
 	AProjectileRocket();
 	virtual void Destroyed() override;
+
+#if WITH_EDITOR
+	//Allows us to spread any changes happening in BP
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
 	
 protected:
 

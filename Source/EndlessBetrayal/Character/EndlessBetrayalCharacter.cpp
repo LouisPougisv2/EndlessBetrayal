@@ -4,6 +4,7 @@
 #include "EndlessBetrayalCharacter.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Components/BoxComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Net/UnrealNetwork.h"
@@ -13,6 +14,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "EndlessBetrayal/EndlessBetrayal.h"
 #include "EndlessBetrayal/EndlessBetrayalComponents/BuffComponent.h"
+#include "EndlessBetrayal/EndlessBetrayalComponents/LagCompensationComponent.h"
 #include "EndlessBetrayal/GameMode/EndlessBetrayalGameMode.h"
 #include "EndlessBetrayal/GameState/EndlessBetrayalPlayerState.h"
 #include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
@@ -38,8 +40,8 @@ AEndlessBetrayalCharacter::AEndlessBetrayalCharacter()
 	bUseControllerRotationYaw = false;	//We don't want our character rotating along with our controller (not yet)
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
-	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
-	OverheadWidget->SetupAttachment(RootComponent);
+	//OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
+	//OverheadWidget->SetupAttachment(RootComponent);
 
 	CombatComponent = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
 	CombatComponent->SetIsReplicated(true);
@@ -47,6 +49,9 @@ AEndlessBetrayalCharacter::AEndlessBetrayalCharacter()
 	BuffComponent = CreateDefaultSubobject<UBuffComponent>(TEXT("BuffComponent"));
 	BuffComponent->SetIsReplicated(true);
 
+	//Will only be used on the server so no need to replicate it
+	LagCompensationComponent = CreateDefaultSubobject<ULagCompensationComponent>(TEXT("LagCompensationComponent"));
+	
 	AttachedGrenade = CreateDefaultSubobject<UStaticMeshComponent>("AttachedGrenade");
 	AttachedGrenade->SetupAttachment(GetMesh(), FName("GrenadeSocket"));
 	AttachedGrenade->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -64,6 +69,95 @@ AEndlessBetrayalCharacter::AEndlessBetrayalCharacter()
 
 	NetUpdateFrequency = 66.0f;
 	MinNetUpdateFrequency = 33.0f;
+
+	/*
+	 * Hit boxes for server-side rewind
+	 */
+
+	HeadBox = CreateDefaultSubobject<UBoxComponent>(TEXT("HeadBox"));
+	HeadBox->SetupAttachment(GetMesh(), FName("head"));
+	HitCollisionBoxes.Add(FName("head"), HeadBox);
+
+	PelvisBox = CreateDefaultSubobject<UBoxComponent>(TEXT("PelvisBox"));
+	PelvisBox->SetupAttachment(GetMesh(), FName("Pelvis"));
+	HitCollisionBoxes.Add(FName("Pelvis"), PelvisBox);
+
+	
+	SpineBox2 = CreateDefaultSubobject<UBoxComponent>(TEXT("SpineBox2"));
+	SpineBox2->SetupAttachment(GetMesh(), FName("spine_02"));
+	HitCollisionBoxes.Add(FName("spine_02"), SpineBox2);
+
+
+	SpineBox3 = CreateDefaultSubobject<UBoxComponent>(TEXT("SpineBox3"));
+	SpineBox3->SetupAttachment(GetMesh(), FName("spine_03"));
+	HitCollisionBoxes.Add(FName("spine_03"), SpineBox3);
+
+	UpperArmLeftBox = CreateDefaultSubobject<UBoxComponent>(TEXT("UpperArmLeftBox"));
+	UpperArmLeftBox->SetupAttachment(GetMesh(), FName("UpperArm_L"));
+	HitCollisionBoxes.Add(FName("UpperArm_L"), UpperArmLeftBox);
+	
+	LowerArmLeftBox = CreateDefaultSubobject<UBoxComponent>(TEXT("LowerArmLeftBox"));
+	LowerArmLeftBox->SetupAttachment(GetMesh(), FName("lowerarm_l"));
+	HitCollisionBoxes.Add(FName("lowerarm_l"), LowerArmLeftBox);
+
+	HandLeftBox = CreateDefaultSubobject<UBoxComponent>(TEXT("HandLeftBox"));
+	HandLeftBox->SetupAttachment(GetMesh(), FName("Hand_L"));
+	HitCollisionBoxes.Add(FName("Hand_L"), HandLeftBox);
+
+	UpperArmRightBox = CreateDefaultSubobject<UBoxComponent>(TEXT("UpperArmRightbox"));
+	UpperArmRightBox->SetupAttachment(GetMesh(), FName("UpperArm_R"));
+	HitCollisionBoxes.Add(FName("UpperArm_R"), UpperArmRightBox);
+
+	LowerArmRightBox = CreateDefaultSubobject<UBoxComponent>(TEXT("LowerArmRightBox"));
+	LowerArmRightBox->SetupAttachment(GetMesh(), FName("lowerarm_r"));
+	HitCollisionBoxes.Add(FName("lowerarm_r"), LowerArmRightBox);
+
+	HandRightBox = CreateDefaultSubobject<UBoxComponent>(TEXT("HandRightBox"));
+	HandRightBox->SetupAttachment(GetMesh(), FName("Hand_R"));
+	HitCollisionBoxes.Add(FName("Hand_R"), HandRightBox);
+
+	BackpackBox = CreateDefaultSubobject<UBoxComponent>(TEXT("BackpackBox"));
+	BackpackBox->SetupAttachment(GetMesh(), FName("backpack"));
+	HitCollisionBoxes.Add(FName("backpack"), BackpackBox);
+
+	BlanketBox = CreateDefaultSubobject<UBoxComponent>(TEXT("BlanketBox"));
+	BlanketBox->SetupAttachment(GetMesh(), FName("blanket_r"));
+	HitCollisionBoxes.Add(FName("blanket_r"), BlanketBox);
+
+	ThighLeftBox = CreateDefaultSubobject<UBoxComponent>(TEXT("ThighLeftBox"));
+	ThighLeftBox->SetupAttachment(GetMesh(), FName("Thigh_L"));
+	HitCollisionBoxes.Add(FName("Thigh_L"), ThighLeftBox);
+
+	CalfLeftBox = CreateDefaultSubobject<UBoxComponent>(TEXT("CalfLeftBox"));
+	CalfLeftBox->SetupAttachment(GetMesh(), FName("calf_l"));
+	HitCollisionBoxes.Add(FName("calf_l"), CalfLeftBox);
+
+	FootLeftBox = CreateDefaultSubobject<UBoxComponent>(TEXT("FootLeftBox"));
+	FootLeftBox->SetupAttachment(GetMesh(), FName("Foot_L"));
+	HitCollisionBoxes.Add(FName("Foot_L"), FootLeftBox);
+
+	ThighRightBox = CreateDefaultSubobject<UBoxComponent>(TEXT("ThighRightBox"));
+	ThighRightBox->SetupAttachment(GetMesh(), FName("Thigh_R"));
+	HitCollisionBoxes.Add(FName("Thigh_R"), ThighRightBox);
+
+	CalfRightBox = CreateDefaultSubobject<UBoxComponent>(TEXT("CalfRightBox"));
+	CalfRightBox->SetupAttachment(GetMesh(), FName("calf_r"));
+	HitCollisionBoxes.Add(FName("calf_r"), CalfRightBox);
+
+	FootRightBox = CreateDefaultSubobject<UBoxComponent>(TEXT("FootRightBox"));
+	FootRightBox->SetupAttachment(GetMesh(), FName("Foot_R"));
+	HitCollisionBoxes.Add(FName("Foot_R"), FootRightBox);
+
+	for (auto& HitCollisionBox : HitCollisionBoxes)
+	{
+		if(IsValid(HitCollisionBox.Value))
+		{
+			HitCollisionBox.Value->SetCollisionObjectType(ECC_HitBox);
+			HitCollisionBox.Value->SetCollisionResponseToAllChannels(ECR_Ignore);
+			HitCollisionBox.Value->SetCollisionResponseToChannel(ECC_HitBox, ECR_Block);
+			HitCollisionBox.Value->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+	}
 }
 
 void AEndlessBetrayalCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -205,6 +299,14 @@ void AEndlessBetrayalCharacter::PostInitializeComponents()
 		ensureAlways(IsValid(GetCharacterMovement()));
 		BuffComponent->SetInitialJumpVelocity(GetCharacterMovement()->JumpZVelocity);
 	}
+
+	if(LagCompensationComponent)
+	{
+		LagCompensationComponent->Character = this;
+
+		EndlessBetrayalPlayerController = !IsValid(EndlessBetrayalPlayerController) ? Cast<AEndlessBetrayalPlayerController>(Controller) : EndlessBetrayalPlayerController;
+		LagCompensationComponent->PlayerController = EndlessBetrayalPlayerController;
+	}
 }
 
 void AEndlessBetrayalCharacter::OnRep_ReplicatedMovement()
@@ -334,6 +436,15 @@ void AEndlessBetrayalCharacter::PlayThrowGrenadeMontage()
 	if(IsValid(AnimInstance) && IsValid(ThrowingGrenadeMontage))
 	{
 		AnimInstance->Montage_Play(ThrowingGrenadeMontage);
+	}
+}
+
+void AEndlessBetrayalCharacter::PlaySwapWeaponMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if(IsValid(AnimInstance) && IsValid(SwapWeaponMontage))
+	{
+		AnimInstance->Montage_Play(SwapWeaponMontage);
 	}
 }
 

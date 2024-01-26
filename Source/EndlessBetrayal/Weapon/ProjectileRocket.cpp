@@ -17,15 +17,30 @@ AProjectileRocket::AProjectileRocket()
 	ProjectileMesh->SetupAttachment(RootComponent);
 	ProjectileMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);	//Our rocket is purely cosmetic
 
+	InitialSpeed = 2000.0f;
+	
 	RocketMovementComponent = CreateDefaultSubobject<URocketMovementComponent>(TEXT("RocketMovementComponent"));
 	//Following line makes sure that the projectile will keep its rotation aligned with the velocity
 	RocketMovementComponent->bRotationFollowsVelocity = true;
 	RocketMovementComponent->SetIsReplicated(true);
+	RocketMovementComponent->InitialSpeed = InitialSpeed;
+	RocketMovementComponent->MaxSpeed = InitialSpeed;
 }
 
 void AProjectileRocket::Destroyed()
 {
 	
+}
+
+void AProjectileRocket::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	if(PropertyChangedEvent.GetPropertyName() == GET_MEMBER_NAME_CHECKED(AProjectileRocket, InitialSpeed))
+	{
+		RocketMovementComponent->InitialSpeed = InitialSpeed;
+		RocketMovementComponent->MaxSpeed = InitialSpeed;
+	}
 }
 
 void AProjectileRocket::BeginPlay()

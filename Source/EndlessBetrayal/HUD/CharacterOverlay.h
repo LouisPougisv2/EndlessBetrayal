@@ -35,6 +35,13 @@ public:
 	UTextBlock* DeathsValue;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Player Stats")
+	class UImage* HighPingImage;
+
+	//For WidgetAnimation, the meta BindWidgetAnim only works if the variable is Transient !! (not serialized to disk)
+	UPROPERTY(meta = (BindWidgetAnim), Transient, BlueprintReadOnly, Category = "Player Stats")
+	UWidgetAnimation* HighPingAnimation;
+	
+	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Player Stats")
 	UTextBlock* KillText;
 	
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Player Stats")

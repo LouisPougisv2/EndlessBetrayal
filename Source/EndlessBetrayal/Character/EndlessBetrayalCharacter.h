@@ -27,10 +27,15 @@ public:
 	void UpdateHUDAmmo();
 	void UpdateHealthHUD();
 	void UpdateShieldHUD();
+
+	/**
+	 * Play Montages
+	 */
 	void PlayFireMontage(bool bIsAiming);
 	void PlayReloadMontage();
 	void PlayEliminatedMontage();
 	void PlayThrowGrenadeMontage();
+	void PlaySwapWeaponMontage();
 
 	//Reserved for functionalities that'll happen only on the server
 	void OnPlayerEliminated();
@@ -40,6 +45,68 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowSniperScopeWidget(bool bShouldShowScope);
+
+	/*
+	 * Hit boxes used for Server-side rewinds
+	 * Note : Head Box's name correspond to the Bone name, hence the 2, 3 for some
+	 */
+
+	UPROPERTY(EditAnywhere)
+	class UBoxComponent* HeadBox;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* PelvisBox;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* SpineBox2;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* SpineBox3;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* UpperArmLeftBox;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* LowerArmLeftBox;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* HandLeftBox;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* UpperArmRightBox;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* LowerArmRightBox;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* HandRightBox;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* BackpackBox;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* BlanketBox;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* ThighLeftBox;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* CalfLeftBox;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* FootLeftBox;
+	
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* ThighRightBox;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* CalfRightBox;
+
+	UPROPERTY(EditAnywhere)
+	UBoxComponent* FootRightBox;
+
+	UPROPERTY()
+	TMap<FName, UBoxComponent*> HitCollisionBoxes;
 
 protected:
 	virtual void BeginPlay() override;
@@ -89,11 +156,17 @@ private:
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);	//Function called automatically when the variable is replicated
 
+	/**
+	* EndlessBetrayal Components
+	*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UCombatComponent* CombatComponent;
 
 	UPROPERTY(VisibleAnywhere)
 	class UBuffComponent* BuffComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	class ULagCompensationComponent* LagCompensationComponent;
 
 	/**
 	* Default Weapon
@@ -127,6 +200,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	UAnimMontage* ThrowingGrenadeMontage;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	UAnimMontage* SwapWeaponMontage;
 
 	//End of Animation Montages
 	UPROPERTY(EditAnywhere, Category = "Camera")
@@ -251,6 +327,7 @@ public:
 	FORCEINLINE bool IsGameplayDisabled() const { return bShouldDisableGameplayInput; }
 	AWeapon* GetEquippedWeapon();
 	FORCEINLINE UStaticMeshComponent* GetAttachedGrenade() { return AttachedGrenade; }
+	FORCEINLINE ULagCompensationComponent* GetLagCompensationComponent() const { return LagCompensationComponent; }
 
 	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; }
 	FORCEINLINE bool IsEliminated() const { return bIsEliminated; }

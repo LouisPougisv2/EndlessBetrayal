@@ -16,7 +16,8 @@ class ENDLESSBETRAYAL_API AShotgun : public AHitScanWeapon
 
 public:
 
-	virtual void Fire(const FVector& HitTarget) override;
+	virtual void FireShotgun(const TArray<FVector_NetQuantize>& TraceHitTargets);
+	void ShotgunTraceEndWithScatter(const FVector& HitTarget, TArray<FVector_NetQuantize>& HitTargets);
 
 private:
 

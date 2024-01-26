@@ -13,6 +13,7 @@
 #include "Camera/CameraComponent.h"
 #include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
 #include "EndlessBetrayal/Weapon/Projectile.h"
+#include "EndlessBetrayal/Weapon/Shotgun.h"
 #include "Sound/SoundCue.h"
 
 UCombatComponent::UCombatComponent()
@@ -48,7 +49,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 
 	DOREPLIFETIME(UCombatComponent, EquippedWeapon);
 	DOREPLIFETIME(UCombatComponent, SecondaryWeapon);
-	DOREPLIFETIME(UCombatComponent, bIsAiming);
+	DOREPLIFETIME_CONDITION(UCombatComponent, bIsAiming, COND_SkipOwner);
 	//CarriedAmmo will only replicate to the Owning client
 	DOREPLIFETIME_CONDITION(UCombatComponent, CarriedAmmo, COND_OwnerOnly);
 	DOREPLIFETIME(UCombatComponent, CombatState);
@@ -255,11 +256,25 @@ void UCombatComponent::Fire()
 	if(CanFire())
 	{
 		bCanFire = false;
-		ServerFire(HitTarget);
 
 		if(IsValid(EquippedWeapon))
 		{
 			CrosshairShootingFactor += EquippedWeapon->GetCrosshairShootingFactor();
+
+			switch (EquippedWeapon->FireType)
+			{
+				case EFireType::EFT_ProjectileWeapon:
+					FireProjectileWeapon();
+					break;
+				case EFireType::EFT_HitScanWeapon:
+					FireHitScanWeapon();
+					break;
+				case EFireType::EFT_ShotgunWeapon:
+					FireShotgun();
+					break;
+				default:
+					break;
+			}
 		}
 		StartFireTimer();
 	}
@@ -324,7 +339,17 @@ void UCombatComponent::UpdateAmmoValues()
 	EquippedWeapon->UpdateAmmo(ReloadAmount);
 }
 
-void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
+//Use WithValidation only in cases where you want to kick the player
+bool UCombatComponent::ServerFire_Validate(const FVector_NetQuantize& TraceHitTarget, float FireDelay)
+{
+	if(IsValid(EquippedWeapon))
+	{
+		return FMath::IsNearlyEqual(EquippedWeapon->FireDelay, FireDelay, 0.001f);
+	}
+	return true;
+}
+
+void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& TraceHitTarget, float FireDelay)
 {
 	//Runs on Server and all clients when call from the server
 	MulticastFire(TraceHitTarget);
@@ -332,12 +357,99 @@ void UCombatComponent::ServerFire_Implementation(const FVector_NetQuantize& Trac
 
 void UCombatComponent::MulticastFire_Implementation(const FVector_NetQuantize& TraceHitTarget)
 {
+	//If we pass this line, we're either on the server or on a client who is not controlling
+	if(IsValid(Character) && Character->IsLocallyControlled() && !Character->HasAuthority()) return;
+	LocalFire(TraceHitTarget);
+}
+
+void UCombatComponent::LocalFire(const FVector_NetQuantize& TraceHitTarget)
+{
 	if(!IsValid(EquippedWeapon)) return;
 	
 	if(IsValid(Character) && CombatState == ECombatState::ECS_Unoccupied)
 	{
 		Character->PlayFireMontage(bIsAiming);
 		EquippedWeapon->Fire(TraceHitTarget);
+	}
+}
+
+bool UCombatComponent::ServerShotgunFire_Validate(const TArray<FVector_NetQuantize>& TraceHitTargets, float FireDelay)
+{
+	if(IsValid(EquippedWeapon))
+	{
+		return FMath::IsNearlyEqual(EquippedWeapon->FireDelay, FireDelay, 0.001f);
+	}
+	return true;
+}
+
+void UCombatComponent::ServerShotgunFire_Implementation(const TArray<FVector_NetQuantize>& TraceHitTargets, float FireDelay)
+{
+	MulticastShotgunFire(TraceHitTargets);
+}
+
+void UCombatComponent::MulticastShotgunFire_Implementation(const TArray<FVector_NetQuantize>& TraceHitTargets)
+{
+	//If we pass this line, we're either on the server or on a client who is not controlling
+	if(IsValid(Character) && Character->IsLocallyControlled() && !Character->HasAuthority()) return;
+	LocalShotgunFire(TraceHitTargets);
+}
+
+void UCombatComponent::LocalShotgunFire(const TArray<FVector_NetQuantize>& TraceHitTargets)
+{
+	if(!IsValid(EquippedWeapon) || !IsValid(Character)) return;
+	AShotgun* Shotgun = Cast<AShotgun>(EquippedWeapon);
+	if(!IsValid(Shotgun)) return;
+	
+	if(CombatState == ECombatState::ECS_Unoccupied)
+	{
+		Character->PlayFireMontage(bIsAiming);
+		Shotgun->FireShotgun(TraceHitTargets);
+	}
+}
+
+void UCombatComponent::FireProjectileWeapon()
+{
+	if(IsValid(EquippedWeapon) && Character)
+	{
+		//Getting the new updated HitTarget with the Scatter applied
+		HitTarget = EquippedWeapon->bUseScatter ? EquippedWeapon->GetTraceEndWithScatter(HitTarget) : HitTarget;
+		if(!Character->HasAuthority())	//It doesn't make sense to call LocalFire if the player is the server
+		{
+			LocalFire(HitTarget); //Local Fire to directly apply cosmetic effect locally
+		}
+		ServerFire(HitTarget, EquippedWeapon->FireDelay); //Server Fire to authoritatively to apply damages
+	}
+}
+
+void UCombatComponent::FireHitScanWeapon()
+{
+	if(IsValid(EquippedWeapon) && Character)
+	{
+		//Getting the new updated HitTarget with the Scatter applied
+		HitTarget = EquippedWeapon->bUseScatter ? EquippedWeapon->GetTraceEndWithScatter(HitTarget) : HitTarget;
+		if(!Character->HasAuthority())	//It doesn't make sense to call LocalFire if the player is the server
+		{
+			LocalFire(HitTarget); //Local Fire to directly apply cosmetic effect locally
+		}
+		ServerFire(HitTarget, EquippedWeapon->FireDelay); //Server Fire to authoritatively to apply damages
+	}
+}
+
+void UCombatComponent::FireShotgun()
+{
+	if(IsValid(EquippedWeapon))
+	{
+		AShotgun* Shotgun = Cast<AShotgun>(EquippedWeapon);
+		if(!IsValid(Shotgun)) return;
+		
+		TArray<FVector_NetQuantize> HitTargets;
+		Shotgun->ShotgunTraceEndWithScatter(HitTarget, HitTargets);
+
+		if(!Character->HasAuthority())
+		{
+			LocalShotgunFire(HitTargets);
+		}
+		ServerShotgunFire(HitTargets, EquippedWeapon->FireDelay);
 	}
 }
 
@@ -361,20 +473,11 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 void UCombatComponent::SwapWeapons()
 {
-	if(!ShouldSwapWeapon() || CombatState == ECombatState::ECS_Reloading) return;
+	if(!ShouldSwapWeapon() || CombatState == ECombatState::ECS_Reloading || !IsValid(Character) || CombatState == ECombatState::ECS_SwappingWeapons) return;
 
-	AWeapon* TemporaryWeapon = EquippedWeapon;
-	EquippedWeapon = SecondaryWeapon;
-	SecondaryWeapon = TemporaryWeapon;
-
-	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
-	AttachActorToSocket(EquippedWeapon, FName("RightHandSocket"));
-	EquippedWeapon->UpdateHUDAmmo();
-	UpdateWeaponCarriedAmmo();
-	PlayEquipSound(EquippedWeapon);
-
-	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_EquippedSecondary);
-	AttachActorToSocket(SecondaryWeapon, FName("BackpackSocket"));
+	Character->PlaySwapWeaponMontage();
+	CombatState = ECombatState::ECS_SwappingWeapons;
+	if(IsValid(SecondaryWeapon)) SecondaryWeapon->ToggleCustomDepth(false);
 }
 
 void UCombatComponent::EquipPrimaryWeapon(AWeapon* WeaponToEquip)
@@ -612,6 +715,31 @@ void UCombatComponent::FinishReloading()
 	}
 }
 
+void UCombatComponent::FinishSwap()
+{
+	if(IsValid(Character) && Character->HasAuthority() && IsValid(Character->GetCombatComponent()))
+	{
+		CombatState = ECombatState::ECS_Unoccupied;
+	}
+	if(IsValid(SecondaryWeapon)) SecondaryWeapon->ToggleCustomDepth(true);
+}
+
+void UCombatComponent::FinishSwapAttachWeapon()
+{
+		AWeapon* TemporaryWeapon = EquippedWeapon;
+	EquippedWeapon = SecondaryWeapon;
+	SecondaryWeapon = TemporaryWeapon;
+	
+	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
+	AttachActorToSocket(EquippedWeapon, FName("RightHandSocket"));
+	EquippedWeapon->UpdateHUDAmmo();
+	UpdateWeaponCarriedAmmo();
+	PlayEquipSound(EquippedWeapon);
+
+	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_EquippedSecondary);
+	AttachActorToSocket(SecondaryWeapon, FName("BackpackSocket"));
+}
+
 
 void UCombatComponent::OnRep_CombatState()
 {
@@ -625,6 +753,13 @@ void UCombatComponent::OnRep_CombatState()
 			{
 				Fire();
 			}
+			break;
+		case ECombatState::ECS_SwappingWeapons:
+			if(IsValid(Character)/* && !Character->IsLocallyControlled()*/)
+			{
+				Character->PlaySwapWeaponMontage();
+			}
+			break;
 		default:
 			break;
 	}

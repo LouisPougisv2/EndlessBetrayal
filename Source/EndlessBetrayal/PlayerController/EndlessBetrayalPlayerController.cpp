@@ -3,6 +3,7 @@
 
 #include "EndlessBetrayalPlayerController.h"
 
+#include "Components/Image.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
 #include "EndlessBetrayal/Character/EndlessBetrayalCharacter.h"
@@ -33,6 +34,7 @@ void AEndlessBetrayalPlayerController::Tick(float DeltaSeconds)
 	SetHUDTime();
 	CheckTimeSync(DeltaSeconds);
 	PollInit();
+	CheckPing(DeltaSeconds);
 }
 
 void AEndlessBetrayalPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -174,8 +176,8 @@ void AEndlessBetrayalPlayerController::UpdateHUDMatchCountdown(float InCountdown
 			return;
 		}
 
-		const int32 Minutes = FMath::FloorToInt(InCountdownTime / 60);
-		const int32 Seconds = InCountdownTime - Minutes * 60;
+		const int32 Minutes = FMath::FloorToInt(InCountdownTime / 60.0f);
+		const int32 Seconds = InCountdownTime - Minutes * 60.0f;
 		const FString CountDownText = FString::Printf(TEXT("%02d:%02d"), Minutes, Seconds);
 		EndlessBetrayalHUD->CharacterOverlay->MatchCountdownText->SetText(FText::FromString(CountDownText));
 
@@ -325,6 +327,75 @@ void AEndlessBetrayalPlayerController::HandleCooldown()
 	}
 }
 
+void AEndlessBetrayalPlayerController::CheckPing(float DeltaSeconds)
+{
+	//Server has no lag so it doesn't make sense to check the ping
+	if(HasAuthority()) return;
+	
+	HighPingRunningTime += DeltaSeconds;
+	if(HighPingRunningTime > CheckPingFrequency)
+	{
+		PlayerState = !IsValid(PlayerState) ? GetPlayerState<APlayerState>() : PlayerState;
+		if(IsValid(PlayerState))
+		{
+			//Note : If we were to use PlayerState->GetPing, the ping is compressed by UE to fit in a uint32.
+			//The returned ping is 1/4 of the accurate one so we'd need to use GetPing * 4 to get the accurate one
+			//UE_LOG(LogTemp, Warning, TEXT("PlayerState->GetPingInMilliseconds() : %f"), PlayerState->GetPingInMilliseconds())
+			const bool bIsHighPing = PlayerState->GetPingInMilliseconds() > HighPingThreshold;
+			if(bIsHighPing)
+			{
+				ShowHighPingWarning();
+				PingAnimationRunningTime = 0.0f;
+			}
+			ServerReportPingStatus(bIsHighPing);
+		}
+		HighPingRunningTime = 0.0f;
+	}
+
+	const bool bIsHighPingAnimationPlaying = IsValid(EndlessBetrayalHUD) && IsValid(EndlessBetrayalHUD->CharacterOverlay) && IsValid(EndlessBetrayalHUD->CharacterOverlay->HighPingImage) && EndlessBetrayalHUD->CharacterOverlay->IsAnimationPlaying(EndlessBetrayalHUD->CharacterOverlay->HighPingAnimation);
+	if(bIsHighPingAnimationPlaying)
+	{
+		PingAnimationRunningTime += DeltaSeconds;
+		if(PingAnimationRunningTime > HighPingWarningDuration)
+		{
+			HideHighPingWarning();
+		}
+	}
+}
+
+//Is the Ping too high?
+void AEndlessBetrayalPlayerController::ServerReportPingStatus_Implementation(bool bHighPing)
+{
+	HighPingDelegate.Broadcast(bHighPing);
+}
+
+void AEndlessBetrayalPlayerController::ShowHighPingWarning()
+{
+	EndlessBetrayalHUD = !IsValid(EndlessBetrayalHUD) ? EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD()) : EndlessBetrayalHUD;
+	
+	const bool bIsHUDValid = IsValid(EndlessBetrayalHUD) && IsValid(EndlessBetrayalHUD->CharacterOverlay) && IsValid(EndlessBetrayalHUD->CharacterOverlay->HighPingImage) && EndlessBetrayalHUD->CharacterOverlay->HighPingAnimation;
+	if(bIsHUDValid)
+	{
+		EndlessBetrayalHUD->CharacterOverlay->HighPingImage->SetOpacity(1.0f);
+		EndlessBetrayalHUD->CharacterOverlay->PlayAnimation(EndlessBetrayalHUD->CharacterOverlay->HighPingAnimation, 0.0f, 5);
+	}
+}
+
+void AEndlessBetrayalPlayerController::HideHighPingWarning()
+{
+	EndlessBetrayalHUD = !IsValid(EndlessBetrayalHUD) ? EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD()) : EndlessBetrayalHUD;
+	
+	const bool bIsHUDValid = IsValid(EndlessBetrayalHUD) && IsValid(EndlessBetrayalHUD->CharacterOverlay) && IsValid(EndlessBetrayalHUD->CharacterOverlay->HighPingImage) && EndlessBetrayalHUD->CharacterOverlay->HighPingAnimation;
+	if(bIsHUDValid)
+	{
+		EndlessBetrayalHUD->CharacterOverlay->HighPingImage->SetOpacity(0.0f);
+		if(EndlessBetrayalHUD->CharacterOverlay->IsAnimationPlaying(EndlessBetrayalHUD->CharacterOverlay->HighPingAnimation))
+		{
+			EndlessBetrayalHUD->CharacterOverlay->StopAnimation(EndlessBetrayalHUD->CharacterOverlay->HighPingAnimation);
+		}
+	}
+}
+
 void AEndlessBetrayalPlayerController::ReceivedPlayer()
 {
 	Super::ReceivedPlayer();
@@ -352,6 +423,7 @@ void AEndlessBetrayalPlayerController::ClientJoinMidGame_Implementation(const fl
 {
 	WarmUpTime = InWarmUpTime;
 	MatchTime = InMatchTime;
+	CooldownTime = InCooldownTime;
 	LevelStartingTime = InLevelStartingTime;
 	MatchState = InMatchState;
 
@@ -408,7 +480,7 @@ void AEndlessBetrayalPlayerController::SetHUDTime()
 	//Reminder, GetServerTime() return the time since the game STARTED (including the time passed on menu)
 	if(MatchState == MatchState::WaitingToStart) TimeLeft = WarmUpTime - GetServerTime() + LevelStartingTime;
 	else if(MatchState == MatchState::InProgress) TimeLeft = WarmUpTime  + MatchTime - GetServerTime() + LevelStartingTime;
-	else if(MatchState == MatchState::Cooldown) TimeLeft =  WarmUpTime  + MatchTime - GetServerTime() + LevelStartingTime + CooldownTime;
+	else if(MatchState == MatchState::Cooldown) TimeLeft =  CooldownTime + WarmUpTime  + MatchTime - GetServerTime() + LevelStartingTime;
 
 	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft);
 	
@@ -435,8 +507,6 @@ void AEndlessBetrayalPlayerController::SetHUDTime()
 		{
 			UpdateHUDMatchCountdown(TimeLeft);
 		}
-		
-		UpdateHUDMatchCountdown(MatchTime - GetServerTime());
 	}
 	CountDownInt = SecondsLeft;
 }
@@ -488,9 +558,10 @@ void AEndlessBetrayalPlayerController::ServerRequestServerTime_Implementation(fl
 void AEndlessBetrayalPlayerController::ClientReportServerTime_Implementation(float TimeOfClientRequest, float TimeServerReceivedClientRequest)
 {
 	const float RoundTripTime = GetWorld()->GetTimeSeconds() - TimeOfClientRequest;
+	SingleTripTime = RoundTripTime / 2;
 
 	//Approximation of Current Time on Server
-	const float CurrentServerTime = TimeServerReceivedClientRequest + ( RoundTripTime / 2);
+	const float CurrentServerTime = TimeServerReceivedClientRequest + SingleTripTime;
 	ClientServerDelta = CurrentServerTime - GetWorld()->GetTimeSeconds();
 }
 

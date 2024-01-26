@@ -10,9 +10,9 @@
 #include "Particles/ParticleSystemComponent.h"
 #include "Sound/SoundCue.h"
 #include "DrawDebugHelpers.h"
-#include "Kismet/KismetMathLibrary.h"
 #include "WeaponTypes.h"
 #include "EndlessBetrayal/EndlessBetrayalComponents/CombatComponent.h"
+#include "EndlessBetrayal/EndlessBetrayalComponents/LagCompensationComponent.h"
 
 void AHitScanWeapon::Fire(const FVector& HitTarget)
 {
@@ -20,7 +20,7 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 
 	APawn* OwnerPawn = Cast<APawn>(GetOwner());
 	if(!IsValid(OwnerPawn)) return;
-	AEndlessBetrayalPlayerController* DamageInstigator = Cast<AEndlessBetrayalPlayerController>(OwnerPawn->GetController());
+	AController* DamageInstigator = OwnerPawn->GetController();
 	
 	const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName(FName("MuzzleFlash"));
 	if(IsValid(MuzzleFlashSocket))
@@ -33,9 +33,28 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 			
 		AEndlessBetrayalCharacter* HitCharacter = Cast<AEndlessBetrayalCharacter>(FireHit.GetActor());
 		//We only apply damage if we're on the Server
-		if(IsValid(HitCharacter) && HasAuthority() && IsValid(DamageInstigator))
+		if(IsValid(HitCharacter) && IsValid(DamageInstigator))
 		{
-			UGameplayStatics::ApplyDamage(HitCharacter, Damage, DamageInstigator, this, UDamageType::StaticClass());
+			//If next bool is true, the server should cause damage
+			bool bCauseAuthDamage =	!bUseServerSideRewind || OwnerPawn->IsLocallyControlled();
+			if(HasAuthority() && bCauseAuthDamage)
+			{
+				UGameplayStatics::ApplyDamage(HitCharacter, Damage, DamageInstigator, this, UDamageType::StaticClass());
+			}
+			
+			if(!HasAuthority() &&bUseServerSideRewind)
+			{
+				WeaponOwnerCharacter = !IsValid(WeaponOwnerCharacter) ? Cast<AEndlessBetrayalCharacter>(OwnerPawn) : WeaponOwnerCharacter;
+				WeaponOwnerController = !IsValid(WeaponOwnerController) ? Cast<AEndlessBetrayalPlayerController>(DamageInstigator) : WeaponOwnerController;
+
+				//We only want to send the Client RPC if the client is locally controlled
+				if(IsValid(WeaponOwnerCharacter) && IsValid(WeaponOwnerController) && WeaponOwnerCharacter->GetLagCompensationComponent() && WeaponOwnerCharacter->IsLocallyControlled())
+				{
+					//Make sure the server rewind time enough to position that opponent's character to the location that it was in corresponding to when we hit
+					float HitTime = WeaponOwnerController->GetServerTime() - WeaponOwnerController->SingleTripTime;
+					WeaponOwnerCharacter->GetLagCompensationComponent()->ServerScoreRequest(HitCharacter, Start, FireHit.ImpactPoint, HitTime,this);
+				}
+			}
 		}
 
 		if(IsValid(ImpactParticle))
@@ -75,7 +94,7 @@ void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& Hi
 	
 	if(IsValid(World))
 	{
-		const FVector End = bUseScatter ? GetTraceEndWithScatter(TraceStart, HitTarget) : TraceStart + (HitTarget - TraceStart) * 1.25f;
+		const FVector End = TraceStart + (HitTarget - TraceStart) * 1.25f;
 
 		World->LineTraceSingleByChannel(OutHitResult, TraceStart, End, ECC_Visibility);
 
@@ -84,7 +103,9 @@ void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& Hi
 		{
 			BeamEnd = OutHitResult.ImpactPoint;
 		}
-
+		
+		//DrawDebugSphere(GetWorld(), BeamEnd, 16.f, 12, FColor::Orange, true);
+		
 		if(IsValid(BeamParticles))
 		{
 			BeamSystemComponent = UGameplayStatics::SpawnEmitterAtLocation(World, BeamParticles, TraceStart);
@@ -95,19 +116,4 @@ void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& Hi
 			}
 		}
 	}
-}
-
-FVector AHitScanWeapon::GetTraceEndWithScatter(const FVector& TraceStartLocation, const FVector& HitTarget)
-{
-	FVector ToTargetNormalized = (HitTarget - TraceStartLocation).GetSafeNormal();
-	FVector SphereCenter = TraceStartLocation + ToTargetNormalized * DistanceToSphere;
-	FVector	RandVect = UKismetMathLibrary::RandomUnitVector() * FMath::RandRange(0.0f, SphereRadius);
-	FVector EndLocation = SphereCenter + RandVect;
-	FVector ToEndLocation = EndLocation - TraceStartLocation;
-	
-	//DrawDebugSphere(GetWorld(), SphereCenter, SphereRadius, 12, FColor::White, true);
-	//DrawDebugSphere(GetWorld(), EndLocation, 4.0f, 12, FColor::Red, true);
-	//DrawDebugLine(GetWorld(), TraceStartLocation, FVector(TraceStartLocation + ToEndLocation * TRACE_LENGTH / ToEndLocation.Size()), FColor::White, true);
-	
-	return FVector(TraceStartLocation + ToEndLocation * TRACE_LENGTH / ToEndLocation.Size());
 }

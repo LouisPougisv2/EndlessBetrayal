@@ -18,6 +18,16 @@ enum class EWeaponState : uint8
 	EWS_MAX UMETA(DisplayName= "DefaultMax")
 };
 
+UENUM(BlueprintType)
+enum class EFireType : uint8
+{
+	EFT_HitScanWeapon UMETA(DisplayName = "HitScan Weapon"),
+	EFT_ProjectileWeapon UMETA(DisplayName = "Projectile Weapon"),
+	EFT_ShotgunWeapon UMETA(DisplayName = "Shotgun Weapon"),
+
+	EFT_MAX UMETA(DsplayName = "DefaultMax")
+};
+
 UCLASS()
 class ENDLESSBETRAYAL_API AWeapon : public AActor
 {
@@ -36,6 +46,9 @@ public:
 	void UpdateHUDAmmo();
 	virtual void OnWeaponDropped();
 	void UpdateAmmo(int32 AmmoAmount);
+	virtual FVector GetTraceEndWithScatter(const FVector& HitTarget);
+
+	FORCEINLINE float GetDamage() const { return Damage; }
 
 	//Enable / Disable Custom Depth
 	void ToggleCustomDepth(bool bEnable);
@@ -44,6 +57,9 @@ public:
 	
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	bool bIsWeaponAutomatic = true;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")	
+	bool bUseScatter = false;
 	
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	float FireDelay = 0.15f;
@@ -52,7 +68,10 @@ public:
 	bool bAllowAutomaticReload = false;
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
-	class USoundCue* OnEquipSoundCue;	
+	class USoundCue* OnEquipSoundCue;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
+	EFireType FireType;
 
 protected:
 	virtual void BeginPlay() override;
@@ -68,9 +87,48 @@ protected:
 	UFUNCTION()
 	virtual void OnSphereOverlapEnd(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
+	UFUNCTION(Client, Reliable)
+	void ClientUpdateAmmo(int32 ServerAmmo);
+	
+	UFUNCTION(Client, Reliable)
+	void ClientAddAmmo(int32 ServerAmmoToAdd);
+	
 	void SpendRound();
 
+	UFUNCTION()
+	void OnPingTooHigh(bool bPingTooHigh);
+
+	/** This function will bind or remove the Delegate of type FHighPingDelegate
+	* @params if bShouldBind == true -> Bind, else remove
+	*/
+	void BindOrRemovePingTooHighDelegate();
+
 	FORCEINLINE class AEndlessBetrayalCharacter* GetWeaponOwnerCharacter() const { return WeaponOwnerCharacter; }
+
+	UPROPERTY(EditAnywhere)
+	float Damage = 20.0f;
+	
+	//The number of unprocessed server request for Ammo, incremented in spend round, decremented in Client Update Ammo
+	int32 SequenceNumber = 0;
+	
+	/*
+	* Trace End With Scatter
+	*/
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
+	float DistanceToSphere = 800.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon Scatter")
+	float SphereRadius = 75.0f;
+
+	UPROPERTY(Replicated, EditAnywhere, Category = "Weapon Properties")
+	bool bUseServerSideRewind = false;
+
+	UPROPERTY()
+	AEndlessBetrayalCharacter* WeaponOwnerCharacter;
+
+	UPROPERTY()
+	class AEndlessBetrayalPlayerController* WeaponOwnerController;
 	
 private:
 
@@ -83,26 +141,17 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_WeaponState, VisibleAnywhere, Category = "Weapon Properties")
 	EWeaponState WeaponState;
 
-	UPROPERTY(EditAnywhere, ReplicatedUsing=OnRep_Ammo, Category = "Combat")
+	UPROPERTY(EditAnywhere, Category = "Combat")
 	int32 AmmoAmount;
 
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	int32 MagCapacity;
-
-	UPROPERTY()
-	AEndlessBetrayalCharacter* WeaponOwnerCharacter;
-
-	UPROPERTY()
-	class AEndlessBetrayalPlayerController* WeaponOwnerController;
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	EWeaponType WeaponType;
 
 	UFUNCTION()
 	void OnRep_WeaponState();
-	
-	UFUNCTION()
-	void OnRep_Ammo();
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	class UWidgetComponent* PickupWidget;

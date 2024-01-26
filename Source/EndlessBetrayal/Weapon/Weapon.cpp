@@ -11,6 +11,7 @@
 #include "Animation/AnimationAsset.h"
 #include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "Kismet/KismetMathLibrary.h"
 
 
 // Sets default values
@@ -70,7 +71,7 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AWeapon, WeaponState);
-	DOREPLIFETIME(AWeapon, AmmoAmount);
+	DOREPLIFETIME_CONDITION(AWeapon, bUseServerSideRewind, COND_OwnerOnly);
 }
 
 void AWeapon::OnRep_Owner()
@@ -95,19 +96,19 @@ void AWeapon::OnRep_Owner()
 
 void AWeapon::OnSphereOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	AEndlessBetrayalCharacter* EndlessBetrayalCharacter = Cast<AEndlessBetrayalCharacter>(OtherActor);
-	if (EndlessBetrayalCharacter)
+	AEndlessBetrayalCharacter* Character = Cast<AEndlessBetrayalCharacter>(OtherActor);
+	if (Character)
 	{
-		EndlessBetrayalCharacter->SetOverlappingWeapon(this);
+		Character->SetOverlappingWeapon(this);
 	}
 }
 
 void AWeapon::OnSphereOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	AEndlessBetrayalCharacter* EndlessBetrayalCharacter = Cast<AEndlessBetrayalCharacter>(OtherActor);
-	if (EndlessBetrayalCharacter)
+	AEndlessBetrayalCharacter* Character = Cast<AEndlessBetrayalCharacter>(OtherActor);
+	if (Character)
 	{
-		EndlessBetrayalCharacter->SetOverlappingWeapon(nullptr);
+		Character->SetOverlappingWeapon(nullptr);
 	}
 }
 
@@ -159,6 +160,8 @@ void AWeapon::HandleWeaponEquipped()
 		WeaponMesh->SetCollisionResponseToChannels(ECollisionResponse::ECR_Ignore);
 		WeaponMesh->SetEnableGravity(true);
 	}
+
+	BindOrRemovePingTooHighDelegate();
 }
 
 void AWeapon::HandleWeaponDropped()
@@ -175,6 +178,8 @@ void AWeapon::HandleWeaponDropped()
 	WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
 	WeaponMesh->MarkRenderStateDirty();
 	ToggleCustomDepth(true);
+
+	BindOrRemovePingTooHighDelegate();
 }
 
 void AWeapon::HandleWeaponEquippedSecondary()
@@ -195,6 +200,8 @@ void AWeapon::HandleWeaponEquippedSecondary()
 		WeaponMesh->SetCollisionResponseToChannels(ECollisionResponse::ECR_Ignore);
 		WeaponMesh->SetEnableGravity(true);
 	}
+
+	BindOrRemovePingTooHighDelegate();
 	
 }
 
@@ -211,18 +218,70 @@ void AWeapon::UpdateHUDAmmo()
 	}
 }
 
+void AWeapon::ClientUpdateAmmo_Implementation(int32 ServerAmmo)
+{
+	if(HasAuthority()) return;
+	
+	AmmoAmount = ServerAmmo;
+	--SequenceNumber;
+
+	//Correction (SequenceNumber represents the number of round spent but not replicated back to us yet
+	AmmoAmount -= SequenceNumber;
+	UpdateHUDAmmo();
+}
+
+void AWeapon::ClientAddAmmo_Implementation(int32 ServerAmmoToAdd)
+{
+	if(HasAuthority()) return;
+	
+	AmmoAmount = FMath::Clamp(AmmoAmount + ServerAmmoToAdd, 0, MagCapacity);
+	UpdateHUDAmmo();
+}
+
 void AWeapon::SpendRound()
 {
 	AmmoAmount = FMath::Clamp(--AmmoAmount, 0, MagCapacity);
 	UpdateHUDAmmo();
+	if(HasAuthority())
+	{
+		ClientUpdateAmmo(AmmoAmount);
+	}
+	else if (WeaponOwnerCharacter && WeaponOwnerCharacter->IsLocallyControlled())
+	{
+		++SequenceNumber;
+	}
 }
 
+void AWeapon::OnPingTooHigh(bool bPingTooHigh)
+{
+	bUseServerSideRewind = !bPingTooHigh;
+}
 
-
-void AWeapon::OnRep_Ammo()
+void AWeapon::BindOrRemovePingTooHighDelegate()
 {
 	WeaponOwnerCharacter = WeaponOwnerCharacter == nullptr ? Cast<AEndlessBetrayalCharacter>(GetOwner()) : WeaponOwnerCharacter;
+	if(IsValid(WeaponOwnerCharacter))
+	{
+		WeaponOwnerController = WeaponOwnerController == nullptr ? Cast<AEndlessBetrayalPlayerController>(WeaponOwnerCharacter->Controller) : WeaponOwnerController;
+		if(WeaponOwnerController && HasAuthority())
+		{
+			if(!WeaponOwnerController->HighPingDelegate.IsBound())
+			{
+				WeaponOwnerController->HighPingDelegate.AddUniqueDynamic(this, &AWeapon::OnPingTooHigh);
+			}
+			else if(WeaponOwnerController->HighPingDelegate.IsBound())
+			{
+				WeaponOwnerController->HighPingDelegate.RemoveDynamic(this, &AWeapon::OnPingTooHigh);
+			}
+		}
+	}
+}
+
+void AWeapon::UpdateAmmo(int32 AmmoAmountToAdd)
+{
+	AmmoAmount = FMath::Clamp(AmmoAmount + AmmoAmountToAdd, 0, MagCapacity);
 	UpdateHUDAmmo();
+	ClientAddAmmo(AmmoAmount);
 }
 
 void AWeapon::ShowPickupWidget(bool bShowWidget)
@@ -274,10 +333,26 @@ void AWeapon::OnWeaponDropped()
 	WeaponOwnerController = nullptr;
 }
 
-void AWeapon::UpdateAmmo(int32 AmmoAmountToAdd)
+FVector AWeapon::GetTraceEndWithScatter(const FVector& HitTarget)
 {
-	AmmoAmount = FMath::Clamp(AmmoAmount + AmmoAmountToAdd, 0, MagCapacity);
-	UpdateHUDAmmo();
+	const USkeletalMeshSocket* MuzzleFlashSocket = GetWeaponMesh()->GetSocketByName(FName("MuzzleFlash"));
+	
+	if(!IsValid(MuzzleFlashSocket)) return FVector();
+	
+	const FTransform SocketTransform = MuzzleFlashSocket->GetSocketTransform(GetWeaponMesh());
+	const FVector Start = SocketTransform.GetLocation();
+	
+	const FVector ToTargetNormalized = (HitTarget - Start).GetSafeNormal();
+	const FVector SphereCenter = Start + ToTargetNormalized * DistanceToSphere;
+	const FVector RandVect = UKismetMathLibrary::RandomUnitVector() * FMath::RandRange(0.0f, SphereRadius);
+	const FVector EndLocation = SphereCenter + RandVect;
+	const FVector ToEndLocation = EndLocation - Start;
+	
+	//DrawDebugSphere(GetWorld(), SphereCenter, SphereRadius, 12, FColor::White, true);
+	//DrawDebugSphere(GetWorld(), EndLocation, 4.0f, 12, FColor::Red, true);
+	//DrawDebugLine(GetWorld(), TraceStartLocation, FVector(TraceStartLocation + ToEndLocation * TRACE_LENGTH / ToEndLocation.Size()), FColor::White, true);
+	
+	return FVector(Start + ToEndLocation * TRACE_LENGTH / ToEndLocation.Size());
 }
 
 void AWeapon::ToggleCustomDepth(bool bEnable)

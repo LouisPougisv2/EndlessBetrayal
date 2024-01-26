@@ -63,12 +63,27 @@ protected:
 	
 	void Fire();
 	
-	UFUNCTION(Server, Reliable)
-	void ServerFire(const FVector_NetQuantize& TraceHitTarget);
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerFire(const FVector_NetQuantize& TraceHitTarget, float FireDelay);
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastFire(const FVector_NetQuantize& TraceHitTarget);
 
+	void LocalFire(const FVector_NetQuantize& TraceHitTarget);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerShotgunFire(const TArray<FVector_NetQuantize>& TraceHitTargets, float FireDelay);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastShotgunFire(const TArray<FVector_NetQuantize>& TraceHitTargets);
+
+	void LocalShotgunFire(const TArray<FVector_NetQuantize>& TraceHitTargets);
+	
+	void FireProjectileWeapon();
+	void FireHitScanWeapon();
+	void FireShotgun();
+
+	
 	UFUNCTION(Server, Reliable)
 	void ServerReload();
 
@@ -91,6 +106,12 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void FinishReloading();
+
+	UFUNCTION(BlueprintCallable)
+	void FinishSwap();
+
+	UFUNCTION(BlueprintCallable)
+	void FinishSwapAttachWeapon();
 	
 	void TraceUnderCrosshair(FHitResult& HitResult);
 
@@ -118,9 +139,10 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_SecondaryWeapon)
 	AWeapon* SecondaryWeapon;
 
+	//Used to zoom in and out
 	UPROPERTY(Replicated)
-	bool bIsAiming;
-
+	bool bIsAiming = false;
+	
 	UPROPERTY(EditAnywhere)
 	float BaseWalkSpeed;
 

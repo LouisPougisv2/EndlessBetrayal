@@ -16,6 +16,24 @@ public:
 	AProjectile();
 	virtual void Tick(float DeltaTime) override;
 	virtual void Destroyed() override;
+
+	void SetDamage(const float InDamage) { Damage = InDamage; }
+
+	/**
+	* Used with Server Side Rewind
+	*/
+
+	UPROPERTY()
+	bool bUseServerSideRewind = false;
+
+	UPROPERTY()
+	FVector_NetQuantize TraceStart;
+
+	UPROPERTY()
+	FVector_NetQuantize100 InitialVelocity;
+
+	UPROPERTY(EditAnywhere)
+	float InitialSpeed = 15000.0f;
 	
 protected:
 	
