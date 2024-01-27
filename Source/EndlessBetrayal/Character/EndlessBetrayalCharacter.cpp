@@ -666,6 +666,14 @@ void AEndlessBetrayalCharacter::ServerEquipButtonPressed_Implementation()
 void AEndlessBetrayalCharacter::SwapWeaponMouseWheelRolled()
 {
 	ServerSwapWeaponMouseWheelRolled();
+	if(CombatComponent)
+	{
+		if (CombatComponent->ShouldSwapWeapon() && !HasAuthority() && CombatComponent->CombatState == ECombatState::ECS_Unoccupied)
+		{
+			PlaySwapWeaponMontage();
+			CombatComponent->CombatState = ECombatState::ECS_SwappingWeapons;
+		}
+	}
 }
 
 

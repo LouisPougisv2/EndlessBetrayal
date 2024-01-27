@@ -340,11 +340,11 @@ void UCombatComponent::UpdateAmmoValues()
 }
 
 //Use WithValidation only in cases where you want to kick the player
-bool UCombatComponent::ServerFire_Validate(const FVector_NetQuantize& TraceHitTarget, float FireDelay)
+bool UCombatComponent::ServerFire_Validate(const FVector_NetQuantize& TraceHitTarget, float LocalFireDelay)
 {
 	if(IsValid(EquippedWeapon))
 	{
-		return FMath::IsNearlyEqual(EquippedWeapon->FireDelay, FireDelay, 0.001f);
+		return FMath::IsNearlyEqual(EquippedWeapon->FireDelay, LocalFireDelay, 0.001f);
 	}
 	return true;
 }
@@ -373,11 +373,11 @@ void UCombatComponent::LocalFire(const FVector_NetQuantize& TraceHitTarget)
 	}
 }
 
-bool UCombatComponent::ServerShotgunFire_Validate(const TArray<FVector_NetQuantize>& TraceHitTargets, float FireDelay)
+bool UCombatComponent::ServerShotgunFire_Validate(const TArray<FVector_NetQuantize>& TraceHitTargets, float LocalFireDelay)
 {
 	if(IsValid(EquippedWeapon))
 	{
-		return FMath::IsNearlyEqual(EquippedWeapon->FireDelay, FireDelay, 0.001f);
+		return FMath::IsNearlyEqual(EquippedWeapon->FireDelay, LocalFireDelay, 0.001f);
 	}
 	return true;
 }
@@ -473,8 +473,21 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 
 void UCombatComponent::SwapWeapons()
 {
-	if(!ShouldSwapWeapon() || CombatState == ECombatState::ECS_Reloading || !IsValid(Character) || CombatState == ECombatState::ECS_SwappingWeapons) return;
+	if(!ShouldSwapWeapon() || !IsValid(Character) || CombatState != ECombatState::ECS_Unoccupied || !Character->HasAuthority()) return;
+	
+	AWeapon* TemporaryWeapon = EquippedWeapon;
+	EquippedWeapon = SecondaryWeapon;
+	SecondaryWeapon = TemporaryWeapon;
+	
+	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
+	AttachActorToSocket(EquippedWeapon, FName("RightHandSocket"));
+	EquippedWeapon->UpdateHUDAmmo();
+	UpdateWeaponCarriedAmmo();
+	PlayEquipSound(EquippedWeapon);
 
+	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_EquippedSecondary);
+	AttachActorToSocket(SecondaryWeapon, FName("BackpackSocket"));
+	
 	Character->PlaySwapWeaponMontage();
 	CombatState = ECombatState::ECS_SwappingWeapons;
 	if(IsValid(SecondaryWeapon)) SecondaryWeapon->ToggleCustomDepth(false);
@@ -717,29 +730,12 @@ void UCombatComponent::FinishReloading()
 
 void UCombatComponent::FinishSwap()
 {
-	if(IsValid(Character) && Character->HasAuthority() && IsValid(Character->GetCombatComponent()))
+	if(IsValid(Character) && Character->HasAuthority())
 	{
 		CombatState = ECombatState::ECS_Unoccupied;
 	}
 	if(IsValid(SecondaryWeapon)) SecondaryWeapon->ToggleCustomDepth(true);
 }
-
-void UCombatComponent::FinishSwapAttachWeapon()
-{
-		AWeapon* TemporaryWeapon = EquippedWeapon;
-	EquippedWeapon = SecondaryWeapon;
-	SecondaryWeapon = TemporaryWeapon;
-	
-	EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
-	AttachActorToSocket(EquippedWeapon, FName("RightHandSocket"));
-	EquippedWeapon->UpdateHUDAmmo();
-	UpdateWeaponCarriedAmmo();
-	PlayEquipSound(EquippedWeapon);
-
-	SecondaryWeapon->SetWeaponState(EWeaponState::EWS_EquippedSecondary);
-	AttachActorToSocket(SecondaryWeapon, FName("BackpackSocket"));
-}
-
 
 void UCombatComponent::OnRep_CombatState()
 {
@@ -755,7 +751,7 @@ void UCombatComponent::OnRep_CombatState()
 			}
 			break;
 		case ECombatState::ECS_SwappingWeapons:
-			if(IsValid(Character)/* && !Character->IsLocallyControlled()*/)
+			if(IsValid(Character) && !Character->IsLocallyControlled())
 			{
 				Character->PlaySwapWeaponMontage();
 			}
@@ -772,6 +768,7 @@ void UCombatComponent::OnRep_EquippedWeapon()
 		EquippedWeapon->SetWeaponState(EWeaponState::EWS_Equipped);
 		EquippedWeapon->ToggleCustomDepth(false);
 		EquippedWeapon->UpdateHUDAmmo();
+		EquippedWeapon->SetOwner(Character);
 		
 		AttachActorToSocket(EquippedWeapon, FName("RightHandSocket"));
 
