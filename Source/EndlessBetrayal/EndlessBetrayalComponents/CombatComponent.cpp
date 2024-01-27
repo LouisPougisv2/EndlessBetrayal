@@ -525,7 +525,6 @@ void UCombatComponent::DropEquippedWeapon()
 {
 	if(IsValid(EquippedWeapon))
 	{
-		//TODO: If-check to potentially remove when Switching weapon will be implemented
 		if(EquippedWeapon->bIsDefaultWeapon)
 		{
 			EquippedWeapon->Destroy();

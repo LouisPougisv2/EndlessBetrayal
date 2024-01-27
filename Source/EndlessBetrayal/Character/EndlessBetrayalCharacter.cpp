@@ -324,10 +324,6 @@ void AEndlessBetrayalCharacter::Destroyed()
 	{
 		EliminationBotComponent->DestroyComponent();
 	}
-	if(CombatComponent && CombatComponent->EquippedWeapon)
-	{
-		CombatComponent->EquippedWeapon->OnWeaponDropped();
-	}
 	Super::Destroyed();
 }
 
