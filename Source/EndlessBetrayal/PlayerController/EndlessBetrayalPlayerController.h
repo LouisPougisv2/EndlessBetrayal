@@ -48,6 +48,7 @@ protected:
 
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
+	void SetupInputComponent() override;
 	void CheckTimeSync(float DeltaSeconds);
 	void SetHUDTime();
 	void HandleMatchStates();
@@ -84,6 +85,10 @@ protected:
 
 	UPROPERTY()
 	float TimeSyncRunningTime = 0.0f;
+
+	//Return To Main Menu
+	UFUNCTION()
+	void ShowReturnToMainMenu();
 	
 private:
 
@@ -144,4 +149,13 @@ private:
 
 	UFUNCTION(Server, Reliable)
 	void ServerReportPingStatus(bool bHighPing);
+
+	//Return to Main Menu
+	UPROPERTY(EditAnywhere, Category = "HUD")
+	TSubclassOf<class UUserWidget> ReturnToMainMenuWidget;
+
+	UPROPERTY()
+	class UReturnToMainMenu* ReturnToMainMenu;
+
+	bool bIsReturnToMainMenuOpened = false;
 };

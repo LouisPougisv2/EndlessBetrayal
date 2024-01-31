@@ -14,6 +14,7 @@
 #include "EndlessBetrayal/HUD/AnnouncementUserWidget.h"
 #include "EndlessBetrayal/HUD/CharacterOverlay.h"
 #include "EndlessBetrayal/HUD/EndlessBetrayalHUD.h"
+#include "EndlessBetrayal/HUD/ReturnToMainMenu.h"
 #include "GameFramework/GameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
@@ -42,6 +43,38 @@ void AEndlessBetrayalPlayerController::GetLifetimeReplicatedProps(TArray<FLifeti
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AEndlessBetrayalPlayerController, MatchState);
+}
+
+void AEndlessBetrayalPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+
+	if(IsValid(InputComponent))
+	{
+		InputComponent->BindAction("Quit", IE_Pressed, this, &AEndlessBetrayalPlayerController::ShowReturnToMainMenu);
+	}
+}
+
+void AEndlessBetrayalPlayerController::ShowReturnToMainMenu()
+{
+	if(!IsValid(ReturnToMainMenuWidget)) return;
+
+	if(!ReturnToMainMenu)
+	{
+		ReturnToMainMenu = CreateWidget<UReturnToMainMenu>(this, ReturnToMainMenuWidget);
+	}
+	if(ReturnToMainMenu)
+	{
+		bIsReturnToMainMenuOpened = !bIsReturnToMainMenuOpened;
+		if(bIsReturnToMainMenuOpened)
+		{
+			ReturnToMainMenu->MenuSetUp();
+		}
+		else
+		{
+			ReturnToMainMenu->MenuTearDown();
+		}
+	}
 }
 
 void AEndlessBetrayalPlayerController::OnPossess(APawn* InPawn)
