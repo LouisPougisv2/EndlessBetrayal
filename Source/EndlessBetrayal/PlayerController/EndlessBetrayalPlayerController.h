@@ -19,6 +19,7 @@ public:
 
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void PawnLeavingGame() override;
 	
 	void UpdateHealthHUD(float NewHealth, float MaxHealth);
 	void UpdateShieldHUD(float NewShieldValue, float MaxShield);

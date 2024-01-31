@@ -45,6 +45,17 @@ void AEndlessBetrayalPlayerController::GetLifetimeReplicatedProps(TArray<FLifeti
 	DOREPLIFETIME(AEndlessBetrayalPlayerController, MatchState);
 }
 
+void AEndlessBetrayalPlayerController::PawnLeavingGame()
+{
+	AEndlessBetrayalCharacter* EndlessBetrayal = Cast<AEndlessBetrayalCharacter>(GetPawn());
+	if(IsValid(EndlessBetrayal) && !EndlessBetrayal->HasLeftGame())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("PawnLeavingGame from overriden function on AEndlessBetrayalPlayerController"));
+		EndlessBetrayal->OnPlayerEliminated(true);
+	}
+	Super::PawnLeavingGame();
+}
+
 void AEndlessBetrayalPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
