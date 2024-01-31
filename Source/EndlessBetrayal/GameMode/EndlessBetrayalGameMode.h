@@ -26,6 +26,7 @@ public:
 	
 	virtual void OnPlayerEliminated(class AEndlessBetrayalCharacter* EliminatedCharacter, class AEndlessBetrayalPlayerController* VictimController, AEndlessBetrayalPlayerController* AttackerController);
 	virtual void RequestRespawn(AEndlessBetrayalCharacter* EliminatedCharacter, AEndlessBetrayalPlayerController* EliminatedController);
+	void OnPlayerLeftGame(AEndlessBetrayalPlayerState* PlayerLeavingTheGame);
 
 	FORCEINLINE float GetCountdownTime() const { return CountDownTime; }
 

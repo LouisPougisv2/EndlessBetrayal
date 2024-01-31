@@ -444,15 +444,16 @@ void AEndlessBetrayalCharacter::PlaySwapWeaponMontage()
 	}
 }
 
-void AEndlessBetrayalCharacter::OnPlayerEliminated()
+void AEndlessBetrayalCharacter::OnPlayerEliminated(bool bPlayerHasLeftGame)
 {
 	DropOrDestroyWeapons();
-	MulticastOnPlayerEliminated();
-	GetWorldTimerManager().SetTimer(OnPlayerEliminatedTimer, this, &AEndlessBetrayalCharacter::OnPlayerEliminatedCallBack, OnPlayerEliminatedDelayTime);
+	MulticastOnPlayerEliminated(bPlayerHasLeftGame);
 }
 
-void AEndlessBetrayalCharacter::MulticastOnPlayerEliminated_Implementation()
+void AEndlessBetrayalCharacter::MulticastOnPlayerEliminated_Implementation(bool bPlayerHasLeftGame)
 {
+	bHasLeftGame = bPlayerHasLeftGame;
+	
 	if(IsValid(EndlessBetrayalPlayerController))
 	{
 		EndlessBetrayalPlayerController->UpdateWeaponAmmo(0);
@@ -504,15 +505,32 @@ void AEndlessBetrayalCharacter::MulticastOnPlayerEliminated_Implementation()
 
 		UGameplayStatics::PlaySoundAtLocation(this, EliminationBotSound, EliminationBotPoint);
 	}
+
+	//Move there so it is called in the client as well
+	GetWorldTimerManager().SetTimer(OnPlayerEliminatedTimer, this, &AEndlessBetrayalCharacter::OnPlayerEliminatedCallBack, OnPlayerEliminatedDelayTime);
 }
 
 void AEndlessBetrayalCharacter::OnPlayerEliminatedCallBack()
 {
 	//Respawn
 	AEndlessBetrayalGameMode* EndlessBetrayalGameMode = GetWorld()->GetAuthGameMode<AEndlessBetrayalGameMode>();
-	if(IsValid(EndlessBetrayalGameMode))
+	if(IsValid(EndlessBetrayalGameMode) && !bHasLeftGame)
 	{
 		EndlessBetrayalGameMode->RequestRespawn(this, EndlessBetrayalPlayerController );
+	}
+
+	if(bHasLeftGame && IsLocallyControlled())
+	{
+		OnPlayerLeftGameDelegate.Broadcast();
+	}
+}
+
+void AEndlessBetrayalCharacter::ServerLeaveGame_Implementation()
+{
+	AEndlessBetrayalGameMode* GameMode = GetWorld()->GetAuthGameMode<AEndlessBetrayalGameMode>();
+	if(IsValid(GameMode) && IsValid(EndlessBetrayalPlayerState))
+	{
+		GameMode->OnPlayerLeftGame(EndlessBetrayalPlayerState);
 	}
 }
 

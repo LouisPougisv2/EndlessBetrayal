@@ -10,6 +10,8 @@
 #include "EndlessBetrayal/Interface/InteractWithCrosshairInterface.h"
 #include "EndlessBetrayalCharacter.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerLeftGame);
+
 UCLASS()
 class ENDLESSBETRAYAL_API AEndlessBetrayalCharacter : public ACharacter, public IInteractWithCrosshairInterface
 {
@@ -28,6 +30,11 @@ public:
 	void UpdateHealthHUD();
 	void UpdateShieldHUD();
 
+	FOnPlayerLeftGame OnPlayerLeftGameDelegate;
+	
+	UFUNCTION(Server, Reliable)
+	void ServerLeaveGame();
+
 	/**
 	 * Play Montages
 	 */
@@ -38,10 +45,10 @@ public:
 	void PlaySwapWeaponMontage();
 
 	//Reserved for functionalities that'll happen only on the server
-	void OnPlayerEliminated();
+	void OnPlayerEliminated(bool bPlayerHasLeftGame);
 	
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastOnPlayerEliminated();
+	void MulticastOnPlayerEliminated(bool bPlayerHasLeftGame);
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowSniperScopeWidget(bool bShouldShowScope);
@@ -258,6 +265,8 @@ private:
 	UFUNCTION()
 	void OnPlayerEliminatedCallBack();
 
+	bool bHasLeftGame = false;
+	
 	/**
 	*	Dissolve Effect
 	*/

@@ -71,7 +71,7 @@ void AEndlessBetrayalGameMode::OnPlayerEliminated(AEndlessBetrayalCharacter* Eli
 	{
 		VictimPlayerState->AddToKills(1);
 	}
-	EliminatedCharacter->OnPlayerEliminated();
+	EliminatedCharacter->OnPlayerEliminated(false);
 }
 
 void AEndlessBetrayalGameMode::RequestRespawn(AEndlessBetrayalCharacter* EliminatedCharacter, AEndlessBetrayalPlayerController* EliminatedController)
@@ -88,6 +88,23 @@ void AEndlessBetrayalGameMode::RequestRespawn(AEndlessBetrayalCharacter* Elimina
 		UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStartActors);
 		const int32 IndexSelectedPlayerStart = FMath::RandRange(0, PlayerStartActors.Num() - 1);
 		RestartPlayerAtPlayerStart(EliminatedController, PlayerStartActors[IndexSelectedPlayerStart]);
+	}
+}
+
+void AEndlessBetrayalGameMode::OnPlayerLeftGame(AEndlessBetrayalPlayerState* PlayerLeavingTheGame)
+{
+	if(!IsValid(PlayerLeavingTheGame)) return;
+	
+	AEndlessBetrayalGameState* EndlessBetrayalGameState = GetGameState<AEndlessBetrayalGameState>();
+	if(IsValid(EndlessBetrayalGameState) && EndlessBetrayalGameState->TopScoringPlayers.Contains(PlayerLeavingTheGame))
+	{
+		EndlessBetrayalGameState->TopScoringPlayers.Remove(PlayerLeavingTheGame);
+	}
+
+	AEndlessBetrayalCharacter* PlayerCharacter = Cast<AEndlessBetrayalCharacter>(PlayerLeavingTheGame->GetPawn());
+	if(IsValid(PlayerCharacter))
+	{
+		PlayerCharacter->OnPlayerEliminated(true);
 	}
 }
 

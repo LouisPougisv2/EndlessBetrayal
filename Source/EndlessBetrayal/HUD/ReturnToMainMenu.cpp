@@ -5,6 +5,7 @@
 
 #include "Components/Button.h"
 #include "MultiplayerSessionsSubsystem.h"
+#include "EndlessBetrayal/Character/EndlessBetrayalCharacter.h"
 #include "GameFramework/GameModeBase.h"
 
 void UReturnToMainMenu::MenuSetUp()
@@ -106,11 +107,30 @@ void UReturnToMainMenu::OnDestroyedSession(bool bWasSuccessful)
 	}
 }
 
-void UReturnToMainMenu::OnReturnButtonClicked()
+void UReturnToMainMenu::OnPlayerLeftGame()
 {
-	ReturnButton->SetIsEnabled(false);
 	if(IsValid(MultiplayerSessionsSubsystem))
 	{
 		MultiplayerSessionsSubsystem->DestroySession();	//Will disconnect player from the session
+	}
+}
+
+void UReturnToMainMenu::OnReturnButtonClicked()
+{
+	ReturnButton->SetIsEnabled(false);
+
+	APlayerController* PlayerController = GetOwningPlayer();
+	if(IsValid(PlayerController))
+	{
+		AEndlessBetrayalCharacter* EndlessBetrayalCharacter = Cast<AEndlessBetrayalCharacter>(PlayerController->GetPawn());
+		if(IsValid(EndlessBetrayalCharacter))
+		{
+			EndlessBetrayalCharacter->ServerLeaveGame();
+			EndlessBetrayalCharacter->OnPlayerLeftGameDelegate.AddDynamic(this, &UReturnToMainMenu::OnPlayerLeftGame);
+		}
+		else
+		{
+			ReturnButton->SetIsEnabled(true);
+		}
 	}
 }
