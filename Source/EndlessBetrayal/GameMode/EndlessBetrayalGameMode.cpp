@@ -95,7 +95,7 @@ void AEndlessBetrayalGameMode::Logout(AController* Exiting)
 {
 	AEndlessBetrayalPlayerState* ExitingPlayerState = Cast<AEndlessBetrayalPlayerState>(Exiting->PlayerState);
 	AEndlessBetrayalGameState* EndlessBetrayalGameState = GetGameState<AEndlessBetrayalGameState>();
-	if(IsValid(ExitingPlayerState) && IsValid(EndlessBetrayalGameState) && EndlessBetrayalGameState->TopScoringPlayers.Contains(Exiting))
+	if(IsValid(ExitingPlayerState) && IsValid(EndlessBetrayalGameState) && EndlessBetrayalGameState->TopScoringPlayers.Contains(ExitingPlayerState))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Logout overrriden function in AEndlessBetrayalGameMode"));
 		EndlessBetrayalGameState->TopScoringPlayers.Remove(ExitingPlayerState);
