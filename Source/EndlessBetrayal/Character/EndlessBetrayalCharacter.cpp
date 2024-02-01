@@ -2,6 +2,9 @@
 
 
 #include "EndlessBetrayalCharacter.h"
+
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/BoxComponent.h"
@@ -351,6 +354,32 @@ void AEndlessBetrayalCharacter::UpdateHUDAmmo()
 	{
 		EndlessBetrayalPlayerController->UpdateWeaponAmmo(CombatComponent->EquippedWeapon->GetAmmo());
 		EndlessBetrayalPlayerController->UpdateWeaponCarriedAmmo(CombatComponent->CarriedAmmo);
+	}
+}
+
+void AEndlessBetrayalCharacter::MulticastPlayerGainedTheLead_Implementation()
+{
+	if(!CrownEffect) return;
+
+	//Creating the Niagara component if it doesn't exist
+	if(!CrownComponent)
+	{
+		CrownComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(CrownEffect, GetCapsuleComponent(), FName(),
+			GetActorLocation() + FVector(0.0f, 0.0f, 110.0f), GetActorRotation(), EAttachLocation::KeepWorldPosition, false);
+	}
+	
+	//Activating the Niagara system
+	if(CrownComponent)
+	{
+		CrownComponent->Activate();
+	}
+}
+
+void AEndlessBetrayalCharacter::MulticastPlayerLostTheLead_Implementation()
+{
+	if(CrownComponent)
+	{
+		CrownComponent->DestroyComponent();
 	}
 }
 

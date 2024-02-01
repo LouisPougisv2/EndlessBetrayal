@@ -63,8 +63,38 @@ void AEndlessBetrayalGameMode::OnPlayerEliminated(AEndlessBetrayalCharacter* Eli
 	AEndlessBetrayalGameState* EndlessBetrayalGameState = GetGameState<AEndlessBetrayalGameState>();
 	if(AttackerPlayerState && AttackerPlayerState != VictimPlayerState && EndlessBetrayalGameState)
 	{
+		TArray<AEndlessBetrayalPlayerState*> PlayersCurrentlyInTheLead;
+		for (AEndlessBetrayalPlayerState* TopScoringPlayer : EndlessBetrayalGameState->TopScoringPlayers)
+		{
+			PlayersCurrentlyInTheLead.Add(TopScoringPlayer);
+		}
+		
 		AttackerPlayerState->AddToScore(1.0f);
 		EndlessBetrayalGameState->UpdateTopScore(AttackerPlayerState);
+
+		//Grant the crown to the attacker player if in the Top Score Players
+		if(EndlessBetrayalGameState->TopScoringPlayers.Contains(AttackerPlayerState))
+		{
+			AEndlessBetrayalCharacter* AttackerCharacter = Cast<AEndlessBetrayalCharacter>(AttackerPlayerState->GetPawn());
+			if(IsValid(AttackerCharacter))
+			{
+				AttackerCharacter->MulticastPlayerGainedTheLead();
+			}
+		}
+		
+		for(int32 i = 0; i < PlayersCurrentlyInTheLead.Num(); ++i)
+		{
+			//The player isn't in the top scorers anymore -> remove the crown
+			//Note, after line 73 (UpdateToScore call), the TOpScoring players array may have changed
+			if(!EndlessBetrayalGameState->TopScoringPlayers.Contains(PlayersCurrentlyInTheLead[i]))
+			{
+				AEndlessBetrayalCharacter* LoserCharacter = Cast<AEndlessBetrayalCharacter>(PlayersCurrentlyInTheLead[i]->GetPawn());
+				if(IsValid(LoserCharacter))
+				{
+					LoserCharacter->MulticastPlayerLostTheLead();
+				}
+			}
+		}
 	}
 	
 	if(VictimPlayerState)

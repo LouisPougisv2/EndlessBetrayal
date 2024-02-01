@@ -35,6 +35,12 @@ public:
 	UFUNCTION(Server, Reliable)
 	void ServerLeaveGame();
 
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlayerGainedTheLead();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlayerLostTheLead();
+
 	/**
 	 * Play Montages
 	 */
@@ -292,7 +298,7 @@ private:
 	void StartDissolve();
 
 	/**
-	*	Elimination Bot
+	*	Elimination Effect
 	**/
 
 	UPROPERTY(EditAnywhere)
@@ -309,6 +315,12 @@ private:
 
 	UPROPERTY()
 	class AEndlessBetrayalPlayerController* EndlessBetrayalPlayerController;
+	
+	UPROPERTY(EditAnywhere)
+	class UNiagaraSystem* CrownEffect;
+	
+	UPROPERTY()
+	class UNiagaraComponent* CrownComponent;
 	
 	/**
 	*	Grenade
