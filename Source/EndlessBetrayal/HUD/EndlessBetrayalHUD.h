@@ -75,5 +75,13 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UEliminationAnnouncementWidget> EliminationAnnouncementClass;
+
+	UPROPERTY(EditAnywhere)
+	float EliminationAnnouncementLifeTime  = 2.5f;
+
+	UPROPERTY()
+	TArray<UEliminationAnnouncementWidget*> EliminationMessages;
 	
+	UFUNCTION()
+	void EliminationAnnouncementTimerFinished(UEliminationAnnouncementWidget* MsgToRemove);
 };
