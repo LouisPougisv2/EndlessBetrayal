@@ -60,6 +60,8 @@ void AEndlessBetrayalGameMode::OnPlayerEliminated(AEndlessBetrayalCharacter* Eli
 	AEndlessBetrayalPlayerState* AttackerPlayerState = Cast<AEndlessBetrayalPlayerState>(AttackerController->PlayerState);
 	AEndlessBetrayalPlayerState* VictimPlayerState = Cast<AEndlessBetrayalPlayerState>(VictimController->PlayerState);
 
+	if(!IsValid(AttackerPlayerState) || !IsValid(VictimPlayerState)) return;
+
 	AEndlessBetrayalGameState* EndlessBetrayalGameState = GetGameState<AEndlessBetrayalGameState>();
 	if(AttackerPlayerState && AttackerPlayerState != VictimPlayerState && EndlessBetrayalGameState)
 	{
@@ -102,6 +104,16 @@ void AEndlessBetrayalGameMode::OnPlayerEliminated(AEndlessBetrayalCharacter* Eli
 		VictimPlayerState->AddToKills(1);
 	}
 	EliminatedCharacter->OnPlayerEliminated(false);
+
+	//Elimination message broadcast
+	for(FConstPlayerControllerIterator PCIterator = GetWorld()->GetPlayerControllerIterator(); PCIterator; ++PCIterator)
+	{
+		AEndlessBetrayalPlayerController* EliminatedPlayerController = Cast<AEndlessBetrayalPlayerController>(*PCIterator);
+		if(IsValid(EliminatedPlayerController))
+		{
+			EliminatedPlayerController->BroadCastElimination(AttackerPlayerState, VictimPlayerState);
+		}
+	}
 }
 
 void AEndlessBetrayalGameMode::RequestRespawn(AEndlessBetrayalCharacter* EliminatedCharacter, AEndlessBetrayalPlayerController* EliminatedController)

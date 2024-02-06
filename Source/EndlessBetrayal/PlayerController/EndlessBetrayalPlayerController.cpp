@@ -88,6 +88,39 @@ void AEndlessBetrayalPlayerController::ShowReturnToMainMenu()
 	}
 }
 
+void AEndlessBetrayalPlayerController::ClientEliminationAnnouncement_Implementation(AEndlessBetrayalPlayerState* Attacker, AEndlessBetrayalPlayerState* Victim)
+{
+	const AEndlessBetrayalPlayerState* SelfPlayerState = GetPlayerState<AEndlessBetrayalPlayerState>();
+	if(IsValid(SelfPlayerState) && IsValid(Attacker) && IsValid(Victim))
+	{
+		EndlessBetrayalHUD = !IsValid(EndlessBetrayalHUD) ? EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD()) : EndlessBetrayalHUD;
+
+		if(EndlessBetrayalHUD)
+		{
+			FString AttackerName = SelfPlayerState == Attacker ? "You" : Attacker->GetPlayerName();
+			FString VictimName = SelfPlayerState == Victim ? "You" : Victim->GetPlayerName();
+
+			if(Attacker == SelfPlayerState && Attacker == Victim)
+			{
+				AttackerName = "You";
+				VictimName = "yourself"; 
+			}
+
+			if(Attacker != SelfPlayerState && Attacker == Victim)
+			{
+				VictimName = "themselves"; 
+			}
+
+			EndlessBetrayalHUD->AddEliminationAnnouncement(AttackerName, VictimName);
+		}
+	}
+}
+
+void AEndlessBetrayalPlayerController::BroadCastElimination(AEndlessBetrayalPlayerState* Attacker, AEndlessBetrayalPlayerState* Victim)
+{
+	ClientEliminationAnnouncement(Attacker, Victim);
+}
+
 void AEndlessBetrayalPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);

@@ -45,6 +45,9 @@ public:
 	float SingleTripTime = 0.0f;
 
 	FHighPingDelegate HighPingDelegate;
+
+	void BroadCastElimination(class AEndlessBetrayalPlayerState* Attacker, AEndlessBetrayalPlayerState* Victim);
+	
 protected:
 
 	virtual void BeginPlay() override;
@@ -90,6 +93,9 @@ protected:
 	//Return To Main Menu
 	UFUNCTION()
 	void ShowReturnToMainMenu();
+
+	UFUNCTION(Client, Reliable)
+	void ClientEliminationAnnouncement(AEndlessBetrayalPlayerState* Attacker, AEndlessBetrayalPlayerState* Victim);
 	
 private:
 

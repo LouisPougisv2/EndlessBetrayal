@@ -5,6 +5,7 @@
 
 #include "AnnouncementUserWidget.h"
 #include "CharacterOverlay.h"
+#include "EliminationAnnouncementWidget.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/TextBlock.h"
 #include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
@@ -68,6 +69,21 @@ void AEndlessBetrayalHUD::HideKillDeathMessages()
 	if(CharacterOverlay->DeathText)
 	{
 		CharacterOverlay->DeathText->SetVisibility(ESlateVisibility::Collapsed);
+	}
+}
+
+void AEndlessBetrayalHUD::AddEliminationAnnouncement(FString Attacker, FString Victim)
+{
+	AEndlessBetrayalPlayerController* PlayerController = Cast<AEndlessBetrayalPlayerController>(GetOwningPlayerController());
+	if(IsValid(PlayerController) && IsValid(EliminationAnnouncementClass))
+	{
+		UEliminationAnnouncementWidget* EliminationAnnouncementWidget = CreateWidget<UEliminationAnnouncementWidget>(PlayerController, EliminationAnnouncementClass);
+		if(IsValid(EliminationAnnouncementWidget))
+		{
+			EliminationAnnouncementWidget->SetEliminationAnnouncementText(Attacker, Victim);
+			EliminationAnnouncementWidget->AddToViewport();
+		}
+		
 	}
 }
 

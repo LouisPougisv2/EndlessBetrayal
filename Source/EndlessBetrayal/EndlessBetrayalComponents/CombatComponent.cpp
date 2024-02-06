@@ -581,8 +581,8 @@ void UCombatComponent::AutomaticReload()
 
 void UCombatComponent::Reload()
 {
-	const bool IsWeaponFullyLoaded = IsValid(EquippedWeapon) && !EquippedWeapon->IsFullyLoaded();
-	if(CarriedAmmo > 0 && CombatState == ECombatState::ECS_Unoccupied && IsWeaponFullyLoaded)
+	const bool IsWeaponNotFullyLoaded = IsValid(EquippedWeapon) && !EquippedWeapon->IsFullyLoaded();
+	if(CarriedAmmo > 0 && CombatState == ECombatState::ECS_Unoccupied && IsWeaponNotFullyLoaded)
 	{
 		ServerReload();
 	}
