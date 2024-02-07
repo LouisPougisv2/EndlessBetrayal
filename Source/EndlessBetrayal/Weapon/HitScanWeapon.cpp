@@ -39,7 +39,9 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 			bool bCauseAuthDamage =	!bUseServerSideRewind || OwnerPawn->IsLocallyControlled();
 			if(HasAuthority() && bCauseAuthDamage)
 			{
-				UGameplayStatics::ApplyDamage(HitCharacter, Damage, DamageInstigator, this, UDamageType::StaticClass());
+				//We can retrieve the head bone from the physic asset in order to check if it is a headshot
+				const float DamageToApply = FireHit.BoneName.ToString() == FString("head") ? HeadShotDamage : Damage;
+				UGameplayStatics::ApplyDamage(HitCharacter, DamageToApply, DamageInstigator, this, UDamageType::StaticClass());
 			}
 			
 			if(!HasAuthority() &&bUseServerSideRewind)
@@ -102,6 +104,10 @@ void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& Hi
 		if(OutHitResult.bBlockingHit)
 		{
 			BeamEnd = OutHitResult.ImpactPoint;
+		}
+		else
+		{
+			OutHitResult.ImpactPoint = End;
 		}
 		
 		//DrawDebugSphere(GetWorld(), BeamEnd, 16.f, 12, FColor::Orange, true);
