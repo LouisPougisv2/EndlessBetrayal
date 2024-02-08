@@ -54,7 +54,7 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 				{
 					//Make sure the server rewind time enough to position that opponent's character to the location that it was in corresponding to when we hit
 					float HitTime = WeaponOwnerController->GetServerTime() - WeaponOwnerController->SingleTripTime;
-					WeaponOwnerCharacter->GetLagCompensationComponent()->ServerScoreRequest(HitCharacter, Start, FireHit.ImpactPoint, HitTime,this);
+					WeaponOwnerCharacter->GetLagCompensationComponent()->ServerScoreRequest(HitCharacter, Start, FireHit.ImpactPoint, HitTime);
 				}
 			}
 		}

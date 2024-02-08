@@ -122,7 +122,7 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& TraceHitTargets)
 		}
 		
 		
-		if(!HasAuthority() && !bUseServerSideRewind)
+		if(!HasAuthority() && bUseServerSideRewind)
 		{
 			WeaponOwnerCharacter = !IsValid(WeaponOwnerCharacter) ? Cast<AEndlessBetrayalCharacter>(OwnerPawn) : WeaponOwnerCharacter;
 			WeaponOwnerController = !IsValid(WeaponOwnerController) ? Cast<AEndlessBetrayalPlayerController>(DamageInstigator) : WeaponOwnerController;
