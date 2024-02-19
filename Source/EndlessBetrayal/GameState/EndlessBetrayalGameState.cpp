@@ -10,6 +10,9 @@ void AEndlessBetrayalGameState::GetLifetimeReplicatedProps(TArray<FLifetimePrope
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AEndlessBetrayalGameState, TopScoringPlayers);
+	DOREPLIFETIME(AEndlessBetrayalGameState, RedTeamScore);
+	DOREPLIFETIME(AEndlessBetrayalGameState, BlueTeamScore);
+	
 }
 
 void AEndlessBetrayalGameState::UpdateTopScore(AEndlessBetrayalPlayerState* ScoringPlayer)
@@ -29,4 +32,14 @@ void AEndlessBetrayalGameState::UpdateTopScore(AEndlessBetrayalPlayerState* Scor
 		TopScoringPlayers.AddUnique(ScoringPlayer);
 		TopScore = ScoringPlayer->GetScore();
 	}
+}
+
+void AEndlessBetrayalGameState::OnRep_RedTeamScore()
+{
+	
+}
+
+void AEndlessBetrayalGameState::OnRep_BlueTeamScore()
+{
+	
 }

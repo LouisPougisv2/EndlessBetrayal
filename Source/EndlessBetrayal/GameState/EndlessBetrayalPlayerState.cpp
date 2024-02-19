@@ -12,6 +12,7 @@ void AEndlessBetrayalPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimePro
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AEndlessBetrayalPlayerState, DeathsCount);
+	DOREPLIFETIME(AEndlessBetrayalPlayerState, Team);
 }
 
 void AEndlessBetrayalPlayerState::OnRep_Score()

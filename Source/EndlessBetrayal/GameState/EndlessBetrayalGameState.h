@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "EndlessBetrayal/EndlessBetrayalTypes/Team.h"
 #include "GameFramework/GameState.h"
 #include "EndlessBetrayalGameState.generated.h"
 
@@ -23,6 +24,25 @@ public:
 	UPROPERTY(Replicated)
 	TArray<AEndlessBetrayalPlayerState*> TopScoringPlayers;
 
+	/*
+	* Teams
+	*/
+
+	TArray<AEndlessBetrayalPlayerState*> RedTeam;
+	TArray<AEndlessBetrayalPlayerState*> BlueTeam;
+
+	UPROPERTY(ReplicatedUsing = OnRep_RedTeamScore)
+	float RedTeamScore = 0.0f;
+
+	UPROPERTY(ReplicatedUsing = OnRep_BlueTeamScore)
+	float BlueTeamScore = 0.0f;
+
+	UFUNCTION()
+	void OnRep_RedTeamScore();
+
+	UFUNCTION()
+	void OnRep_BlueTeamScore();
+	
 private:
 
 	UPROPERTY()
