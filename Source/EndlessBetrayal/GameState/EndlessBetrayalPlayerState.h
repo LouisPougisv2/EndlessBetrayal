@@ -28,7 +28,7 @@ public:
 	void AddToKills(float NewKill);
 
 	FORCEINLINE ETeam GetTeam() const { return Team; }
-	FORCEINLINE void SetTeam(const ETeam InTeam) { Team = InTeam; }
+	void SetTeam(ETeam InTeam);
 
 private:
 

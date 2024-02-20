@@ -203,6 +203,7 @@ void AEndlessBetrayalCharacter::PollInitialize()
 			{
 				EndlessBetrayalPlayerState->AddToScore(0.0f);
 				EndlessBetrayalPlayerState->AddToKills(0);
+				SetTeamColor(EndlessBetrayalPlayerState->GetTeam());
 			}
 
 			EndlessBetrayalPlayerController->HideMessagesOnScreenHUD();
@@ -477,6 +478,30 @@ void AEndlessBetrayalCharacter::OnPlayerEliminated(bool bPlayerHasLeftGame)
 {
 	DropOrDestroyWeapons();
 	MulticastOnPlayerEliminated(bPlayerHasLeftGame);
+}
+
+void AEndlessBetrayalCharacter::SetTeamColor_Implementation(ETeam InTeam)
+{
+	if(!IsValid(GetMesh()) || !OriginalMaterial) return;
+	
+	switch (InTeam)
+	{
+		case ETeam::ET_NoTeam:
+			GetMesh()->SetMaterial(0, OriginalMaterial);
+			DissolveMaterialInstance = OriginalDissolveMaterialInstance;
+			break;
+		case ETeam::ET_BlueTeam:
+			GetMesh()->SetMaterial(0, BlueMaterial);
+			DissolveMaterialInstance = BlueDissolveMaterialInstance;
+			break;
+		case ETeam::ET_RedTeam:
+			GetMesh()->SetMaterial(0, RedMaterial);
+			DissolveMaterialInstance = RedDissolveMaterialInstance;
+			break;
+		
+		default:
+			break;
+	}
 }
 
 void AEndlessBetrayalCharacter::MulticastOnPlayerEliminated_Implementation(bool bPlayerHasLeftGame)

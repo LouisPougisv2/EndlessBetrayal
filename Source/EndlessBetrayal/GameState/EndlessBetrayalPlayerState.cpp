@@ -73,3 +73,14 @@ void AEndlessBetrayalPlayerState::AddToKills(float NewKill)
 		}
 	}
 }
+
+void AEndlessBetrayalPlayerState::SetTeam(ETeam InTeam)
+{
+	Team = InTeam;
+
+	AEndlessBetrayalCharacter* EBCharacter = Cast<AEndlessBetrayalCharacter>(GetPawn());
+	if(IsValid(EBCharacter))
+	{
+		EBCharacter->SetTeamColor(Team);
+	}
+}

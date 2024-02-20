@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Components/TimelineComponent.h"
 #include "EndlessBetrayal/EndlessBetrayalTypes/CombatState.h"
+#include "EndlessBetrayal/EndlessBetrayalTypes/Team.h"
 #include "GameFramework/Character.h"
 #include "EndlessBetrayal/EndlessBetrayalTypes/TurningInPlace.h"
 #include "EndlessBetrayal/Interface/InteractWithCrosshairInterface.h"
@@ -58,6 +59,9 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowSniperScopeWidget(bool bShouldShowScope);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void SetTeamColor(ETeam InTeam);
 
 	/*
 	 * Hit boxes used for Server-side rewinds
@@ -290,13 +294,35 @@ private:
 	UMaterialInstanceDynamic* DynamicDissolveMaterialInstance;
 
 	//Material Instance set on the BP used with the Dynamic Material Instance
-	UPROPERTY(EditAnywhere, Category = "Elimination")
+	UPROPERTY(VisibleAnywhere, Category = "Elimination")
 	UMaterialInstance* DissolveMaterialInstance;
 	//Every TimelineComponent needs a callback called every frame as we're updating the timeline
 	UFUNCTION()	//Allows to be bound
 	void UpdateDissolveMaterial(float DissolveValue);
 	void StartDissolve();
 
+	/**
+	*	Team Colors
+	**/
+
+	UPROPERTY(EditAnywhere, Category = "Elimination")
+	UMaterialInstance* RedMaterial;
+	
+	UPROPERTY(EditAnywhere, Category = "Elimination")
+	UMaterialInstance* RedDissolveMaterialInstance;
+
+	UPROPERTY(EditAnywhere, Category = "Elimination")
+	UMaterialInstance* BlueMaterial;
+	
+	UPROPERTY(EditAnywhere, Category = "Elimination")
+	UMaterialInstance* BlueDissolveMaterialInstance;
+
+	UPROPERTY(EditAnywhere, Category = "Elimination")
+	UMaterialInstance* OriginalMaterial;
+
+	UPROPERTY(EditAnywhere, Category = "Elimination")
+	UMaterialInstance* OriginalDissolveMaterialInstance;
+	
 	/**
 	*	Elimination Effect
 	**/
