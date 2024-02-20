@@ -18,6 +18,7 @@ public:
 
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 	virtual void Logout(AController* Exiting) override;
+	virtual float CalculateDamage(AController* AttackerController, AController* VictimController, float Damages) override;
 	
 protected:
 

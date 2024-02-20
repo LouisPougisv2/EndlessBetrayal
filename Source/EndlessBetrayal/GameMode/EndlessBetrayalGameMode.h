@@ -28,6 +28,7 @@ public:
 	virtual void RequestRespawn(AEndlessBetrayalCharacter* EliminatedCharacter, AEndlessBetrayalPlayerController* EliminatedController);
 	virtual void Logout(AController* Exiting) override;
 	void OnPlayerLeftGame(AEndlessBetrayalPlayerState* PlayerLeavingTheGame);
+	virtual float CalculateDamage(AController* AttackerController, AController* VictimController, float Damages);
 
 	FORCEINLINE float GetCountdownTime() const { return CountDownTime; }
 

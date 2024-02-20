@@ -647,7 +647,9 @@ void AEndlessBetrayalCharacter::DropOrDestroyWeapons()
 
 void AEndlessBetrayalCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
-	if(bIsEliminated) return;
+	AEndlessBetrayalGameMode* EndlessBetrayalGameMode = GetWorld()->GetAuthGameMode<AEndlessBetrayalGameMode>();
+	if(bIsEliminated || !IsValid(EndlessBetrayalGameMode)) return;
+	Damage = EndlessBetrayalGameMode->CalculateDamage(InstigatedBy, GetController(), Damage);
 
 	const bool bDamageFullyAbsorbed = (Shield - Damage > 0.0f);
 	float DamageAfterShieldAbsorption = Damage;
@@ -669,7 +671,6 @@ void AEndlessBetrayalCharacter::ReceiveDamage(AActor* DamagedActor, float Damage
 
 	if(Health > 0.0f) return;
 
-	AEndlessBetrayalGameMode* EndlessBetrayalGameMode = GetWorld()->GetAuthGameMode<AEndlessBetrayalGameMode>();
 	if(IsValid(EndlessBetrayalGameMode))
 	{
 		EndlessBetrayalPlayerController = !IsValid(EndlessBetrayalPlayerController) ? Cast<AEndlessBetrayalPlayerController>(Controller) : EndlessBetrayalPlayerController;

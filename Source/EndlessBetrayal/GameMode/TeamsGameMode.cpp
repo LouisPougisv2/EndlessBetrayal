@@ -51,6 +51,28 @@ void ATeamsGameMode::Logout(AController* Exiting)
 	}
 }
 
+float ATeamsGameMode::CalculateDamage(AController* AttackerController, AController* VictimController, float Damages)
+{
+	const AEndlessBetrayalPlayerState* AttackerPlayerState = AttackerController->GetPlayerState<AEndlessBetrayalPlayerState>();
+	const AEndlessBetrayalPlayerState* VictimPlayerState = VictimController->GetPlayerState<AEndlessBetrayalPlayerState>();
+	if(!IsValid(AttackerPlayerState) || !IsValid(VictimPlayerState)) return Damages;
+
+	//Self Damage
+	if(AttackerPlayerState == VictimPlayerState)
+	{
+		return Super::CalculateDamage(AttackerController, VictimController, Damages);
+	}
+
+	//Preventing Friendly Fire
+	if(AttackerPlayerState->GetTeam() == VictimPlayerState->GetTeam())
+	{
+		return 0.0f;
+	}
+
+	//Shooting another player on another team
+	return Super::CalculateDamage(AttackerController, VictimController, Damages);
+}
+
 void ATeamsGameMode::HandleMatchHasStarted()
 {
 	Super::HandleMatchHasStarted();

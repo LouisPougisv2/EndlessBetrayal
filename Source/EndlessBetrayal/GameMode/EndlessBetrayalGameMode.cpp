@@ -163,6 +163,11 @@ void AEndlessBetrayalGameMode::OnPlayerLeftGame(AEndlessBetrayalPlayerState* Pla
 	}
 }
 
+float AEndlessBetrayalGameMode::CalculateDamage(AController* AttackerController, AController* VictimController, float Damages)
+{
+	return Damages;
+}
+
 void AEndlessBetrayalGameMode::BeginPlay()
 {
 	Super::BeginPlay();
