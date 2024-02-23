@@ -364,7 +364,17 @@ void AEndlessBetrayalPlayerController::UpdateGrenadesAmmo(int32 Grenades)
 
 void AEndlessBetrayalPlayerController::InitHUDTeamScores()
 {
+	EndlessBetrayalHUD = !IsValid(EndlessBetrayalHUD) ? EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD()) : EndlessBetrayalHUD;
 	
+	const bool bIsHUDValid = IsValid(EndlessBetrayalHUD) && IsValid(EndlessBetrayalHUD->CharacterOverlay) && IsValid(EndlessBetrayalHUD->CharacterOverlay->BlueTeamScore) && IsValid(EndlessBetrayalHUD->CharacterOverlay->RedTeamScore) && IsValid(EndlessBetrayalHUD->CharacterOverlay->TeamScoreSlash);
+	if(bIsHUDValid)
+	{
+		const FString Zero("0");
+		const FString Spacer("|");
+		EndlessBetrayalHUD->CharacterOverlay->BlueTeamScore->SetText(FText::FromString(Zero));
+		EndlessBetrayalHUD->CharacterOverlay->RedTeamScore->SetText(FText::FromString(Zero));
+		EndlessBetrayalHUD->CharacterOverlay->TeamScoreSlash->SetText(FText::FromString(Spacer));
+	}
 }
 
 void AEndlessBetrayalPlayerController::HideTeamScores()
@@ -539,7 +549,10 @@ void AEndlessBetrayalPlayerController::ReceivedPlayer()
 
 void AEndlessBetrayalPlayerController::HandleMatchHasStarted(bool bIsTeamMatch)
 {
-	bShouldShowTeamScore = bIsTeamMatch;
+	if(HasAuthority())
+	{
+		bShouldShowTeamScore = bIsTeamMatch;
+	}
 
 	EndlessBetrayalHUD = !IsValid(EndlessBetrayalHUD) ? EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD()) : EndlessBetrayalHUD;
 	if(IsValid(EndlessBetrayalHUD))
@@ -688,6 +701,15 @@ void AEndlessBetrayalPlayerController::PollInit()
 				{
 					UpdateGrenadesAmmo(EndlessBetrayalCharacter->GetCombatComponent()->GetGrenadesAmount());
 				}
+			}
+			
+			if (bShouldShowTeamScore)
+			{
+				InitHUDTeamScores();
+			}
+			else
+			{
+				HideTeamScores();
 			}
 		}
 	}
