@@ -20,6 +20,9 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	void UpdateTopScore(class AEndlessBetrayalPlayerState* ScoringPlayer);
+
+	void IncrementBlueTeamScore();
+	void IncrementRedTeamScore();
 	
 	UPROPERTY(Replicated)
 	TArray<AEndlessBetrayalPlayerState*> TopScoringPlayers;

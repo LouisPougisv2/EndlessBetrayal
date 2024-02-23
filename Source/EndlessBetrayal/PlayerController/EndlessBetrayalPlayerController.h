@@ -31,12 +31,25 @@ public:
 	void UpdateWeaponAmmo(int32 NewAmmo);
 	void UpdateWeaponCarriedAmmo(int32 NewAmmo);
 	void UpdateGrenadesAmmo(int32 Grenades);
+
+	/**
+	* Team Scores
+	*/
+	
+	void InitHUDTeamScores();
+	void HideTeamScores();
+	void UpdateHUDRedTeamScore(int32 NewScore);
+	void UpdateHUDBlueTeamScore(int32 NewScore);
+	
+	/**
+	* EndTeam Scores
+	*/
 	
 	//Sync with Server clock as soon as possible
 	virtual void ReceivedPlayer() override;
 
 	//Only happening on the server
-	void OnMatchStateSet(FName NewMatchState);
+	void OnMatchStateSet(FName NewMatchState, bool bIsTeamMatch = false);
 	
 	//synced with Server world clock 
 	virtual float GetServerTime();
@@ -55,8 +68,8 @@ protected:
 	void SetupInputComponent() override;
 	void CheckTimeSync(float DeltaSeconds);
 	void SetHUDTime();
-	void HandleMatchStates();
-	void HandleMatchHasStarted();
+	void HandleMatchStates(bool bIsTeamMatch = false);
+	void HandleMatchHasStarted(bool bIsTeamMatch = false);
 	void HandleCooldown();
 	void CheckPing(float DeltaSeconds);
 
@@ -96,6 +109,12 @@ protected:
 
 	UFUNCTION(Client, Reliable)
 	void ClientEliminationAnnouncement(AEndlessBetrayalPlayerState* Attacker, AEndlessBetrayalPlayerState* Victim);
+
+	UPROPERTY(ReplicatedUsing = OnRep_ShouldShowTeamScore)
+	bool bShouldShowTeamScore = false;
+
+	UFUNCTION()
+	void OnRep_ShouldShowTeamScore();
 	
 private:
 

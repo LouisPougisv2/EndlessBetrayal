@@ -34,6 +34,16 @@ void AEndlessBetrayalGameState::UpdateTopScore(AEndlessBetrayalPlayerState* Scor
 	}
 }
 
+void AEndlessBetrayalGameState::IncrementBlueTeamScore()
+{
+	++BlueTeamScore;
+}
+
+void AEndlessBetrayalGameState::IncrementRedTeamScore()
+{
+	++RedTeamScore;
+}
+
 void AEndlessBetrayalGameState::OnRep_RedTeamScore()
 {
 	

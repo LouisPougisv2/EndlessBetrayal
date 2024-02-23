@@ -7,6 +7,11 @@
 #include "EndlessBetrayal/GameState/EndlessBetrayalPlayerState.h"
 #include "Kismet/GameplayStatics.h"
 
+ATeamsGameMode::ATeamsGameMode()
+{
+	bIsTeamsMatch = true;
+}
+
 void ATeamsGameMode::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);

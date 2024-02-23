@@ -184,7 +184,7 @@ void AEndlessBetrayalGameMode::OnMatchStateSet()
 		AEndlessBetrayalPlayerController* EndlessBetrayalPlayerController = Cast<AEndlessBetrayalPlayerController>(*It);
 		if(IsValid(EndlessBetrayalPlayerController))
 		{
-			EndlessBetrayalPlayerController->OnMatchStateSet(MatchState);
+			EndlessBetrayalPlayerController->OnMatchStateSet(MatchState, bIsTeamsMatch);
 		}
 	}
 }

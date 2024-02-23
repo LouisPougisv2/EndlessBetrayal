@@ -45,6 +45,8 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 	float CooldownTime = 30.0f;
 
+	bool bIsTeamsMatch = false;
+
 protected:
 
 	virtual void BeginPlay() override;
