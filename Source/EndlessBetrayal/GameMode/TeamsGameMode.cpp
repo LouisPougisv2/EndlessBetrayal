@@ -5,6 +5,7 @@
 
 #include "EndlessBetrayal/GameState/EndlessBetrayalGameState.h"
 #include "EndlessBetrayal/GameState/EndlessBetrayalPlayerState.h"
+#include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
 #include "Kismet/GameplayStatics.h"
 
 ATeamsGameMode::ATeamsGameMode()
@@ -52,6 +53,27 @@ void ATeamsGameMode::Logout(AController* Exiting)
 		if(EndlessBetrayalGameState->BlueTeam.Contains(EndlessBetrayalPlayerState))
 		{
 			EndlessBetrayalGameState->BlueTeam.Remove(EndlessBetrayalPlayerState);
+		}
+	}
+}
+
+void ATeamsGameMode::OnPlayerEliminated(AEndlessBetrayalCharacter* EliminatedCharacter, AEndlessBetrayalPlayerController* VictimController, AEndlessBetrayalPlayerController* AttackerController)
+{
+	Super::OnPlayerEliminated(EliminatedCharacter, VictimController, AttackerController);
+
+	AEndlessBetrayalGameState* EndlessBetrayalGameState = Cast<AEndlessBetrayalGameState>(UGameplayStatics::GetGameState(this));
+	const AEndlessBetrayalPlayerState* AttackerPlayerState = Cast<AEndlessBetrayalPlayerState>(AttackerController->PlayerState);
+
+	if(IsValid(EndlessBetrayalGameState) && IsValid(AttackerPlayerState))
+	{
+		if(AttackerPlayerState->GetTeam() == ETeam::ET_BlueTeam)
+		{
+			EndlessBetrayalGameState->IncrementBlueTeamScore();
+		}
+		
+		if(AttackerPlayerState->GetTeam() == ETeam::ET_RedTeam)
+		{
+			EndlessBetrayalGameState->IncrementRedTeamScore();
 		}
 	}
 }

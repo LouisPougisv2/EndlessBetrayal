@@ -3,6 +3,7 @@
 
 #include "EndlessBetrayalGameState.h"
 #include "EndlessBetrayalPlayerState.h"
+#include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
 #include "Net/UnrealNetwork.h"
 
 void AEndlessBetrayalGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -37,19 +38,39 @@ void AEndlessBetrayalGameState::UpdateTopScore(AEndlessBetrayalPlayerState* Scor
 void AEndlessBetrayalGameState::IncrementBlueTeamScore()
 {
 	++BlueTeamScore;
+
+	AEndlessBetrayalPlayerController* EndlessBetrayalPlayerController = Cast<AEndlessBetrayalPlayerController>(GetWorld()->GetFirstPlayerController());
+	if(IsValid(EndlessBetrayalPlayerController))
+	{
+		EndlessBetrayalPlayerController->UpdateHUDBlueTeamScore(BlueTeamScore);
+	}
 }
 
 void AEndlessBetrayalGameState::IncrementRedTeamScore()
 {
 	++RedTeamScore;
+	
+	AEndlessBetrayalPlayerController* EndlessBetrayalPlayerController = Cast<AEndlessBetrayalPlayerController>(GetWorld()->GetFirstPlayerController());
+	if(IsValid(EndlessBetrayalPlayerController))
+	{
+		EndlessBetrayalPlayerController->UpdateHUDRedTeamScore(RedTeamScore);
+	}
 }
 
 void AEndlessBetrayalGameState::OnRep_RedTeamScore()
 {
-	
+	AEndlessBetrayalPlayerController* EndlessBetrayalPlayerController = Cast<AEndlessBetrayalPlayerController>(GetWorld()->GetFirstPlayerController());
+	if(IsValid(EndlessBetrayalPlayerController))
+	{
+		EndlessBetrayalPlayerController->UpdateHUDRedTeamScore(RedTeamScore);
+	}
 }
 
 void AEndlessBetrayalGameState::OnRep_BlueTeamScore()
 {
-	
+	AEndlessBetrayalPlayerController* EndlessBetrayalPlayerController = Cast<AEndlessBetrayalPlayerController>(GetWorld()->GetFirstPlayerController());
+	if(IsValid(EndlessBetrayalPlayerController))
+	{
+		EndlessBetrayalPlayerController->UpdateHUDBlueTeamScore(BlueTeamScore);
+	}
 }
