@@ -115,6 +115,9 @@ protected:
 
 	UFUNCTION()
 	void OnRep_ShouldShowTeamScore();
+
+	FString GetWinnerText(const TArray<AEndlessBetrayalPlayerState*>& TopPlayers);
+	FString GetTeamMatchWinnerText(const class AEndlessBetrayalGameState* GameState);
 	
 private:
 

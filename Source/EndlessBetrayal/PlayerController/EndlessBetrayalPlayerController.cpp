@@ -8,7 +8,9 @@
 #include "Components/TextBlock.h"
 #include "EndlessBetrayal/Character/EndlessBetrayalCharacter.h"
 #include "EndlessBetrayal/EndlessBetrayalComponents/CombatComponent.h"
+#include "EndlessBetrayal/EndlessBetrayalTypes/Announcement.h"
 #include "EndlessBetrayal/GameMode/EndlessBetrayalGameMode.h"
+#include "EndlessBetrayal/GameMode/TeamsGameMode.h"
 #include "EndlessBetrayal/GameState/EndlessBetrayalGameState.h"
 #include "EndlessBetrayal/GameState/EndlessBetrayalPlayerState.h"
 #include "EndlessBetrayal/HUD/AnnouncementUserWidget.h"
@@ -100,6 +102,8 @@ void AEndlessBetrayalPlayerController::OnRep_ShouldShowTeamScore()
 		HideTeamScores();
 	}
 }
+
+
 
 void AEndlessBetrayalPlayerController::ClientEliminationAnnouncement_Implementation(AEndlessBetrayalPlayerState* Attacker, AEndlessBetrayalPlayerState* Victim)
 {
@@ -425,36 +429,16 @@ void AEndlessBetrayalPlayerController::HandleCooldown()
 		if(bIsHUDValid)
 		{
 			EndlessBetrayalHUD->AnnouncementWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
-			EndlessBetrayalHUD->AnnouncementWidget->AnnouncementText->SetText(FText::FromString("New Match Starts In :"));
-
-			FString InfoTextString;
-			AEndlessBetrayalGameState* EndlessBetrayalGameState = Cast<AEndlessBetrayalGameState>(UGameplayStatics::GetGameState(this));
-			AEndlessBetrayalPlayerState* EndlessBetrayalPlayerState = GetPlayerState<AEndlessBetrayalPlayerState>();
+			EndlessBetrayalHUD->AnnouncementWidget->AnnouncementText->SetText(FText::FromString(Announcements::NewMatchStartsIn));
+			
+			const AEndlessBetrayalGameState* EndlessBetrayalGameState = Cast<AEndlessBetrayalGameState>(UGameplayStatics::GetGameState(this));
+			const AEndlessBetrayalPlayerState* EndlessBetrayalPlayerState = GetPlayerState<AEndlessBetrayalPlayerState>();
 			if(IsValid(EndlessBetrayalGameState) && EndlessBetrayalPlayerState)
 			{
 				const TArray<AEndlessBetrayalPlayerState*>& TopPlayers = EndlessBetrayalGameState->TopScoringPlayers;
-				if(TopPlayers.IsEmpty())	//No winners
-				{
-					InfoTextString = FString("There is no winners");
-				}
-				else if ((TopPlayers.Num() == 1) && (TopPlayers[0] == EndlessBetrayalPlayerState) )
-				{
-					InfoTextString = FString("You are the winner!");
-				}
-				else if(TopPlayers.Num() == 1)
-				{
-					InfoTextString = FString::Printf(TEXT("Winner : \n %s"), *TopPlayers[0]->GetPlayerName());
-				}
-				else
-				{
-					InfoTextString = FString("Players tied for the win : \n");
-					for (const AEndlessBetrayalPlayerState* TiedPlayer : TopPlayers)
-					{
-						InfoTextString.Append(FString::Printf(TEXT("%s \n"), *TiedPlayer->GetPlayerName()));
-					}
-				}
+				const FString InfoTextString = bShouldShowTeamScore ? GetTeamMatchWinnerText(EndlessBetrayalGameState) : GetWinnerText(TopPlayers);
+				EndlessBetrayalHUD->AnnouncementWidget->InfoText->SetText(FText::FromString(InfoTextString));
 			}
-			EndlessBetrayalHUD->AnnouncementWidget->InfoText->SetText(FText::FromString(InfoTextString));
 		}
 	}
 
@@ -467,6 +451,76 @@ void AEndlessBetrayalPlayerController::HandleCooldown()
 		//If the player is already firing, it'll be stuck in firing, hence the following line
 		EndlessBetrayalCharacter->GetCombatComponent()->FireButtonPressed(false);
 	}
+}
+
+FString AEndlessBetrayalPlayerController::GetWinnerText(const TArray<AEndlessBetrayalPlayerState*>& TopPlayers)
+{
+	FString InfoTextString;
+	AEndlessBetrayalPlayerState* EndlessBetrayalPlayerState = GetPlayerState<AEndlessBetrayalPlayerState>();
+	if(!IsValid(EndlessBetrayalPlayerState)) return FString();
+
+	if(TopPlayers.IsEmpty())	//No winners
+	{
+		InfoTextString = Announcements::NoWinner;
+	}
+	else if ((TopPlayers.Num() == 1) && (TopPlayers[0] == EndlessBetrayalPlayerState) )
+	{
+		InfoTextString = Announcements::YouAreTheWinner;
+	}
+	else if(TopPlayers.Num() == 1)
+	{
+		InfoTextString = FString::Printf(TEXT("Winner : \n %s"), *TopPlayers[0]->GetPlayerName());
+	}
+	else
+	{
+		InfoTextString = Announcements::PlayerTiedForTheWin;
+		for (const AEndlessBetrayalPlayerState* TiedPlayer : TopPlayers)
+		{
+			InfoTextString.Append(FString::Printf(TEXT("%s \n"), *TiedPlayer->GetPlayerName()));
+		}
+	}
+
+	return InfoTextString;
+}
+
+FString AEndlessBetrayalPlayerController::GetTeamMatchWinnerText(const AEndlessBetrayalGameState* GameState)
+{
+	if(!IsValid(GameState)) return FString();
+	FString InfoTextString = Announcements::NoWinningTeam;
+
+	const int32 RedTeamScore = GameState->RedTeamScore;
+	const int32 BlueTeamScore = GameState->BlueTeamScore;
+
+	const ATeamsGameMode* const TeamMatchGameMode = Cast<ATeamsGameMode>(GameState->GetDefaultGameMode());
+	
+	if(IsValid(TeamMatchGameMode))
+	{
+		if(GameState->BlueTeamScore > GameState->RedTeamScore)
+		{
+			InfoTextString = Announcements::BlueTeamWin;
+			InfoTextString.Append(TEXT("\n"));
+			InfoTextString.Append(FString::Printf(TEXT("%s: %d \n"), *Announcements::BlueTeam, BlueTeamScore));
+			InfoTextString.Append(FString::Printf(TEXT("%s: %d \n"), *Announcements::RedTeam, RedTeamScore));
+		}
+		if(GameState->BlueTeamScore < GameState->RedTeamScore)
+		{
+			InfoTextString = Announcements::RedTeamWin;
+			
+			InfoTextString.Append(TEXT("\n"));
+			
+			InfoTextString.Append(FString::Printf(TEXT("%s: %d \n"), *Announcements::RedTeam, RedTeamScore));
+			InfoTextString.Append(FString::Printf(TEXT("%s: %d \n"), *Announcements::BlueTeam, BlueTeamScore));
+		}
+		if(GameState->BlueTeamScore == GameState->RedTeamScore)
+		{
+			InfoTextString = Announcements::TeamTiedForTheWin;
+			InfoTextString.Append(Announcements::BlueTeam);
+			InfoTextString.Append(TEXT("\n"));
+			InfoTextString.Append(Announcements::RedTeam);
+		}
+	}
+	
+	return InfoTextString;
 }
 
 void AEndlessBetrayalPlayerController::CheckPing(float DeltaSeconds)
