@@ -49,6 +49,7 @@ public:
 	virtual FVector GetTraceEndWithScatter(const FVector& HitTarget);
 
 	FORCEINLINE float GetDamage() const { return Damage; }
+	FORCEINLINE float GetHeadShotDamage() const { return HeadShotDamage; }
 
 	//Enable / Disable Custom Depth
 	void ToggleCustomDepth(bool bEnable);
@@ -107,6 +108,9 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	float Damage = 20.0f;
+
+	UPROPERTY(EditAnywhere)
+	float HeadShotDamage = 40.0f;
 	
 	//The number of unprocessed server request for Ammo, incremented in spend round, decremented in Client Update Ammo
 	int32 SequenceNumber = 0;

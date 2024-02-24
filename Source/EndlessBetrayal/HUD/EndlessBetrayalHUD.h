@@ -57,6 +57,9 @@ public:
 	void AddCharacterOverlay();
 	void AddAnnouncementWidget();
 	void HideKillDeathMessages();
+
+	void AddEliminationAnnouncement(FString Attacker, FString Victim);
+	
 protected:
 
 	virtual void BeginPlay() override;
@@ -69,5 +72,16 @@ private:
 	float CrosshairSpreadMax = 10.0f;
 	
 	FHUDTextures HUDTextures;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UEliminationAnnouncementWidget> EliminationAnnouncementClass;
+
+	UPROPERTY(EditAnywhere)
+	float EliminationAnnouncementLifeTime  = 2.5f;
+
+	UPROPERTY()
+	TArray<UEliminationAnnouncementWidget*> EliminationMessages;
 	
+	UFUNCTION()
+	void EliminationAnnouncementTimerFinished(UEliminationAnnouncementWidget* MsgToRemove);
 };

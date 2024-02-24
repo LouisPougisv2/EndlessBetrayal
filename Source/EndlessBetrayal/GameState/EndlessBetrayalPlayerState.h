@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "EndlessBetrayal/EndlessBetrayalTypes/Team.h"
 #include "GameFramework/PlayerState.h"
 #include "EndlessBetrayalPlayerState.generated.h"
 
@@ -26,6 +27,9 @@ public:
 	void AddToScore(float NewScore);
 	void AddToKills(float NewKill);
 
+	FORCEINLINE ETeam GetTeam() const { return Team; }
+	void SetTeam(ETeam InTeam);
+
 private:
 
 	UPROPERTY()
@@ -36,4 +40,7 @@ private:
 
 	UPROPERTY(ReplicatedUsing=OnRep_Deaths)
 	int32 DeathsCount;
+
+	UPROPERTY(Replicated)
+	ETeam Team = ETeam::ET_NoTeam;
 };

@@ -19,6 +19,7 @@ public:
 
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	virtual void PawnLeavingGame() override;
 	
 	void UpdateHealthHUD(float NewHealth, float MaxHealth);
 	void UpdateShieldHUD(float NewShieldValue, float MaxShield);
@@ -30,12 +31,25 @@ public:
 	void UpdateWeaponAmmo(int32 NewAmmo);
 	void UpdateWeaponCarriedAmmo(int32 NewAmmo);
 	void UpdateGrenadesAmmo(int32 Grenades);
+
+	/**
+	* Team Scores
+	*/
+	
+	void InitHUDTeamScores();
+	void HideTeamScores();
+	void UpdateHUDRedTeamScore(int32 NewScore);
+	void UpdateHUDBlueTeamScore(int32 NewScore);
+	
+	/**
+	* EndTeam Scores
+	*/
 	
 	//Sync with Server clock as soon as possible
 	virtual void ReceivedPlayer() override;
 
 	//Only happening on the server
-	void OnMatchStateSet(FName NewMatchState);
+	void OnMatchStateSet(FName NewMatchState, bool bIsTeamMatch = false);
 	
 	//synced with Server world clock 
 	virtual float GetServerTime();
@@ -44,14 +58,18 @@ public:
 	float SingleTripTime = 0.0f;
 
 	FHighPingDelegate HighPingDelegate;
+
+	void BroadCastElimination(class AEndlessBetrayalPlayerState* Attacker, AEndlessBetrayalPlayerState* Victim);
+	
 protected:
 
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
+	void SetupInputComponent() override;
 	void CheckTimeSync(float DeltaSeconds);
 	void SetHUDTime();
-	void HandleMatchStates();
-	void HandleMatchHasStarted();
+	void HandleMatchStates(bool bIsTeamMatch = false);
+	void HandleMatchHasStarted(bool bIsTeamMatch = false);
 	void HandleCooldown();
 	void CheckPing(float DeltaSeconds);
 
@@ -84,6 +102,22 @@ protected:
 
 	UPROPERTY()
 	float TimeSyncRunningTime = 0.0f;
+
+	//Return To Main Menu
+	UFUNCTION()
+	void ShowReturnToMainMenu();
+
+	UFUNCTION(Client, Reliable)
+	void ClientEliminationAnnouncement(AEndlessBetrayalPlayerState* Attacker, AEndlessBetrayalPlayerState* Victim);
+
+	UPROPERTY(ReplicatedUsing = OnRep_ShouldShowTeamScore)
+	bool bShouldShowTeamScore = false;
+
+	UFUNCTION()
+	void OnRep_ShouldShowTeamScore();
+
+	FString GetWinnerText(const TArray<AEndlessBetrayalPlayerState*>& TopPlayers);
+	FString GetTeamMatchWinnerText(const class AEndlessBetrayalGameState* GameState);
 	
 private:
 
@@ -144,4 +178,13 @@ private:
 
 	UFUNCTION(Server, Reliable)
 	void ServerReportPingStatus(bool bHighPing);
+
+	//Return to Main Menu
+	UPROPERTY(EditAnywhere, Category = "HUD")
+	TSubclassOf<class UUserWidget> ReturnToMainMenuWidget;
+
+	UPROPERTY()
+	class UReturnToMainMenu* ReturnToMainMenu;
+
+	bool bIsReturnToMainMenuOpened = false;
 };

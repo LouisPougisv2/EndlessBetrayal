@@ -5,10 +5,13 @@
 #include "CoreMinimal.h"
 #include "Components/TimelineComponent.h"
 #include "EndlessBetrayal/EndlessBetrayalTypes/CombatState.h"
+#include "EndlessBetrayal/EndlessBetrayalTypes/Team.h"
 #include "GameFramework/Character.h"
 #include "EndlessBetrayal/EndlessBetrayalTypes/TurningInPlace.h"
 #include "EndlessBetrayal/Interface/InteractWithCrosshairInterface.h"
 #include "EndlessBetrayalCharacter.generated.h"
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnPlayerLeftGame);
 
 UCLASS()
 class ENDLESSBETRAYAL_API AEndlessBetrayalCharacter : public ACharacter, public IInteractWithCrosshairInterface
@@ -28,6 +31,17 @@ public:
 	void UpdateHealthHUD();
 	void UpdateShieldHUD();
 
+	FOnPlayerLeftGame OnPlayerLeftGameDelegate;
+	
+	UFUNCTION(Server, Reliable)
+	void ServerLeaveGame();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlayerGainedTheLead();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastPlayerLostTheLead();
+
 	/**
 	 * Play Montages
 	 */
@@ -38,13 +52,16 @@ public:
 	void PlaySwapWeaponMontage();
 
 	//Reserved for functionalities that'll happen only on the server
-	void OnPlayerEliminated();
+	void OnPlayerEliminated(bool bPlayerHasLeftGame);
 	
 	UFUNCTION(NetMulticast, Reliable)
-	void MulticastOnPlayerEliminated();
+	void MulticastOnPlayerEliminated(bool bPlayerHasLeftGame);
 
 	UFUNCTION(BlueprintImplementableEvent)
 	void ShowSniperScopeWidget(bool bShouldShowScope);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void SetTeamColor(ETeam InTeam);
 
 	/*
 	 * Hit boxes used for Server-side rewinds
@@ -258,6 +275,8 @@ private:
 	UFUNCTION()
 	void OnPlayerEliminatedCallBack();
 
+	bool bHasLeftGame = false;
+	
 	/**
 	*	Dissolve Effect
 	*/
@@ -275,7 +294,7 @@ private:
 	UMaterialInstanceDynamic* DynamicDissolveMaterialInstance;
 
 	//Material Instance set on the BP used with the Dynamic Material Instance
-	UPROPERTY(EditAnywhere, Category = "Elimination")
+	UPROPERTY(VisibleAnywhere, Category = "Elimination")
 	UMaterialInstance* DissolveMaterialInstance;
 	//Every TimelineComponent needs a callback called every frame as we're updating the timeline
 	UFUNCTION()	//Allows to be bound
@@ -283,7 +302,29 @@ private:
 	void StartDissolve();
 
 	/**
-	*	Elimination Bot
+	*	Team Colors
+	**/
+
+	UPROPERTY(EditAnywhere, Category = "Elimination")
+	UMaterialInstance* RedMaterial;
+	
+	UPROPERTY(EditAnywhere, Category = "Elimination")
+	UMaterialInstance* RedDissolveMaterialInstance;
+
+	UPROPERTY(EditAnywhere, Category = "Elimination")
+	UMaterialInstance* BlueMaterial;
+	
+	UPROPERTY(EditAnywhere, Category = "Elimination")
+	UMaterialInstance* BlueDissolveMaterialInstance;
+
+	UPROPERTY(EditAnywhere, Category = "Elimination")
+	UMaterialInstance* OriginalMaterial;
+
+	UPROPERTY(EditAnywhere, Category = "Elimination")
+	UMaterialInstance* OriginalDissolveMaterialInstance;
+	
+	/**
+	*	Elimination Effect
 	**/
 
 	UPROPERTY(EditAnywhere)
@@ -300,6 +341,12 @@ private:
 
 	UPROPERTY()
 	class AEndlessBetrayalPlayerController* EndlessBetrayalPlayerController;
+	
+	UPROPERTY(EditAnywhere)
+	class UNiagaraSystem* CrownEffect;
+	
+	UPROPERTY()
+	class UNiagaraComponent* CrownComponent;
 	
 	/**
 	*	Grenade
@@ -331,6 +378,7 @@ public:
 
 	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; }
 	FORCEINLINE bool IsEliminated() const { return bIsEliminated; }
+	FORCEINLINE bool HasLeftGame() const { return bHasLeftGame; }
 	FVector GetHitTarget();
 	
 	ECombatState GetCombatState() const;

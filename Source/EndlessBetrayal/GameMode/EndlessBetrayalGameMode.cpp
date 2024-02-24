@@ -60,18 +60,60 @@ void AEndlessBetrayalGameMode::OnPlayerEliminated(AEndlessBetrayalCharacter* Eli
 	AEndlessBetrayalPlayerState* AttackerPlayerState = Cast<AEndlessBetrayalPlayerState>(AttackerController->PlayerState);
 	AEndlessBetrayalPlayerState* VictimPlayerState = Cast<AEndlessBetrayalPlayerState>(VictimController->PlayerState);
 
+	if(!IsValid(AttackerPlayerState) || !IsValid(VictimPlayerState)) return;
+
 	AEndlessBetrayalGameState* EndlessBetrayalGameState = GetGameState<AEndlessBetrayalGameState>();
 	if(AttackerPlayerState && AttackerPlayerState != VictimPlayerState && EndlessBetrayalGameState)
 	{
+		TArray<AEndlessBetrayalPlayerState*> PlayersCurrentlyInTheLead;
+		for (AEndlessBetrayalPlayerState* TopScoringPlayer : EndlessBetrayalGameState->TopScoringPlayers)
+		{
+			PlayersCurrentlyInTheLead.Add(TopScoringPlayer);
+		}
+		
 		AttackerPlayerState->AddToScore(1.0f);
 		EndlessBetrayalGameState->UpdateTopScore(AttackerPlayerState);
+
+		//Grant the crown to the attacker player if in the Top Score Players
+		if(EndlessBetrayalGameState->TopScoringPlayers.Contains(AttackerPlayerState))
+		{
+			AEndlessBetrayalCharacter* AttackerCharacter = Cast<AEndlessBetrayalCharacter>(AttackerPlayerState->GetPawn());
+			if(IsValid(AttackerCharacter))
+			{
+				AttackerCharacter->MulticastPlayerGainedTheLead();
+			}
+		}
+		
+		for(int32 i = 0; i < PlayersCurrentlyInTheLead.Num(); ++i)
+		{
+			//The player isn't in the top scorers anymore -> remove the crown
+			//Note, after line 73 (UpdateToScore call), the TOpScoring players array may have changed
+			if(!EndlessBetrayalGameState->TopScoringPlayers.Contains(PlayersCurrentlyInTheLead[i]))
+			{
+				AEndlessBetrayalCharacter* LoserCharacter = Cast<AEndlessBetrayalCharacter>(PlayersCurrentlyInTheLead[i]->GetPawn());
+				if(IsValid(LoserCharacter))
+				{
+					LoserCharacter->MulticastPlayerLostTheLead();
+				}
+			}
+		}
 	}
 	
 	if(VictimPlayerState)
 	{
 		VictimPlayerState->AddToKills(1);
 	}
-	EliminatedCharacter->OnPlayerEliminated();
+	EliminatedCharacter->OnPlayerEliminated(false);
+
+	//Elimination message broadcast
+	for(FConstPlayerControllerIterator PCIterator = GetWorld()->GetPlayerControllerIterator(); PCIterator; ++PCIterator)
+	{
+		AEndlessBetrayalPlayerController* EliminatedPlayerController = Cast<AEndlessBetrayalPlayerController>(*PCIterator);
+		if(IsValid(EliminatedPlayerController))
+		{
+			EliminatedPlayerController->BroadCastElimination(AttackerPlayerState, VictimPlayerState);
+		}
+	}
 }
 
 void AEndlessBetrayalGameMode::RequestRespawn(AEndlessBetrayalCharacter* EliminatedCharacter, AEndlessBetrayalPlayerController* EliminatedController)
@@ -91,6 +133,41 @@ void AEndlessBetrayalGameMode::RequestRespawn(AEndlessBetrayalCharacter* Elimina
 	}
 }
 
+void AEndlessBetrayalGameMode::Logout(AController* Exiting)
+{
+	AEndlessBetrayalPlayerState* ExitingPlayerState = Cast<AEndlessBetrayalPlayerState>(Exiting->PlayerState);
+	AEndlessBetrayalGameState* EndlessBetrayalGameState = GetGameState<AEndlessBetrayalGameState>();
+	if(IsValid(ExitingPlayerState) && IsValid(EndlessBetrayalGameState) && EndlessBetrayalGameState->TopScoringPlayers.Contains(ExitingPlayerState))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Logout overrriden function in AEndlessBetrayalGameMode"));
+		EndlessBetrayalGameState->TopScoringPlayers.Remove(ExitingPlayerState);
+	}
+	
+	Super::Logout(Exiting);
+}
+
+void AEndlessBetrayalGameMode::OnPlayerLeftGame(AEndlessBetrayalPlayerState* PlayerLeavingTheGame)
+{
+	if(!IsValid(PlayerLeavingTheGame)) return;
+	
+	AEndlessBetrayalGameState* EndlessBetrayalGameState = GetGameState<AEndlessBetrayalGameState>();
+	if(IsValid(EndlessBetrayalGameState) && EndlessBetrayalGameState->TopScoringPlayers.Contains(PlayerLeavingTheGame))
+	{
+		EndlessBetrayalGameState->TopScoringPlayers.Remove(PlayerLeavingTheGame);
+	}
+
+	AEndlessBetrayalCharacter* PlayerCharacter = Cast<AEndlessBetrayalCharacter>(PlayerLeavingTheGame->GetPawn());
+	if(IsValid(PlayerCharacter))
+	{
+		PlayerCharacter->OnPlayerEliminated(true);
+	}
+}
+
+float AEndlessBetrayalGameMode::CalculateDamage(AController* AttackerController, AController* VictimController, float Damages)
+{
+	return Damages;
+}
+
 void AEndlessBetrayalGameMode::BeginPlay()
 {
 	Super::BeginPlay();
@@ -107,7 +184,7 @@ void AEndlessBetrayalGameMode::OnMatchStateSet()
 		AEndlessBetrayalPlayerController* EndlessBetrayalPlayerController = Cast<AEndlessBetrayalPlayerController>(*It);
 		if(IsValid(EndlessBetrayalPlayerController))
 		{
-			EndlessBetrayalPlayerController->OnMatchStateSet(MatchState);
+			EndlessBetrayalPlayerController->OnMatchStateSet(MatchState, bIsTeamsMatch);
 		}
 	}
 }

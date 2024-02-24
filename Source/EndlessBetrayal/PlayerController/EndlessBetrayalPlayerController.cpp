@@ -8,12 +8,15 @@
 #include "Components/TextBlock.h"
 #include "EndlessBetrayal/Character/EndlessBetrayalCharacter.h"
 #include "EndlessBetrayal/EndlessBetrayalComponents/CombatComponent.h"
+#include "EndlessBetrayal/EndlessBetrayalTypes/Announcement.h"
 #include "EndlessBetrayal/GameMode/EndlessBetrayalGameMode.h"
+#include "EndlessBetrayal/GameMode/TeamsGameMode.h"
 #include "EndlessBetrayal/GameState/EndlessBetrayalGameState.h"
 #include "EndlessBetrayal/GameState/EndlessBetrayalPlayerState.h"
 #include "EndlessBetrayal/HUD/AnnouncementUserWidget.h"
 #include "EndlessBetrayal/HUD/CharacterOverlay.h"
 #include "EndlessBetrayal/HUD/EndlessBetrayalHUD.h"
+#include "EndlessBetrayal/HUD/ReturnToMainMenu.h"
 #include "GameFramework/GameMode.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
@@ -42,6 +45,97 @@ void AEndlessBetrayalPlayerController::GetLifetimeReplicatedProps(TArray<FLifeti
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AEndlessBetrayalPlayerController, MatchState);
+	DOREPLIFETIME(AEndlessBetrayalPlayerController, bShouldShowTeamScore);
+}
+
+void AEndlessBetrayalPlayerController::PawnLeavingGame()
+{
+	AEndlessBetrayalCharacter* EndlessBetrayal = Cast<AEndlessBetrayalCharacter>(GetPawn());
+	if(IsValid(EndlessBetrayal) && !EndlessBetrayal->HasLeftGame())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("PawnLeavingGame from overriden function on AEndlessBetrayalPlayerController"));
+		EndlessBetrayal->OnPlayerEliminated(true);
+	}
+	Super::PawnLeavingGame();
+}
+
+void AEndlessBetrayalPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+
+	if(IsValid(InputComponent))
+	{
+		InputComponent->BindAction("Quit", IE_Pressed, this, &AEndlessBetrayalPlayerController::ShowReturnToMainMenu);
+	}
+}
+
+void AEndlessBetrayalPlayerController::ShowReturnToMainMenu()
+{
+	if(!IsValid(ReturnToMainMenuWidget)) return;
+
+	if(!ReturnToMainMenu)
+	{
+		ReturnToMainMenu = CreateWidget<UReturnToMainMenu>(this, ReturnToMainMenuWidget);
+	}
+	if(ReturnToMainMenu)
+	{
+		bIsReturnToMainMenuOpened = !bIsReturnToMainMenuOpened;
+		if(bIsReturnToMainMenuOpened)
+		{
+			ReturnToMainMenu->MenuSetUp();
+		}
+		else
+		{
+			ReturnToMainMenu->MenuTearDown();
+		}
+	}
+}
+
+void AEndlessBetrayalPlayerController::OnRep_ShouldShowTeamScore()
+{
+	if(bShouldShowTeamScore)
+	{
+		InitHUDTeamScores();
+	}
+	else
+	{
+		HideTeamScores();
+	}
+}
+
+
+
+void AEndlessBetrayalPlayerController::ClientEliminationAnnouncement_Implementation(AEndlessBetrayalPlayerState* Attacker, AEndlessBetrayalPlayerState* Victim)
+{
+	const AEndlessBetrayalPlayerState* SelfPlayerState = GetPlayerState<AEndlessBetrayalPlayerState>();
+	if(IsValid(SelfPlayerState) && IsValid(Attacker) && IsValid(Victim))
+	{
+		EndlessBetrayalHUD = !IsValid(EndlessBetrayalHUD) ? EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD()) : EndlessBetrayalHUD;
+
+		if(EndlessBetrayalHUD)
+		{
+			FString AttackerName = SelfPlayerState == Attacker ? "You" : Attacker->GetPlayerName();
+			FString VictimName = SelfPlayerState == Victim ? "You" : Victim->GetPlayerName();
+
+			if(Attacker == SelfPlayerState && Attacker == Victim)
+			{
+				AttackerName = "You";
+				VictimName = "yourself"; 
+			}
+
+			if(Attacker != SelfPlayerState && Attacker == Victim)
+			{
+				VictimName = "themselves"; 
+			}
+
+			EndlessBetrayalHUD->AddEliminationAnnouncement(AttackerName, VictimName);
+		}
+	}
+}
+
+void AEndlessBetrayalPlayerController::BroadCastElimination(AEndlessBetrayalPlayerState* Attacker, AEndlessBetrayalPlayerState* Victim)
+{
+	ClientEliminationAnnouncement(Attacker, Victim);
 }
 
 void AEndlessBetrayalPlayerController::OnPossess(APawn* InPawn)
@@ -272,6 +366,58 @@ void AEndlessBetrayalPlayerController::UpdateGrenadesAmmo(int32 Grenades)
 	}
 }
 
+void AEndlessBetrayalPlayerController::InitHUDTeamScores()
+{
+	EndlessBetrayalHUD = !IsValid(EndlessBetrayalHUD) ? EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD()) : EndlessBetrayalHUD;
+	
+	const bool bIsHUDValid = IsValid(EndlessBetrayalHUD) && IsValid(EndlessBetrayalHUD->CharacterOverlay) && IsValid(EndlessBetrayalHUD->CharacterOverlay->BlueTeamScore) && IsValid(EndlessBetrayalHUD->CharacterOverlay->RedTeamScore) && IsValid(EndlessBetrayalHUD->CharacterOverlay->TeamScoreSlash);
+	if(bIsHUDValid)
+	{
+		const FString Zero("0");
+		const FString Spacer("|");
+		EndlessBetrayalHUD->CharacterOverlay->BlueTeamScore->SetText(FText::FromString(Zero));
+		EndlessBetrayalHUD->CharacterOverlay->RedTeamScore->SetText(FText::FromString(Zero));
+		EndlessBetrayalHUD->CharacterOverlay->TeamScoreSlash->SetText(FText::FromString(Spacer));
+	}
+}
+
+void AEndlessBetrayalPlayerController::HideTeamScores()
+{
+	EndlessBetrayalHUD = !IsValid(EndlessBetrayalHUD) ? EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD()) : EndlessBetrayalHUD;
+	
+	const bool bIsHUDValid = IsValid(EndlessBetrayalHUD) && IsValid(EndlessBetrayalHUD->CharacterOverlay) && IsValid(EndlessBetrayalHUD->CharacterOverlay->BlueTeamScore) && IsValid(EndlessBetrayalHUD->CharacterOverlay->RedTeamScore) && IsValid(EndlessBetrayalHUD->CharacterOverlay->TeamScoreSlash);
+	if(bIsHUDValid)
+	{
+		EndlessBetrayalHUD->CharacterOverlay->BlueTeamScore->SetText(FText());
+		EndlessBetrayalHUD->CharacterOverlay->RedTeamScore->SetText(FText());
+		EndlessBetrayalHUD->CharacterOverlay->TeamScoreSlash->SetText(FText());
+	}
+}
+
+void AEndlessBetrayalPlayerController::UpdateHUDRedTeamScore(int32 NewScore)
+{
+	EndlessBetrayalHUD = !IsValid(EndlessBetrayalHUD) ? EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD()) : EndlessBetrayalHUD;
+	
+	const bool bIsHUDValid = IsValid(EndlessBetrayalHUD) && IsValid(EndlessBetrayalHUD->CharacterOverlay) && IsValid(EndlessBetrayalHUD->CharacterOverlay->RedTeamScore);
+	if(bIsHUDValid)
+	{
+		const FString ScoreText = FString::Printf(TEXT("%d"), NewScore);
+		EndlessBetrayalHUD->CharacterOverlay->RedTeamScore->SetText(FText::FromString(ScoreText));
+	}
+}
+
+void AEndlessBetrayalPlayerController::UpdateHUDBlueTeamScore(int32 NewScore)
+{
+	EndlessBetrayalHUD = !IsValid(EndlessBetrayalHUD) ? EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD()) : EndlessBetrayalHUD;
+	
+	const bool bIsHUDValid = IsValid(EndlessBetrayalHUD) && IsValid(EndlessBetrayalHUD->CharacterOverlay) && IsValid(EndlessBetrayalHUD->CharacterOverlay->BlueTeamScore);
+	if(bIsHUDValid)
+	{
+		const FString ScoreText = FString::Printf(TEXT("%d"), NewScore);
+		EndlessBetrayalHUD->CharacterOverlay->BlueTeamScore->SetText(FText::FromString(ScoreText));
+	}
+}
+
 void AEndlessBetrayalPlayerController::HandleCooldown()
 {
 	EndlessBetrayalHUD = !IsValid(EndlessBetrayalHUD) ? EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD()) : EndlessBetrayalHUD; 
@@ -283,36 +429,16 @@ void AEndlessBetrayalPlayerController::HandleCooldown()
 		if(bIsHUDValid)
 		{
 			EndlessBetrayalHUD->AnnouncementWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
-			EndlessBetrayalHUD->AnnouncementWidget->AnnouncementText->SetText(FText::FromString("New Match Starts In :"));
-
-			FString InfoTextString;
-			AEndlessBetrayalGameState* EndlessBetrayalGameState = Cast<AEndlessBetrayalGameState>(UGameplayStatics::GetGameState(this));
-			AEndlessBetrayalPlayerState* EndlessBetrayalPlayerState = GetPlayerState<AEndlessBetrayalPlayerState>();
+			EndlessBetrayalHUD->AnnouncementWidget->AnnouncementText->SetText(FText::FromString(Announcements::NewMatchStartsIn));
+			
+			const AEndlessBetrayalGameState* EndlessBetrayalGameState = Cast<AEndlessBetrayalGameState>(UGameplayStatics::GetGameState(this));
+			const AEndlessBetrayalPlayerState* EndlessBetrayalPlayerState = GetPlayerState<AEndlessBetrayalPlayerState>();
 			if(IsValid(EndlessBetrayalGameState) && EndlessBetrayalPlayerState)
 			{
 				const TArray<AEndlessBetrayalPlayerState*>& TopPlayers = EndlessBetrayalGameState->TopScoringPlayers;
-				if(TopPlayers.IsEmpty())	//No winners
-				{
-					InfoTextString = FString("There is no winners");
-				}
-				else if ((TopPlayers.Num() == 1) && (TopPlayers[0] == EndlessBetrayalPlayerState) )
-				{
-					InfoTextString = FString("You are the winner!");
-				}
-				else if(TopPlayers.Num() == 1)
-				{
-					InfoTextString = FString::Printf(TEXT("Winner : \n %s"), *TopPlayers[0]->GetPlayerName());
-				}
-				else
-				{
-					InfoTextString = FString("Players tied for the win : \n");
-					for (const AEndlessBetrayalPlayerState* TiedPlayer : TopPlayers)
-					{
-						InfoTextString.Append(FString::Printf(TEXT("%s \n"), *TiedPlayer->GetPlayerName()));
-					}
-				}
+				const FString InfoTextString = bShouldShowTeamScore ? GetTeamMatchWinnerText(EndlessBetrayalGameState) : GetWinnerText(TopPlayers);
+				EndlessBetrayalHUD->AnnouncementWidget->InfoText->SetText(FText::FromString(InfoTextString));
 			}
-			EndlessBetrayalHUD->AnnouncementWidget->InfoText->SetText(FText::FromString(InfoTextString));
 		}
 	}
 
@@ -325,6 +451,76 @@ void AEndlessBetrayalPlayerController::HandleCooldown()
 		//If the player is already firing, it'll be stuck in firing, hence the following line
 		EndlessBetrayalCharacter->GetCombatComponent()->FireButtonPressed(false);
 	}
+}
+
+FString AEndlessBetrayalPlayerController::GetWinnerText(const TArray<AEndlessBetrayalPlayerState*>& TopPlayers)
+{
+	FString InfoTextString;
+	AEndlessBetrayalPlayerState* EndlessBetrayalPlayerState = GetPlayerState<AEndlessBetrayalPlayerState>();
+	if(!IsValid(EndlessBetrayalPlayerState)) return FString();
+
+	if(TopPlayers.IsEmpty())	//No winners
+	{
+		InfoTextString = Announcements::NoWinner;
+	}
+	else if ((TopPlayers.Num() == 1) && (TopPlayers[0] == EndlessBetrayalPlayerState) )
+	{
+		InfoTextString = Announcements::YouAreTheWinner;
+	}
+	else if(TopPlayers.Num() == 1)
+	{
+		InfoTextString = FString::Printf(TEXT("Winner : \n %s"), *TopPlayers[0]->GetPlayerName());
+	}
+	else
+	{
+		InfoTextString = Announcements::PlayerTiedForTheWin;
+		for (const AEndlessBetrayalPlayerState* TiedPlayer : TopPlayers)
+		{
+			InfoTextString.Append(FString::Printf(TEXT("%s \n"), *TiedPlayer->GetPlayerName()));
+		}
+	}
+
+	return InfoTextString;
+}
+
+FString AEndlessBetrayalPlayerController::GetTeamMatchWinnerText(const AEndlessBetrayalGameState* GameState)
+{
+	if(!IsValid(GameState)) return FString();
+	FString InfoTextString = Announcements::NoWinningTeam;
+
+	const int32 RedTeamScore = GameState->RedTeamScore;
+	const int32 BlueTeamScore = GameState->BlueTeamScore;
+
+	const ATeamsGameMode* const TeamMatchGameMode = Cast<ATeamsGameMode>(GameState->GetDefaultGameMode());
+	
+	if(IsValid(TeamMatchGameMode))
+	{
+		if(GameState->BlueTeamScore > GameState->RedTeamScore)
+		{
+			InfoTextString = Announcements::BlueTeamWin;
+			InfoTextString.Append(TEXT("\n"));
+			InfoTextString.Append(FString::Printf(TEXT("%s: %d \n"), *Announcements::BlueTeam, BlueTeamScore));
+			InfoTextString.Append(FString::Printf(TEXT("%s: %d \n"), *Announcements::RedTeam, RedTeamScore));
+		}
+		if(GameState->BlueTeamScore < GameState->RedTeamScore)
+		{
+			InfoTextString = Announcements::RedTeamWin;
+			
+			InfoTextString.Append(TEXT("\n"));
+			
+			InfoTextString.Append(FString::Printf(TEXT("%s: %d \n"), *Announcements::RedTeam, RedTeamScore));
+			InfoTextString.Append(FString::Printf(TEXT("%s: %d \n"), *Announcements::BlueTeam, BlueTeamScore));
+		}
+		if(GameState->BlueTeamScore == GameState->RedTeamScore)
+		{
+			InfoTextString = Announcements::TeamTiedForTheWin;
+			InfoTextString.Append(Announcements::BlueTeam);
+			InfoTextString.Append(TEXT("\n"));
+			InfoTextString.Append(Announcements::RedTeam);
+		}
+	}
+	
+	return InfoTextString;
 }
 
 void AEndlessBetrayalPlayerController::CheckPing(float DeltaSeconds)
@@ -405,8 +601,13 @@ void AEndlessBetrayalPlayerController::ReceivedPlayer()
 	}
 }
 
-void AEndlessBetrayalPlayerController::HandleMatchHasStarted()
+void AEndlessBetrayalPlayerController::HandleMatchHasStarted(bool bIsTeamMatch)
 {
+	if(HasAuthority())
+	{
+		bShouldShowTeamScore = bIsTeamMatch;
+	}
+
 	EndlessBetrayalHUD = !IsValid(EndlessBetrayalHUD) ? EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD()) : EndlessBetrayalHUD;
 	if(IsValid(EndlessBetrayalHUD))
 	{
@@ -415,6 +616,16 @@ void AEndlessBetrayalPlayerController::HandleMatchHasStarted()
 		if(IsValid(EndlessBetrayalHUD->AnnouncementWidget))
 		{
 			EndlessBetrayalHUD->AnnouncementWidget->SetVisibility(ESlateVisibility::Hidden);
+		}
+
+		if(!HasAuthority()) return;
+		if(bIsTeamMatch)
+		{
+			InitHUDTeamScores();
+		}
+		else
+		{
+			HideTeamScores();
 		}
 	}
 }
@@ -428,7 +639,7 @@ void AEndlessBetrayalPlayerController::ClientJoinMidGame_Implementation(const fl
 	MatchState = InMatchState;
 
 	//Making sure that any update that needs to happen after the MatchState is set actually happens
-	OnMatchStateSet(MatchState);
+	OnMatchStateSet(MatchState, bShouldShowTeamScore);
 
 	EndlessBetrayalHUD = Cast<AEndlessBetrayalHUD>(GetHUD());
 	if(IsValid(EndlessBetrayalHUD))
@@ -451,11 +662,11 @@ void AEndlessBetrayalPlayerController::ServerCheckMatchState_Implementation()
 	}
 }
 
-void AEndlessBetrayalPlayerController::OnMatchStateSet(FName NewMatchState)
+void AEndlessBetrayalPlayerController::OnMatchStateSet(FName NewMatchState, bool bIsTeamMatch)
 {
 	MatchState = NewMatchState;
 	
-	HandleMatchStates();
+	HandleMatchStates(bIsTeamMatch);
 }
 
 
@@ -511,11 +722,11 @@ void AEndlessBetrayalPlayerController::SetHUDTime()
 	CountDownInt = SecondsLeft;
 }
 
-void AEndlessBetrayalPlayerController::HandleMatchStates()
+void AEndlessBetrayalPlayerController::HandleMatchStates(bool bIsTeamMatch)
 {
 	if(MatchState == MatchState::InProgress)
 	{
-		HandleMatchHasStarted();
+		HandleMatchHasStarted(bIsTeamMatch);
 	}
 	else if(MatchState == MatchState::Cooldown)
 	{
@@ -544,6 +755,15 @@ void AEndlessBetrayalPlayerController::PollInit()
 				{
 					UpdateGrenadesAmmo(EndlessBetrayalCharacter->GetCombatComponent()->GetGrenadesAmount());
 				}
+			}
+			
+			if (bShouldShowTeamScore)
+			{
+				InitHUDTeamScores();
+			}
+			else
+			{
+				HideTeamScores();
 			}
 		}
 	}

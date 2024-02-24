@@ -109,9 +109,6 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void FinishSwap();
-
-	UFUNCTION(BlueprintCallable)
-	void FinishSwapAttachWeapon();
 	
 	void TraceUnderCrosshair(FHitResult& HitResult);
 

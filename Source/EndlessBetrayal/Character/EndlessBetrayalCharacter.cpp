@@ -2,6 +2,9 @@
 
 
 #include "EndlessBetrayalCharacter.h"
+
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/BoxComponent.h"
@@ -200,6 +203,7 @@ void AEndlessBetrayalCharacter::PollInitialize()
 			{
 				EndlessBetrayalPlayerState->AddToScore(0.0f);
 				EndlessBetrayalPlayerState->AddToKills(0);
+				SetTeamColor(EndlessBetrayalPlayerState->GetTeam());
 			}
 
 			EndlessBetrayalPlayerController->HideMessagesOnScreenHUD();
@@ -324,10 +328,6 @@ void AEndlessBetrayalCharacter::Destroyed()
 	{
 		EliminationBotComponent->DestroyComponent();
 	}
-	if(CombatComponent && CombatComponent->EquippedWeapon)
-	{
-		CombatComponent->EquippedWeapon->OnWeaponDropped();
-	}
 	Super::Destroyed();
 }
 
@@ -355,6 +355,32 @@ void AEndlessBetrayalCharacter::UpdateHUDAmmo()
 	{
 		EndlessBetrayalPlayerController->UpdateWeaponAmmo(CombatComponent->EquippedWeapon->GetAmmo());
 		EndlessBetrayalPlayerController->UpdateWeaponCarriedAmmo(CombatComponent->CarriedAmmo);
+	}
+}
+
+void AEndlessBetrayalCharacter::MulticastPlayerGainedTheLead_Implementation()
+{
+	if(!CrownEffect) return;
+
+	//Creating the Niagara component if it doesn't exist
+	if(!CrownComponent)
+	{
+		CrownComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(CrownEffect, GetCapsuleComponent(), FName(),
+			GetActorLocation() + FVector(0.0f, 0.0f, 110.0f), GetActorRotation(), EAttachLocation::KeepWorldPosition, false);
+	}
+	
+	//Activating the Niagara system
+	if(CrownComponent)
+	{
+		CrownComponent->Activate();
+	}
+}
+
+void AEndlessBetrayalCharacter::MulticastPlayerLostTheLead_Implementation()
+{
+	if(CrownComponent)
+	{
+		CrownComponent->DestroyComponent();
 	}
 }
 
@@ -448,15 +474,40 @@ void AEndlessBetrayalCharacter::PlaySwapWeaponMontage()
 	}
 }
 
-void AEndlessBetrayalCharacter::OnPlayerEliminated()
+void AEndlessBetrayalCharacter::OnPlayerEliminated(bool bPlayerHasLeftGame)
 {
 	DropOrDestroyWeapons();
-	MulticastOnPlayerEliminated();
-	GetWorldTimerManager().SetTimer(OnPlayerEliminatedTimer, this, &AEndlessBetrayalCharacter::OnPlayerEliminatedCallBack, OnPlayerEliminatedDelayTime);
+	MulticastOnPlayerEliminated(bPlayerHasLeftGame);
 }
 
-void AEndlessBetrayalCharacter::MulticastOnPlayerEliminated_Implementation()
+void AEndlessBetrayalCharacter::SetTeamColor_Implementation(ETeam InTeam)
 {
+	if(!IsValid(GetMesh()) || !OriginalMaterial) return;
+	
+	switch (InTeam)
+	{
+		case ETeam::ET_NoTeam:
+			GetMesh()->SetMaterial(0, OriginalMaterial);
+			DissolveMaterialInstance = OriginalDissolveMaterialInstance;
+			break;
+		case ETeam::ET_BlueTeam:
+			GetMesh()->SetMaterial(0, BlueMaterial);
+			DissolveMaterialInstance = BlueDissolveMaterialInstance;
+			break;
+		case ETeam::ET_RedTeam:
+			GetMesh()->SetMaterial(0, RedMaterial);
+			DissolveMaterialInstance = RedDissolveMaterialInstance;
+			break;
+		
+		default:
+			break;
+	}
+}
+
+void AEndlessBetrayalCharacter::MulticastOnPlayerEliminated_Implementation(bool bPlayerHasLeftGame)
+{
+	bHasLeftGame = bPlayerHasLeftGame;
+	
 	if(IsValid(EndlessBetrayalPlayerController))
 	{
 		EndlessBetrayalPlayerController->UpdateWeaponAmmo(0);
@@ -508,15 +559,32 @@ void AEndlessBetrayalCharacter::MulticastOnPlayerEliminated_Implementation()
 
 		UGameplayStatics::PlaySoundAtLocation(this, EliminationBotSound, EliminationBotPoint);
 	}
+
+	//Move there so it is called in the client as well
+	GetWorldTimerManager().SetTimer(OnPlayerEliminatedTimer, this, &AEndlessBetrayalCharacter::OnPlayerEliminatedCallBack, OnPlayerEliminatedDelayTime);
 }
 
 void AEndlessBetrayalCharacter::OnPlayerEliminatedCallBack()
 {
 	//Respawn
 	AEndlessBetrayalGameMode* EndlessBetrayalGameMode = GetWorld()->GetAuthGameMode<AEndlessBetrayalGameMode>();
-	if(IsValid(EndlessBetrayalGameMode))
+	if(IsValid(EndlessBetrayalGameMode) && !bHasLeftGame)
 	{
 		EndlessBetrayalGameMode->RequestRespawn(this, EndlessBetrayalPlayerController );
+	}
+
+	if(bHasLeftGame && IsLocallyControlled())
+	{
+		OnPlayerLeftGameDelegate.Broadcast();
+	}
+}
+
+void AEndlessBetrayalCharacter::ServerLeaveGame_Implementation()
+{
+	AEndlessBetrayalGameMode* GameMode = GetWorld()->GetAuthGameMode<AEndlessBetrayalGameMode>();
+	if(IsValid(GameMode) && IsValid(EndlessBetrayalPlayerState))
+	{
+		GameMode->OnPlayerLeftGame(EndlessBetrayalPlayerState);
 	}
 }
 
@@ -579,7 +647,9 @@ void AEndlessBetrayalCharacter::DropOrDestroyWeapons()
 
 void AEndlessBetrayalCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
-	if(bIsEliminated) return;
+	AEndlessBetrayalGameMode* EndlessBetrayalGameMode = GetWorld()->GetAuthGameMode<AEndlessBetrayalGameMode>();
+	if(bIsEliminated || !IsValid(EndlessBetrayalGameMode)) return;
+	Damage = EndlessBetrayalGameMode->CalculateDamage(InstigatedBy, GetController(), Damage);
 
 	const bool bDamageFullyAbsorbed = (Shield - Damage > 0.0f);
 	float DamageAfterShieldAbsorption = Damage;
@@ -601,7 +671,6 @@ void AEndlessBetrayalCharacter::ReceiveDamage(AActor* DamagedActor, float Damage
 
 	if(Health > 0.0f) return;
 
-	AEndlessBetrayalGameMode* EndlessBetrayalGameMode = GetWorld()->GetAuthGameMode<AEndlessBetrayalGameMode>();
 	if(IsValid(EndlessBetrayalGameMode))
 	{
 		EndlessBetrayalPlayerController = !IsValid(EndlessBetrayalPlayerController) ? Cast<AEndlessBetrayalPlayerController>(Controller) : EndlessBetrayalPlayerController;
@@ -666,6 +735,14 @@ void AEndlessBetrayalCharacter::ServerEquipButtonPressed_Implementation()
 void AEndlessBetrayalCharacter::SwapWeaponMouseWheelRolled()
 {
 	ServerSwapWeaponMouseWheelRolled();
+	if(CombatComponent)
+	{
+		if (CombatComponent->ShouldSwapWeapon() && !HasAuthority() && CombatComponent->CombatState == ECombatState::ECS_Unoccupied)
+		{
+			PlaySwapWeaponMontage();
+			CombatComponent->CombatState = ECombatState::ECS_SwappingWeapons;
+		}
+	}
 }
 
 

@@ -12,6 +12,7 @@ void AEndlessBetrayalPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimePro
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AEndlessBetrayalPlayerState, DeathsCount);
+	DOREPLIFETIME(AEndlessBetrayalPlayerState, Team);
 }
 
 void AEndlessBetrayalPlayerState::OnRep_Score()
@@ -70,5 +71,16 @@ void AEndlessBetrayalPlayerState::AddToKills(float NewKill)
 		{
 			EndlessBetrayalPlayerController->UpdateDeathsHUD(DeathsCount);
 		}
+	}
+}
+
+void AEndlessBetrayalPlayerState::SetTeam(ETeam InTeam)
+{
+	Team = InTeam;
+
+	AEndlessBetrayalCharacter* EBCharacter = Cast<AEndlessBetrayalCharacter>(GetPawn());
+	if(IsValid(EBCharacter))
+	{
+		EBCharacter->SetTeamColor(Team);
 	}
 }

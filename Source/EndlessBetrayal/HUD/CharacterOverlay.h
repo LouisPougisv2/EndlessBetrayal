@@ -33,6 +33,15 @@ public:
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Player Stats")
 	UTextBlock* DeathsValue;
+	
+	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Player Stats")
+	class UTextBlock* BlueTeamScore;
+	
+	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Player Stats")
+	class UTextBlock* RedTeamScore;
+	
+	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Player Stats")
+	class UTextBlock* TeamScoreSlash;
 
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Player Stats")
 	class UImage* HighPingImage;

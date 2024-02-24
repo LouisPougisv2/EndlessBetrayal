@@ -18,6 +18,7 @@ public:
 	virtual void Destroyed() override;
 
 	void SetDamage(const float InDamage) { Damage = InDamage; }
+	void SetHeadShotDamage(const float InHeadShotDamage) { HeadShotDamage = InHeadShotDamage; }
 
 	/**
 	* Used with Server Side Rewind
@@ -48,10 +49,13 @@ protected:
 
 	void SpawnTrailSystem();
 
-	FORCEINLINE float GetDamage() const { return Damage; }
-
+	//Only set this for Rocket and Damages
 	UPROPERTY(EditAnywhere)
 	float Damage = 15.0f;
+
+	//Doesn't matter for Rocket & Grenades
+	UPROPERTY(EditAnywhere)
+	float HeadShotDamage = 30.0f;
 
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* ProjectileMesh;

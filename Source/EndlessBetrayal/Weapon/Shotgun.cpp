@@ -28,6 +28,7 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& TraceHitTargets)
 
 		//Maps character to number of time hits
 		TMap<AEndlessBetrayalCharacter*, uint32> PlayersHitMap;
+		TMap<AEndlessBetrayalCharacter*, uint32> PlayersHeadShotHitMap;
 
 		for (FVector_NetQuantize Hit : TraceHitTargets)
 		{
@@ -38,15 +39,31 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& TraceHitTargets)
 
 			if(IsValid(HitCharacter))
 			{
-				if(PlayersHitMap.Contains(HitCharacter))
+				//Take care of HeadShots
+				if(FireHit.BoneName.ToString() == FString("head"))
 				{
-					++PlayersHitMap[HitCharacter];
+					if(PlayersHeadShotHitMap.Contains(HitCharacter))
+					{
+						++PlayersHeadShotHitMap[HitCharacter];
+					}
+					else
+					{
+						PlayersHeadShotHitMap.Emplace(HitCharacter, 1);
+					}
 				}
-				else
+				else //Normal Body shots
 				{
-					PlayersHitMap.Emplace(HitCharacter, 1);
+					if(PlayersHitMap.Contains(HitCharacter))
+					{
+						++PlayersHitMap[HitCharacter];
+					}
+					else
+					{
+						PlayersHitMap.Emplace(HitCharacter, 1);
+					}
 				}
-
+				
+				//Effects
 				if(IsValid(ImpactParticle))
 				{
 					UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticle, FireHit.ImpactPoint, FireHit.ImpactNormal.Rotation());
@@ -60,24 +77,52 @@ void AShotgun::FireShotgun(const TArray<FVector_NetQuantize>& TraceHitTargets)
 		}
 
 		TArray<AEndlessBetrayalCharacter*> HitCharacters;
+		TMap<AEndlessBetrayalCharacter*, float> DamagesMap;	//Maps Character Hits to total damage
 		TArray<FVector_NetQuantize> HitLocations;
 
-		//If next bool is true, the server should cause damage
-		bool bCauseAuthDamage =	!bUseServerSideRewind || OwnerPawn->IsLocallyControlled();
+		//Looping through the body shots to accumulate all the body shot damages - Store in DamagesMap
 		for (TPair<AEndlessBetrayalCharacter*, unsigned> PlayerHit : PlayersHitMap)
 		{
-			if(IsValid(PlayerHit.Key) && IsValid(DamageInstigator))
+			if(IsValid(PlayerHit.Key))
 			{
-				if(HasAuthority() && bCauseAuthDamage)
-				{
-					UGameplayStatics::ApplyDamage(PlayerHit.Key, Damage * PlayerHit.Value, DamageInstigator, this, UDamageType::StaticClass());
-				}
-
-				HitCharacters.Add(PlayerHit.Key);
+				DamagesMap.Emplace(PlayerHit.Key, PlayerHit.Value * Damage);
+				HitCharacters.AddUnique(PlayerHit.Key);
 			}
 		}
 		
-		if(!HasAuthority() && !bUseServerSideRewind)
+		//Looping through the head shots to accumulate all the head shot damages - Store in DamagesMap
+		for (TPair<AEndlessBetrayalCharacter*, unsigned> PlayerHeadShotHit : PlayersHeadShotHitMap)
+		{
+			if(IsValid(PlayerHeadShotHit.Key))
+			{
+				if(DamagesMap.Contains(PlayerHeadShotHit.Key))
+				{
+					DamagesMap[PlayerHeadShotHit.Key] += PlayerHeadShotHit.Value * HeadShotDamage;
+				}
+				else
+				{
+					DamagesMap.Emplace(PlayerHeadShotHit.Key, PlayerHeadShotHit.Value * HeadShotDamage);
+				}
+				HitCharacters.AddUnique(PlayerHeadShotHit.Key);
+			}
+		}
+
+		//Loop through damage map to get total damage for each character
+		for (TTuple<AEndlessBetrayalCharacter*, float> DamagePair : DamagesMap)
+		{
+			if(IsValid(DamagePair.Key) && IsValid(DamageInstigator))
+			{
+				//If next bool is true, the server should cause damage
+				bool bCauseAuthDamage =	!bUseServerSideRewind || OwnerPawn->IsLocallyControlled();
+				if(HasAuthority() && bCauseAuthDamage)
+				{
+					UGameplayStatics::ApplyDamage(DamagePair.Key, DamagePair.Value, DamageInstigator, this, UDamageType::StaticClass());
+				}
+			}
+		}
+		
+		
+		if(!HasAuthority() && bUseServerSideRewind)
 		{
 			WeaponOwnerCharacter = !IsValid(WeaponOwnerCharacter) ? Cast<AEndlessBetrayalCharacter>(OwnerPawn) : WeaponOwnerCharacter;
 			WeaponOwnerController = !IsValid(WeaponOwnerController) ? Cast<AEndlessBetrayalPlayerController>(DamageInstigator) : WeaponOwnerController;
