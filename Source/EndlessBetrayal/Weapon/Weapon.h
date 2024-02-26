@@ -198,6 +198,7 @@ private:
 public:	
 
 	void SetWeaponState(EWeaponState NewState);
+	void SetWeaponMesh(USkeletalMeshComponent* InWeapon);
 	FORCEINLINE USphereComponent* GetAreaSphere() const	{ return AreaSphere; }
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
 	FORCEINLINE UTexture2D* GetCrosshairCenter() const { return CrosshairCenter; }
@@ -205,6 +206,7 @@ public:
 	FORCEINLINE UTexture2D* GetCrosshairBottom() const { return CrosshairBottom; }
 	FORCEINLINE UTexture2D* GetCrosshairLeft() const { return CrosshairLeft; }
 	FORCEINLINE UTexture2D* GetCrosshairRight() const { return CrosshairRight; }
+	FORCEINLINE UWidgetComponent* GetPickupWidget() const { return PickupWidget; }
 
 	FORCEINLINE float GetZoomedFOV() const { return ZoomedFOV; }
 	FORCEINLINE float GetZoomInterSpeed() const { return ZoomInterpSpeed; }

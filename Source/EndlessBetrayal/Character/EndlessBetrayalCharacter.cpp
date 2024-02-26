@@ -1041,6 +1041,12 @@ AWeapon* AEndlessBetrayalCharacter::GetEquippedWeapon()
 	return CombatComponent->EquippedWeapon;
 }
 
+bool AEndlessBetrayalCharacter::IsHoldingFlag() const
+{
+	if(!IsValid(CombatComponent)) return false;
+	return CombatComponent->bIsHoldingFlag;
+}
+
 FVector AEndlessBetrayalCharacter::GetHitTarget()
 {
 	if (CombatComponent == nullptr) return FVector();

@@ -119,6 +119,11 @@ void AWeapon::SetWeaponState(EWeaponState NewState)
 	OnWeaponStateSet();
 }
 
+void AWeapon::SetWeaponMesh(USkeletalMeshComponent* InWeapon)
+{
+	WeaponMesh = InWeapon;
+}
+
 void AWeapon::OnWeaponStateSet()
 {
 	switch (WeaponState)

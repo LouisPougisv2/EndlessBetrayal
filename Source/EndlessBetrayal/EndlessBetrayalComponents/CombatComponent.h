@@ -255,4 +255,6 @@ private:
 	
 	UFUNCTION()
 	void OnRep_GrenadesAmount();
+	
+	bool bIsHoldingFlag = false;
 };

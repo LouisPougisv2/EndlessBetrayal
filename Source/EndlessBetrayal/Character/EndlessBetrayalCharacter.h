@@ -379,6 +379,7 @@ public:
 	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; }
 	FORCEINLINE bool IsEliminated() const { return bIsEliminated; }
 	FORCEINLINE bool HasLeftGame() const { return bHasLeftGame; }
+	FORCEINLINE bool IsHoldingFlag() const;
 	FVector GetHitTarget();
 	
 	ECombatState GetCombatState() const;
