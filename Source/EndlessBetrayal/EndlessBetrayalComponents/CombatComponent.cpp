@@ -531,9 +531,15 @@ void UCombatComponent::EquipSecondaryWeapon(AWeapon* WeaponToEquip)
 void UCombatComponent::EquipFlag(AWeapon* FlagToEquip)
 {
 	bIsHoldingFlag = true;
+	Flag = FlagToEquip;
 	FlagToEquip->SetWeaponState(EWeaponState::EWS_Equipped);
 	FlagToEquip->SetOwner(Character);
 	AttachActorToSocket(FlagToEquip, FName("FlagSocket"));
+
+	if(IsValid(Character))
+	{
+		Character->Crouch();
+	}
 }
 
 void UCombatComponent::DropEquippedWeapon()
@@ -711,7 +717,6 @@ void UCombatComponent::OnRep_HoldingFlag()
 	if(bIsHoldingFlag && IsValid(Character) && Character->IsLocallyControlled())
 	{
 		Character->Crouch();
-		bCanFire = false;
 	}
 }
 

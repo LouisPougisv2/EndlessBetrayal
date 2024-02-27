@@ -137,6 +137,9 @@ private:
 	UPROPERTY(ReplicatedUsing = OnRep_SecondaryWeapon)
 	AWeapon* SecondaryWeapon;
 
+	UPROPERTY()
+	AWeapon* Flag = nullptr;
+
 	//Used to zoom in and out
 	UPROPERTY(Replicated)
 	bool bIsAiming = false;

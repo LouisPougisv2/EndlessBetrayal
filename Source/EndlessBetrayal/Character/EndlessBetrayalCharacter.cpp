@@ -650,6 +650,11 @@ void AEndlessBetrayalCharacter::DropOrDestroyWeapons()
 		{
 			DropOrDestroyWeapon(CombatComponent->SecondaryWeapon);
 		}
+		
+		if(CombatComponent->bIsHoldingFlag && IsValid(CombatComponent->Flag))
+		{
+			DropOrDestroyWeapon(CombatComponent->Flag);
+		}
 	}
 }
 
