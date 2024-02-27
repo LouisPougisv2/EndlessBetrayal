@@ -731,7 +731,7 @@ void AEndlessBetrayalCharacter::LookUp(float Value)
 
 void AEndlessBetrayalCharacter::EquipButtonPressed()
 {
-	if (CombatComponent && !CombatComponent->bIsHoldingFlag)		
+	if (CombatComponent)		
 	{
 		ServerEquipButtonPressed();	//Whether we are on the client or server, this will be executed on the server
 	}
@@ -1048,6 +1048,14 @@ bool AEndlessBetrayalCharacter::IsWeaponEquipped()
 bool AEndlessBetrayalCharacter::IsAiming() 
 {
 	return (CombatComponent && CombatComponent->bIsAiming);
+}
+
+ETeam AEndlessBetrayalCharacter::GetTeam()
+{
+	EndlessBetrayalPlayerState = EndlessBetrayalPlayerState ? GetPlayerState<AEndlessBetrayalPlayerState>() : EndlessBetrayalPlayerState;
+	if(!IsValid(EndlessBetrayalPlayerState)) return ETeam::ET_NoTeam;
+	
+	return EndlessBetrayalPlayerState->GetTeam();
 }
 
 AWeapon* AEndlessBetrayalCharacter::GetEquippedWeapon()

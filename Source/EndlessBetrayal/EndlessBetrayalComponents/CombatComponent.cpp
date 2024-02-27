@@ -472,6 +472,12 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	else
 	{
 		EquipPrimaryWeapon(WeaponToEquip);
+		
+		if(IsValid(Flag)) //If player is holding the Flag, Drops it
+		{
+			bIsHoldingFlag = false;
+			Flag->OnWeaponDropped();
+		}
 	}
 	
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
