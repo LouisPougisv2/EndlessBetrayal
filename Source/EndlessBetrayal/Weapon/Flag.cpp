@@ -12,4 +12,7 @@ AFlag::AFlag()
 
 	GetAreaSphere()->SetupAttachment(GetRootComponent());
 	GetPickupWidget()->SetupAttachment(GetRootComponent());
+
+	GetWeaponMesh()->SetCollisionResponseToAllChannels(ECR_Ignore);
+	GetWeaponMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 }

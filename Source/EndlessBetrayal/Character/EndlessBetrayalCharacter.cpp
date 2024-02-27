@@ -243,6 +243,14 @@ void AEndlessBetrayalCharacter::Tick(float DeltaTime)
 
 void AEndlessBetrayalCharacter::RotateInPlace(float DeltaTime)
 {
+	if(IsValid(CombatComponent) && CombatComponent->bIsHoldingFlag)
+	{
+		TurningInPlace= ETurningInPlace::ETIP_NotTurning;
+		bUseControllerRotationYaw = false;
+		GetCharacterMovement()->bOrientRotationToMovement = true;
+		return;
+	}
+	
 	if(bShouldDisableGameplayInput)
 	{
 		TurningInPlace= ETurningInPlace::ETIP_NotTurning;
@@ -607,7 +615,7 @@ void AEndlessBetrayalCharacter::PlayHitReactMontage()
 
 void AEndlessBetrayalCharacter::GrenadeButtonPressed()
 {
-	if(CombatComponent)
+	if(CombatComponent && !CombatComponent->bIsHoldingFlag)
 	{
 		CombatComponent->ThrowGrenade();
 	}
@@ -718,7 +726,7 @@ void AEndlessBetrayalCharacter::LookUp(float Value)
 
 void AEndlessBetrayalCharacter::EquipButtonPressed()
 {
-	if (CombatComponent)		
+	if (CombatComponent && !CombatComponent->bIsHoldingFlag)		
 	{
 		ServerEquipButtonPressed();	//Whether we are on the client or server, this will be executed on the server
 	}
@@ -758,7 +766,7 @@ void AEndlessBetrayalCharacter::AimButtonPressed()
 {
 	if(bShouldDisableGameplayInput) return;
 
-	if (CombatComponent)
+	if (CombatComponent && !CombatComponent->bIsHoldingFlag)
 	{
 		CombatComponent->SetAiming(true);
 	}
@@ -767,7 +775,7 @@ void AEndlessBetrayalCharacter::AimButtonReleased()
 {
 	if(bShouldDisableGameplayInput) return;
 
-	if (CombatComponent)
+	if (CombatComponent && !CombatComponent->bIsHoldingFlag)
 	{
 		CombatComponent->SetAiming(false);
 	}
@@ -863,6 +871,8 @@ void AEndlessBetrayalCharacter::SimProxiesTurn()
 void AEndlessBetrayalCharacter::Jump()
 {
 	if(bShouldDisableGameplayInput) return;
+	if(IsValid(CombatComponent) && CombatComponent->bIsHoldingFlag) return;
+	
 	if (bIsCrouched)
 	{
 		UnCrouch();
@@ -877,7 +887,7 @@ void AEndlessBetrayalCharacter::FireButtonPressed()
 {
 	if(bShouldDisableGameplayInput) return;
 
-	if(ensureAlways(IsValid(CombatComponent)))
+	if(ensureAlways(IsValid(CombatComponent)) && !CombatComponent->bIsHoldingFlag)
 	{
 		CombatComponent->FireButtonPressed(true);
 	}
@@ -887,7 +897,7 @@ void AEndlessBetrayalCharacter::FireButtonReleased()
 {
 	if(bShouldDisableGameplayInput) return;
 
-	if(ensureAlways(IsValid(CombatComponent)))
+	if(ensureAlways(IsValid(CombatComponent)) && !CombatComponent->bIsHoldingFlag)
 	{
 		CombatComponent->FireButtonPressed(false);
 	}
@@ -896,6 +906,7 @@ void AEndlessBetrayalCharacter::FireButtonReleased()
 void AEndlessBetrayalCharacter::CrouchButtonPressed()
 {
 	if(bShouldDisableGameplayInput) return;
+	if(IsValid(CombatComponent) && CombatComponent->bIsHoldingFlag) return;
 
 	if (bIsCrouched)			//Inherited public variable
 	{
@@ -911,7 +922,7 @@ void AEndlessBetrayalCharacter::ReloadButtonPressed()
 {
 	if(bShouldDisableGameplayInput) return;
 
-	if(IsValid(CombatComponent))
+	if(IsValid(CombatComponent) && !CombatComponent->bIsHoldingFlag)
 	{
 		CombatComponent->Reload();
 	}
