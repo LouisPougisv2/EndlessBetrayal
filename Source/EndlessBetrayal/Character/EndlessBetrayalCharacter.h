@@ -128,6 +128,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+	void OnPlayerStateInitialized();
 	void MoveForward(float Value);
 	void MoveRight(float Value);
 	void Turn(float Value);
@@ -155,6 +156,8 @@ protected:
 
 	//Poll for any relevant classes and initialize our HUD
 	void PollInitialize();
+
+	void SetSpawnPoints();
 	
 private: 
 

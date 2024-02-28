@@ -21,6 +21,8 @@
 #include "EndlessBetrayal/GameMode/EndlessBetrayalGameMode.h"
 #include "EndlessBetrayal/GameState/EndlessBetrayalPlayerState.h"
 #include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
+#include "EndlessBetrayal/PlayerStart/TeamPlayerStart.h"
+#include "GameFramework/PlayerStart.h"
 #include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
@@ -201,15 +203,46 @@ void AEndlessBetrayalCharacter::PollInitialize()
 			EndlessBetrayalPlayerState = GetPlayerState<AEndlessBetrayalPlayerState>();
 			if(IsValid(EndlessBetrayalPlayerState))
 			{
-				EndlessBetrayalPlayerState->AddToScore(0.0f);
-				EndlessBetrayalPlayerState->AddToKills(0);
-				SetTeamColor(EndlessBetrayalPlayerState->GetTeam());
+				OnPlayerStateInitialized();
 			}
 
 			EndlessBetrayalPlayerController->HideMessagesOnScreenHUD();
 		}
 	}
 	
+}
+
+void AEndlessBetrayalCharacter::SetSpawnPoints()
+{
+	if(EndlessBetrayalPlayerState->GetTeam() == ETeam::ET_NoTeam || !HasAuthority()) return;
+
+	AEndlessBetrayalGameMode* EndlessBetrayalGameMode = Cast<AEndlessBetrayalGameMode>(GetWorld()->GetAuthGameMode());
+	if(IsValid(EndlessBetrayalGameMode))
+	{
+		TArray<AActor*> PlayerStarts;
+		TArray<ATeamPlayerStart*> TeamPlayerStarts;
+		UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStarts);
+
+		//Removing Player Starts of team different from the Player's one
+		for (AActor* PlayerStart : PlayerStarts)
+		{
+			ATeamPlayerStart* TeamPlayerStart = Cast<ATeamPlayerStart>(PlayerStart);
+			if(IsValid(TeamPlayerStart))
+			{
+				if(EndlessBetrayalPlayerState->GetTeam() == TeamPlayerStart->GetTeam())
+				{
+					TeamPlayerStarts.AddUnique(TeamPlayerStart);
+				}
+			}
+		}
+
+		//Picking Random Player Start among Player Start for the Player's team
+		if(PlayerStarts.Num() > 0)
+		{
+			const ATeamPlayerStart* ChosenPlayerStart = CastChecked<ATeamPlayerStart>(TeamPlayerStarts[FMath::RandRange(0, TeamPlayerStarts.Num() - 1)]);
+			SetActorLocationAndRotation(ChosenPlayerStart->GetActorLocation(), ChosenPlayerStart->GetActorRotation());
+		}
+	}
 }
 
 void AEndlessBetrayalCharacter::BeginPlay()
@@ -230,6 +263,14 @@ void AEndlessBetrayalCharacter::BeginPlay()
 		CombatComponent->SetGrenadeVisibility(false);
 		CombatComponent->UpdateHUDGrenadeAmount();
 	}
+}
+
+void AEndlessBetrayalCharacter::OnPlayerStateInitialized()
+{
+	EndlessBetrayalPlayerState->AddToScore(0.0f);
+	EndlessBetrayalPlayerState->AddToKills(0);
+	SetTeamColor(EndlessBetrayalPlayerState->GetTeam());
+	SetSpawnPoints();
 }
 
 void AEndlessBetrayalCharacter::Tick(float DeltaTime)
