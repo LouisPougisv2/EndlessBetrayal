@@ -291,7 +291,12 @@ void AEndlessBetrayalCharacter::RotateInPlace(float DeltaTime)
 		GetCharacterMovement()->bOrientRotationToMovement = true;
 		return;
 	}
-	
+
+	if(IsValid(CombatComponent) && IsValid(CombatComponent->EquippedWeapon))
+	{
+		bUseControllerRotationYaw = true;
+		GetCharacterMovement()->bOrientRotationToMovement = false;
+	}
 	if(bShouldDisableGameplayInput)
 	{
 		TurningInPlace= ETurningInPlace::ETIP_NotTurning;
@@ -1110,6 +1115,14 @@ bool AEndlessBetrayalCharacter::IsHoldingFlag() const
 {
 	if(!IsValid(CombatComponent)) return false;
 	return CombatComponent->bIsHoldingFlag;
+}
+
+void AEndlessBetrayalCharacter::SetHoldingFlag(const bool bIsHoldingFlag)
+{
+	if(IsValid(CombatComponent))
+	{
+		CombatComponent->bIsHoldingFlag = bIsHoldingFlag;
+	}
 }
 
 FVector AEndlessBetrayalCharacter::GetHitTarget()

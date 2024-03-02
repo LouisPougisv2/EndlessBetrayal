@@ -99,7 +99,7 @@ void AWeapon::OnSphereOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* 
 	AEndlessBetrayalCharacter* Character = Cast<AEndlessBetrayalCharacter>(OtherActor);
 	if (Character)
 	{
-		if(WeaponType == EWeaponType::EWT_Flag && Character->GetTeam() != Team) return;
+		if(WeaponType == EWeaponType::EWT_Flag && Character->GetTeam() == Team) return;
 		Character->SetOverlappingWeapon(this);
 	}
 }
@@ -109,7 +109,7 @@ void AWeapon::OnSphereOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* Ot
 	AEndlessBetrayalCharacter* Character = Cast<AEndlessBetrayalCharacter>(OtherActor);
 	if (Character)
 	{
-		if(WeaponType == EWeaponType::EWT_Flag && Character->GetTeam() != Team) return;
+		if(WeaponType == EWeaponType::EWT_Flag && Character->GetTeam() == Team) return;
 		Character->SetOverlappingWeapon(nullptr);
 	}
 }

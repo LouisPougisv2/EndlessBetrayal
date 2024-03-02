@@ -385,6 +385,7 @@ public:
 	FORCEINLINE bool IsEliminated() const { return bIsEliminated; }
 	FORCEINLINE bool HasLeftGame() const { return bHasLeftGame; }
 	FORCEINLINE bool IsHoldingFlag() const;
+	FORCEINLINE void SetHoldingFlag(const bool bIsHoldingFlag);
 	FVector GetHitTarget();
 	
 	ECombatState GetCombatState() const;
