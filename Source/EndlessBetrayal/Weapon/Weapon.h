@@ -134,6 +134,12 @@ protected:
 
 	UPROPERTY()
 	class AEndlessBetrayalPlayerController* WeaponOwnerController;
+
+	UPROPERTY(EditAnywhere, Category = "Pickup settings")
+	bool ShouldWeaponRotate = false;
+	
+	UPROPERTY(EditAnywhere, Category = "Pickup settings")
+	float BaseRotatingRate = 45.0f;
 	
 private:
 

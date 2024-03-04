@@ -64,6 +64,11 @@ void AWeapon::BeginPlay()
 void AWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+	if(IsValid(WeaponMesh) && ShouldWeaponRotate && WeaponState != EWeaponState::EWS_Equipped)
+	{
+		WeaponMesh->AddLocalRotation(FRotator(0.0f, BaseRotatingRate * DeltaTime, 0.0f));
+	}
 }
 
 void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
