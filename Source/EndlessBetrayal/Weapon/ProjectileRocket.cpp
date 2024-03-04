@@ -31,17 +31,17 @@ void AProjectileRocket::Destroyed()
 {
 	
 }
-
-void AProjectileRocket::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
-{
-	Super::PostEditChangeProperty(PropertyChangedEvent);
-
-	if(PropertyChangedEvent.GetPropertyName() == GET_MEMBER_NAME_CHECKED(AProjectileRocket, InitialSpeed))
-	{
-		RocketMovementComponent->InitialSpeed = InitialSpeed;
-		RocketMovementComponent->MaxSpeed = InitialSpeed;
-	}
-}
+//To keep for development
+//void AProjectileRocket::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+//{
+//	Super::PostEditChangeProperty(PropertyChangedEvent);
+//
+//	if(PropertyChangedEvent.GetPropertyName() == GET_MEMBER_NAME_CHECKED(AProjectileRocket, InitialSpeed))
+//	{
+//		RocketMovementComponent->InitialSpeed = InitialSpeed;
+//		RocketMovementComponent->MaxSpeed = InitialSpeed;
+//	}
+//}
 
 void AProjectileRocket::BeginPlay()
 {

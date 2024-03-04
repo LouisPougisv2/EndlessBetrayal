@@ -18,10 +18,10 @@ public:
 
 	AProjectileBullet();
 
-#if WITH_EDITOR
-	//Allows us to spread any changes happening in BP
-	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
-#endif
+//#if WITH_EDITOR
+//	//Allows us to spread any changes happening in BP
+//	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+//#endif
 	
 protected:
 

@@ -20,21 +20,21 @@ AProjectileBullet::AProjectileBullet()
 	ProjectileMovementComponent->MaxSpeed = InitialSpeed;
 }
 
-#if WITH_EDITOR
-void AProjectileBullet::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
-{
-	Super::PostEditChangeProperty(PropertyChangedEvent);
-
-	if(PropertyChangedEvent.GetPropertyName() == GET_MEMBER_NAME_CHECKED(AProjectileBullet, InitialSpeed))
-	{
-		if(IsValid(ProjectileMovementComponent))
-		{
-			ProjectileMovementComponent->InitialSpeed = InitialSpeed;
-			ProjectileMovementComponent->MaxSpeed = InitialSpeed;
-		}
-	}
-}
-#endif
+//#if WITH_EDITOR
+//void AProjectileBullet::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+//{
+//	Super::PostEditChangeProperty(PropertyChangedEvent);
+//
+//	if(PropertyChangedEvent.GetPropertyName() == GET_MEMBER_NAME_CHECKED(AProjectileBullet, InitialSpeed))
+//	{
+//		if(IsValid(ProjectileMovementComponent))
+//		{
+//			ProjectileMovementComponent->InitialSpeed = InitialSpeed;
+//			ProjectileMovementComponent->MaxSpeed = InitialSpeed;
+//		}
+//	}
+//}
+//#endif
 
 void AProjectileBullet::BeginPlay()
 {
