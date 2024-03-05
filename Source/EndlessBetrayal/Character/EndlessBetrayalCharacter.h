@@ -128,6 +128,7 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+	void OnPlayerStateInitialized();
 	void MoveForward(float Value);
 	void MoveRight(float Value);
 	void Turn(float Value);
@@ -155,6 +156,8 @@ protected:
 
 	//Poll for any relevant classes and initialize our HUD
 	void PollInitialize();
+
+	void SetSpawnPoints();
 	
 private: 
 
@@ -359,6 +362,8 @@ public:
 	void SetOverlappingWeapon(AWeapon* Weapon);
 	bool IsWeaponEquipped();
 	bool IsAiming();
+	ETeam GetTeam();
+	
 	FORCEINLINE float GetAO_Yaw() const { return AO_Yaw; }
 	FORCEINLINE float GetAO_Pitch() const { return AO_Pitch; }
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
@@ -379,6 +384,8 @@ public:
 	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; }
 	FORCEINLINE bool IsEliminated() const { return bIsEliminated; }
 	FORCEINLINE bool HasLeftGame() const { return bHasLeftGame; }
+	FORCEINLINE bool IsHoldingFlag() const;
+	FORCEINLINE void SetHoldingFlag(const bool bIsHoldingFlag);
 	FVector GetHitTarget();
 	
 	ECombatState GetCombatState() const;

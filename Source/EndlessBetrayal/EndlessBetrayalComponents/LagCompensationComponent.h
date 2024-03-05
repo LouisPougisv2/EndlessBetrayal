@@ -13,13 +13,13 @@ struct FBoxInformation
 	GENERATED_BODY()
 
 	UPROPERTY()
-	FVector Location;
+	FVector Location = FVector::ZeroVector;
 
 	UPROPERTY()
-	FRotator Rotation;
+	FRotator Rotation = FRotator::ZeroRotator;
 
 	UPROPERTY()
-	FVector BoxExtent;
+	FVector BoxExtent = FVector::ZeroVector;
 	
 };
 

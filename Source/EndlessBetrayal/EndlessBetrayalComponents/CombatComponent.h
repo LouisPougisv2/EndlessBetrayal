@@ -37,7 +37,7 @@ public:
 	void ServerLaunchGrenade(const FVector_NetQuantize& Target);
 
 	FORCEINLINE int32 GetGrenadesAmount() const { return AmountOfGrenades; };
-	FORCEINLINE bool ShouldSwapWeapon() const { return EquippedWeapon && SecondaryWeapon; }
+	FORCEINLINE bool ShouldSwapWeapon() const { return EquippedWeapon && SecondaryWeapon && !bIsHoldingFlag; }
 	
 protected:
 
@@ -49,6 +49,7 @@ protected:
 
 	void EquipPrimaryWeapon(AWeapon* WeaponToEquip);
 	void EquipSecondaryWeapon(AWeapon* WeaponToEquip);
+	void EquipFlag(AWeapon* FlagToEquip);
 	void DropEquippedWeapon();
 	void AttachActorToSocket(AActor* ActorToAttach, FName SocketName);
 	void UpdateWeaponCarriedAmmo();
@@ -135,6 +136,9 @@ private:
 
 	UPROPERTY(ReplicatedUsing = OnRep_SecondaryWeapon)
 	AWeapon* SecondaryWeapon;
+
+	UPROPERTY()
+	AWeapon* Flag = nullptr;
 
 	//Used to zoom in and out
 	UPROPERTY(Replicated)
@@ -255,4 +259,10 @@ private:
 	
 	UFUNCTION()
 	void OnRep_GrenadesAmount();
+
+	UPROPERTY(ReplicatedUsing = OnRep_HoldingFlag)
+	bool bIsHoldingFlag = false;
+
+	UFUNCTION()
+	void OnRep_HoldingFlag();
 };

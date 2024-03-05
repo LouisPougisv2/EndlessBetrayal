@@ -54,6 +54,7 @@ void UCombatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME_CONDITION(UCombatComponent, CarriedAmmo, COND_OwnerOnly);
 	DOREPLIFETIME(UCombatComponent, CombatState);
 	DOREPLIFETIME_CONDITION(UCombatComponent, AmountOfGrenades, COND_OwnerOnly);
+	DOREPLIFETIME(UCombatComponent, bIsHoldingFlag);
 }
 
 void UCombatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -458,6 +459,12 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	if (Character == nullptr || WeaponToEquip == nullptr) return;
 	if(CombatState != ECombatState::ECS_Unoccupied) return;
 
+	if(WeaponToEquip->GetWeaponType() == EWeaponType::EWT_Flag && !bIsHoldingFlag)
+	{
+		EquipFlag(WeaponToEquip);
+		return;
+	}
+	
 	if(IsValid(EquippedWeapon) && !IsValid(SecondaryWeapon))
 	{
 		EquipSecondaryWeapon(WeaponToEquip);
@@ -465,6 +472,12 @@ void UCombatComponent::EquipWeapon(AWeapon* WeaponToEquip)
 	else
 	{
 		EquipPrimaryWeapon(WeaponToEquip);
+		
+		if(IsValid(Flag)) //If player is holding the Flag, Drops it
+		{
+			bIsHoldingFlag = false;
+			Flag->OnWeaponDropped();
+		}
 	}
 	
 	Character->GetCharacterMovement()->bOrientRotationToMovement = false;
@@ -519,6 +532,20 @@ void UCombatComponent::EquipSecondaryWeapon(AWeapon* WeaponToEquip)
 	AttachActorToSocket(SecondaryWeapon, FName("BackpackSocket"));
 	
 	PlayEquipSound(SecondaryWeapon);
+}
+
+void UCombatComponent::EquipFlag(AWeapon* FlagToEquip)
+{
+	bIsHoldingFlag = true;
+	Flag = FlagToEquip;
+	FlagToEquip->SetWeaponState(EWeaponState::EWS_Equipped);
+	FlagToEquip->SetOwner(Character);
+	AttachActorToSocket(FlagToEquip, FName("FlagSocket"));
+
+	if(IsValid(Character))
+	{
+		Character->Crouch();
+	}
 }
 
 void UCombatComponent::DropEquippedWeapon()
@@ -689,6 +716,14 @@ void UCombatComponent::UpdateHUDGrenadeAmount()
 void UCombatComponent::OnRep_GrenadesAmount()
 {
 	UpdateHUDGrenadeAmount();
+}
+
+void UCombatComponent::OnRep_HoldingFlag()
+{
+	if(bIsHoldingFlag && IsValid(Character) && Character->IsLocallyControlled())
+	{
+		Character->Crouch();
+	}
 }
 
 void UCombatComponent::ServerReload_Implementation()

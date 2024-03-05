@@ -64,6 +64,11 @@ void AWeapon::BeginPlay()
 void AWeapon::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+	if(IsValid(WeaponMesh) && ShouldWeaponRotate && WeaponState != EWeaponState::EWS_Equipped)
+	{
+		WeaponMesh->AddLocalRotation(FRotator(0.0f, BaseRotatingRate * DeltaTime, 0.0f));
+	}
 }
 
 void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -99,6 +104,7 @@ void AWeapon::OnSphereOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* 
 	AEndlessBetrayalCharacter* Character = Cast<AEndlessBetrayalCharacter>(OtherActor);
 	if (Character)
 	{
+		if(WeaponType == EWeaponType::EWT_Flag && Character->GetTeam() == Team) return;
 		Character->SetOverlappingWeapon(this);
 	}
 }
@@ -108,6 +114,7 @@ void AWeapon::OnSphereOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* Ot
 	AEndlessBetrayalCharacter* Character = Cast<AEndlessBetrayalCharacter>(OtherActor);
 	if (Character)
 	{
+		if(WeaponType == EWeaponType::EWT_Flag && Character->GetTeam() == Team) return;
 		Character->SetOverlappingWeapon(nullptr);
 	}
 }
@@ -117,6 +124,11 @@ void AWeapon::SetWeaponState(EWeaponState NewState)
 	WeaponState = NewState;
 
 	OnWeaponStateSet();
+}
+
+void AWeapon::SetWeaponMesh(USkeletalMeshComponent* InWeapon)
+{
+	WeaponMesh = InWeapon;
 }
 
 void AWeapon::OnWeaponStateSet()

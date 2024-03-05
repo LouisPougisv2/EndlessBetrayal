@@ -21,6 +21,8 @@
 #include "EndlessBetrayal/GameMode/EndlessBetrayalGameMode.h"
 #include "EndlessBetrayal/GameState/EndlessBetrayalPlayerState.h"
 #include "EndlessBetrayal/PlayerController/EndlessBetrayalPlayerController.h"
+#include "EndlessBetrayal/PlayerStart/TeamPlayerStart.h"
+#include "GameFramework/PlayerStart.h"
 #include "GameFramework/PlayerState.h"
 #include "Kismet/GameplayStatics.h"
 #include "Particles/ParticleSystemComponent.h"
@@ -201,15 +203,46 @@ void AEndlessBetrayalCharacter::PollInitialize()
 			EndlessBetrayalPlayerState = GetPlayerState<AEndlessBetrayalPlayerState>();
 			if(IsValid(EndlessBetrayalPlayerState))
 			{
-				EndlessBetrayalPlayerState->AddToScore(0.0f);
-				EndlessBetrayalPlayerState->AddToKills(0);
-				SetTeamColor(EndlessBetrayalPlayerState->GetTeam());
+				OnPlayerStateInitialized();
 			}
 
 			EndlessBetrayalPlayerController->HideMessagesOnScreenHUD();
 		}
 	}
 	
+}
+
+void AEndlessBetrayalCharacter::SetSpawnPoints()
+{
+	if(EndlessBetrayalPlayerState->GetTeam() == ETeam::ET_NoTeam || !HasAuthority()) return;
+
+	AEndlessBetrayalGameMode* EndlessBetrayalGameMode = Cast<AEndlessBetrayalGameMode>(GetWorld()->GetAuthGameMode());
+	if(IsValid(EndlessBetrayalGameMode))
+	{
+		TArray<AActor*> PlayerStarts;
+		TArray<ATeamPlayerStart*> TeamPlayerStarts;
+		UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStarts);
+
+		//Removing Player Starts of team different from the Player's one
+		for (AActor* PlayerStart : PlayerStarts)
+		{
+			ATeamPlayerStart* TeamPlayerStart = Cast<ATeamPlayerStart>(PlayerStart);
+			if(IsValid(TeamPlayerStart))
+			{
+				if(EndlessBetrayalPlayerState->GetTeam() == TeamPlayerStart->GetTeam())
+				{
+					TeamPlayerStarts.AddUnique(TeamPlayerStart);
+				}
+			}
+		}
+
+		//Picking Random Player Start among Player Start for the Player's team
+		if(PlayerStarts.Num() > 0)
+		{
+			const ATeamPlayerStart* ChosenPlayerStart = CastChecked<ATeamPlayerStart>(TeamPlayerStarts[FMath::RandRange(0, TeamPlayerStarts.Num() - 1)]);
+			SetActorLocationAndRotation(ChosenPlayerStart->GetActorLocation(), ChosenPlayerStart->GetActorRotation());
+		}
+	}
 }
 
 void AEndlessBetrayalCharacter::BeginPlay()
@@ -232,6 +265,14 @@ void AEndlessBetrayalCharacter::BeginPlay()
 	}
 }
 
+void AEndlessBetrayalCharacter::OnPlayerStateInitialized()
+{
+	EndlessBetrayalPlayerState->AddToScore(0.0f);
+	EndlessBetrayalPlayerState->AddToKills(0);
+	SetTeamColor(EndlessBetrayalPlayerState->GetTeam());
+	SetSpawnPoints();
+}
+
 void AEndlessBetrayalCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -243,6 +284,19 @@ void AEndlessBetrayalCharacter::Tick(float DeltaTime)
 
 void AEndlessBetrayalCharacter::RotateInPlace(float DeltaTime)
 {
+	if(IsValid(CombatComponent) && CombatComponent->bIsHoldingFlag)
+	{
+		TurningInPlace= ETurningInPlace::ETIP_NotTurning;
+		bUseControllerRotationYaw = false;
+		GetCharacterMovement()->bOrientRotationToMovement = true;
+		return;
+	}
+
+	if(IsValid(CombatComponent) && IsValid(CombatComponent->EquippedWeapon))
+	{
+		bUseControllerRotationYaw = true;
+		GetCharacterMovement()->bOrientRotationToMovement = false;
+	}
 	if(bShouldDisableGameplayInput)
 	{
 		TurningInPlace= ETurningInPlace::ETIP_NotTurning;
@@ -607,7 +661,7 @@ void AEndlessBetrayalCharacter::PlayHitReactMontage()
 
 void AEndlessBetrayalCharacter::GrenadeButtonPressed()
 {
-	if(CombatComponent)
+	if(CombatComponent && !CombatComponent->bIsHoldingFlag)
 	{
 		CombatComponent->ThrowGrenade();
 	}
@@ -641,6 +695,11 @@ void AEndlessBetrayalCharacter::DropOrDestroyWeapons()
 		if(IsValid(CombatComponent->SecondaryWeapon))
 		{
 			DropOrDestroyWeapon(CombatComponent->SecondaryWeapon);
+		}
+		
+		if(CombatComponent->bIsHoldingFlag && IsValid(CombatComponent->Flag))
+		{
+			DropOrDestroyWeapon(CombatComponent->Flag);
 		}
 	}
 }
@@ -758,7 +817,7 @@ void AEndlessBetrayalCharacter::AimButtonPressed()
 {
 	if(bShouldDisableGameplayInput) return;
 
-	if (CombatComponent)
+	if (CombatComponent && !CombatComponent->bIsHoldingFlag)
 	{
 		CombatComponent->SetAiming(true);
 	}
@@ -767,7 +826,7 @@ void AEndlessBetrayalCharacter::AimButtonReleased()
 {
 	if(bShouldDisableGameplayInput) return;
 
-	if (CombatComponent)
+	if (CombatComponent && !CombatComponent->bIsHoldingFlag)
 	{
 		CombatComponent->SetAiming(false);
 	}
@@ -863,6 +922,8 @@ void AEndlessBetrayalCharacter::SimProxiesTurn()
 void AEndlessBetrayalCharacter::Jump()
 {
 	if(bShouldDisableGameplayInput) return;
+	if(IsValid(CombatComponent) && CombatComponent->bIsHoldingFlag) return;
+	
 	if (bIsCrouched)
 	{
 		UnCrouch();
@@ -877,7 +938,7 @@ void AEndlessBetrayalCharacter::FireButtonPressed()
 {
 	if(bShouldDisableGameplayInput) return;
 
-	if(ensureAlways(IsValid(CombatComponent)))
+	if(ensureAlways(IsValid(CombatComponent)) && !CombatComponent->bIsHoldingFlag)
 	{
 		CombatComponent->FireButtonPressed(true);
 	}
@@ -887,7 +948,7 @@ void AEndlessBetrayalCharacter::FireButtonReleased()
 {
 	if(bShouldDisableGameplayInput) return;
 
-	if(ensureAlways(IsValid(CombatComponent)))
+	if(ensureAlways(IsValid(CombatComponent)) && !CombatComponent->bIsHoldingFlag)
 	{
 		CombatComponent->FireButtonPressed(false);
 	}
@@ -896,6 +957,7 @@ void AEndlessBetrayalCharacter::FireButtonReleased()
 void AEndlessBetrayalCharacter::CrouchButtonPressed()
 {
 	if(bShouldDisableGameplayInput) return;
+	if(IsValid(CombatComponent) && CombatComponent->bIsHoldingFlag) return;
 
 	if (bIsCrouched)			//Inherited public variable
 	{
@@ -911,7 +973,7 @@ void AEndlessBetrayalCharacter::ReloadButtonPressed()
 {
 	if(bShouldDisableGameplayInput) return;
 
-	if(IsValid(CombatComponent))
+	if(IsValid(CombatComponent) && !CombatComponent->bIsHoldingFlag)
 	{
 		CombatComponent->Reload();
 	}
@@ -1034,11 +1096,33 @@ bool AEndlessBetrayalCharacter::IsAiming()
 	return (CombatComponent && CombatComponent->bIsAiming);
 }
 
+ETeam AEndlessBetrayalCharacter::GetTeam()
+{
+	EndlessBetrayalPlayerState = EndlessBetrayalPlayerState ? GetPlayerState<AEndlessBetrayalPlayerState>() : EndlessBetrayalPlayerState;
+	if(!IsValid(EndlessBetrayalPlayerState)) return ETeam::ET_NoTeam;
+	
+	return EndlessBetrayalPlayerState->GetTeam();
+}
+
 AWeapon* AEndlessBetrayalCharacter::GetEquippedWeapon()
 {
 	if (CombatComponent == nullptr) return nullptr;
 	
 	return CombatComponent->EquippedWeapon;
+}
+
+bool AEndlessBetrayalCharacter::IsHoldingFlag() const
+{
+	if(!IsValid(CombatComponent)) return false;
+	return CombatComponent->bIsHoldingFlag;
+}
+
+void AEndlessBetrayalCharacter::SetHoldingFlag(const bool bIsHoldingFlag)
+{
+	if(IsValid(CombatComponent))
+	{
+		CombatComponent->bIsHoldingFlag = bIsHoldingFlag;
+	}
 }
 
 FVector AEndlessBetrayalCharacter::GetHitTarget()

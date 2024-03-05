@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "WeaponTypes.h"
+#include "EndlessBetrayal/EndlessBetrayalTypes/Team.h"
 #include "GameFramework/Actor.h"
 #include "Weapon.generated.h"
 
@@ -133,6 +134,12 @@ protected:
 
 	UPROPERTY()
 	class AEndlessBetrayalPlayerController* WeaponOwnerController;
+
+	UPROPERTY(EditAnywhere, Category = "Pickup settings")
+	bool ShouldWeaponRotate = false;
+	
+	UPROPERTY(EditAnywhere, Category = "Pickup settings")
+	float BaseRotatingRate = 45.0f;
 	
 private:
 
@@ -153,6 +160,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category = "Weapon Properties")
 	EWeaponType WeaponType;
+
+	UPROPERTY(EditAnywhere)
+	ETeam Team;
 
 	UFUNCTION()
 	void OnRep_WeaponState();
@@ -198,6 +208,7 @@ private:
 public:	
 
 	void SetWeaponState(EWeaponState NewState);
+	void SetWeaponMesh(USkeletalMeshComponent* InWeapon);
 	FORCEINLINE USphereComponent* GetAreaSphere() const	{ return AreaSphere; }
 	FORCEINLINE USkeletalMeshComponent* GetWeaponMesh() const { return WeaponMesh; }
 	FORCEINLINE UTexture2D* GetCrosshairCenter() const { return CrosshairCenter; }
@@ -205,6 +216,7 @@ public:
 	FORCEINLINE UTexture2D* GetCrosshairBottom() const { return CrosshairBottom; }
 	FORCEINLINE UTexture2D* GetCrosshairLeft() const { return CrosshairLeft; }
 	FORCEINLINE UTexture2D* GetCrosshairRight() const { return CrosshairRight; }
+	FORCEINLINE UWidgetComponent* GetPickupWidget() const { return PickupWidget; }
 
 	FORCEINLINE float GetZoomedFOV() const { return ZoomedFOV; }
 	FORCEINLINE float GetZoomInterSpeed() const { return ZoomInterpSpeed; }
@@ -213,4 +225,5 @@ public:
 	FORCEINLINE EWeaponType GetWeaponType() const { return WeaponType; }
 	FORCEINLINE int32 GetAmmo() const { return AmmoAmount; }
 	FORCEINLINE int32 GetMagCapacity() const { return MagCapacity; }
+	FORCEINLINE ETeam GetTeam() const { return Team; }
 };
